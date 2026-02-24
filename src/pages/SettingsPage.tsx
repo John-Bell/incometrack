@@ -1,0 +1,103 @@
+import { AppLayout } from '../components/layout/AppLayout';
+import { Header } from '../components/layout/Header';
+import { Icon } from '../components/ui/Icon';
+import { MonthlyCloseOut } from '../components/settings/MonthlyCloseOut';
+import { HistoryLogItem } from '../components/settings/HistoryLogItem';
+
+export function SettingsPage() {
+    return (
+        <AppLayout
+            header={
+                <Header
+                    title="Settings"
+                    leftElement={<Icon name="arrow_back" className="text-primary text-2xl" />}
+                    rightElement={<div className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">V 2.4.0</div>}
+                    className="bg-transparent backdrop-blur-md"
+                />
+            }
+        >
+            <div className="flex-1 max-w-md mx-auto w-full pb-8">
+                <section className="mt-6 px-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">iCloud Sync</h2>
+                    <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                                    <Icon name="cloud_sync" />
+                                </div>
+                                <div>
+                                    <p className="font-semibold">Save to iCloud</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Last Synced: Oct 24, 2025, 14:02</p>
+                                </div>
+                            </div>
+                            <label className="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-300 dark:bg-primary/20 p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary">
+                                <div className="h-full w-[27px] rounded-full bg-white shadow-md"></div>
+                                <input type="checkbox" defaultChecked className="invisible absolute" />
+                            </label>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mt-8 px-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Monthly Close-Out</h2>
+                    <MonthlyCloseOut
+                        description="Archives current balances and interest rates to history and prepares the ledger for the new month. This action is final."
+                        monthString="October 2025"
+                        onArchive={() => { }}
+                    />
+                </section>
+
+                <section className="mt-8 px-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">General Settings</h2>
+                    <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl divide-y divide-slate-100 dark:divide-primary/5">
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="payments" />
+                                </div>
+                                <p className="font-medium">Currency</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary font-semibold">
+                                <span>GBP (£)</span>
+                                <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="calendar_today" />
+                                </div>
+                                <p className="font-medium">Tax Year</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary font-semibold">
+                                <span>2024/25</span>
+                                <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mt-8 px-4">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60">History Log</h2>
+                        <button className="text-xs font-bold text-primary hover:underline">View All</button>
+                    </div>
+                    <div className="space-y-3">
+                        <HistoryLogItem month="September 2025" closedDate="Sep 30, 2025" totalInterest="£1,280.42" />
+                        <HistoryLogItem month="August 2025" closedDate="Aug 31, 2025" totalInterest="£1,142.10" />
+                        <HistoryLogItem month="July 2025" closedDate="Jul 31, 2025" totalInterest="£988.50" />
+                    </div>
+                </section>
+
+                <section className="mt-12 px-4 mb-8">
+                    <div className="border-t border-slate-200 dark:border-red-900/30 pt-6">
+                        <button className="w-full text-red-500 dark:text-red-400 font-semibold py-3 border border-red-500/20 rounded-lg bg-red-500/5 hover:bg-red-500/10 transition-colors">
+                            Reset App Data
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </AppLayout>
+    );
+}

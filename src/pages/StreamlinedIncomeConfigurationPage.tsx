@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
@@ -8,6 +9,35 @@ export function StreamlinedIncomeConfigurationPage() {
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
+
+    const [activeTabKey, setActiveTabKey] = useState<'partner1' | 'partner2'>('partner1');
+
+    const [incomeData, setIncomeData] = useState({
+        partner1: {
+            pension: "11500",
+            rental: "12000",
+            employment: "21070",
+            dividends: ""
+        },
+        partner2: {
+            pension: "0",
+            rental: "0",
+            employment: "0",
+            dividends: ""
+        }
+    });
+
+    const handleInputChange = (field: keyof typeof incomeData.partner1, value: string) => {
+        setIncomeData(prev => ({
+            ...prev,
+            [activeTabKey]: {
+                ...prev[activeTabKey],
+                [field]: value
+            }
+        }));
+    };
+
+    const currentData = incomeData[activeTabKey];
 
     return (
         <AppLayout hideBottomNav={true}>
@@ -32,7 +62,8 @@ export function StreamlinedIncomeConfigurationPage() {
                                 name="partner_toggle"
                                 value={p1Name}
                                 className="invisible w-0 h-0 absolute"
-                                defaultChecked
+                                checked={activeTabKey === 'partner1'}
+                                onChange={() => setActiveTabKey('partner1')}
                             />
                         </label>
                         <label className="flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-[0.2rem] px-2 transition-all duration-200 has-[:checked]:bg-white dark:has-[:checked]:bg-[#2f3e37] has-[:checked]:shadow-sm has-[:checked]:text-primary text-slate-500 dark:text-[#9db9b0] text-sm font-semibold leading-normal">
@@ -42,6 +73,8 @@ export function StreamlinedIncomeConfigurationPage() {
                                 name="partner_toggle"
                                 value={p2Name}
                                 className="invisible w-0 h-0 absolute"
+                                checked={activeTabKey === 'partner2'}
+                                onChange={() => setActiveTabKey('partner2')}
                             />
                         </label>
                     </div>
@@ -58,15 +91,18 @@ export function StreamlinedIncomeConfigurationPage() {
                     <div className="flex flex-col gap-4">
                         <IncomeInputCard
                             label="State / Private Pension"
-                            value="11500"
+                            value={currentData.pension}
+                            onChange={(e) => handleInputChange('pension', e.target.value)}
                         />
                         <IncomeInputCard
                             label="Rental Income (Net)"
-                            value="12000"
+                            value={currentData.rental}
+                            onChange={(e) => handleInputChange('rental', e.target.value)}
                         />
                         <IncomeInputCard
                             label="Employment / Other"
-                            value="21070"
+                            value={currentData.employment}
+                            onChange={(e) => handleInputChange('employment', e.target.value)}
                         />
                     </div>
                 </div>
@@ -82,8 +118,9 @@ export function StreamlinedIncomeConfigurationPage() {
 
                     <IncomeInputCard
                         label="Total Dividends"
-                        value=""
+                        value={currentData.dividends}
                         tooltipText="Dividends are taxed differently but count towards your total income band."
+                        onChange={(e) => handleInputChange('dividends', e.target.value)}
                     />
                     <p className="mt-3 text-xs text-slate-500 dark:text-[#9db9b0] leading-relaxed">
                         Dividend allowance of £500 is applied automatically. This income sits on top of non-savings income in your tax stack.

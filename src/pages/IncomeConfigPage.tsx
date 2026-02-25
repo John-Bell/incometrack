@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -11,6 +12,35 @@ export function IncomeConfigPage() {
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
+
+    const [activeTabKey, setActiveTabKey] = useState<'partner1' | 'partner2'>('partner1');
+
+    const [incomeData, setIncomeData] = useState({
+        partner1: {
+            pension: "11500",
+            rental: "12000",
+            employment: "21070",
+            dividends: "0"
+        },
+        partner2: {
+            pension: "0",
+            rental: "0",
+            employment: "0",
+            dividends: "0"
+        }
+    });
+
+    const handleInputChange = (field: keyof typeof incomeData.partner1, value: string) => {
+        setIncomeData(prev => ({
+            ...prev,
+            [activeTabKey]: {
+                ...prev[activeTabKey],
+                [field]: value
+            }
+        }));
+    };
+
+    const currentData = incomeData[activeTabKey];
 
     return (
         <AppLayout
@@ -28,7 +58,11 @@ export function IncomeConfigPage() {
             }
         >
             <div className="sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-                <Tabs options={[p1Name, p2Name]} selected={p1Name} onValueChange={() => { }} />
+                <Tabs
+                    options={[p1Name, p2Name]}
+                    selected={activeTabKey === 'partner1' ? p1Name : p2Name}
+                    onValueChange={(val) => setActiveTabKey(val === p1Name ? 'partner1' : 'partner2')}
+                />
             </div>
 
             <div className="px-4 py-6">
@@ -42,9 +76,21 @@ export function IncomeConfigPage() {
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <IncomeInputCard label="State / Private Pension" value="11500" />
-                    <IncomeInputCard label="Rental Income (Net)" value="12000" />
-                    <IncomeInputCard label="Employment / Other" value="21070" />
+                    <IncomeInputCard
+                        label="State / Private Pension"
+                        value={currentData.pension}
+                        onChange={(e) => handleInputChange('pension', e.target.value)}
+                    />
+                    <IncomeInputCard
+                        label="Rental Income (Net)"
+                        value={currentData.rental}
+                        onChange={(e) => handleInputChange('rental', e.target.value)}
+                    />
+                    <IncomeInputCard
+                        label="Employment / Other"
+                        value={currentData.employment}
+                        onChange={(e) => handleInputChange('employment', e.target.value)}
+                    />
                 </div>
             </div>
 
@@ -56,8 +102,9 @@ export function IncomeConfigPage() {
 
                 <IncomeInputCard
                     label="Total Dividends"
-                    value="0"
+                    value={currentData.dividends}
                     tooltipText="Dividends are taxed differently but count towards your total income band."
+                    onChange={(e) => handleInputChange('dividends', e.target.value)}
                 />
 
                 <p className="mt-3 text-xs text-slate-500 dark:text-[#9db9b0] leading-relaxed">

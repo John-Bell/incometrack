@@ -26,7 +26,6 @@ describe('Database Schema', () => {
             balance: 1000,
             institutionName: 'Bank A',
             institutionCode: 'B',
-            institutionColor: 'blue',
             interestRate: 4.5,
             updatedAt: Date.now(),
             notes: 'Test note',
@@ -40,26 +39,23 @@ describe('Database Schema', () => {
         expect(savedAccount).toEqual(account);
         expect(savedAccount?.institutionName).toBe('Bank A');
         expect(savedAccount?.institutionCode).toBe('B');
-        expect(savedAccount?.institutionColor).toBe('blue');
         expect(savedAccount?.interestRate).toBe(4.5);
     });
 
-    it('should support new Profile color fields', async () => {
+    it('should support new Profile fields', async () => {
         const profile: Profile = {
             id: 'default',
             name: 'Smith Family',
             partner1Name: 'John',
             partner2Name: 'Jane',
-            partner1Color: 'blue',
-            partner2Color: 'pink',
             createdAt: Date.now()
         };
 
         await db.profile.add(profile);
         const savedProfile = await db.profile.get('default');
 
-        expect(savedProfile?.partner1Color).toBe('blue');
-        expect(savedProfile?.partner2Color).toBe('pink');
+        expect(savedProfile).toEqual(profile);
+        expect(savedProfile?.partner1Name).toBe('John');
     });
 
     it('should support new Income fields', async () => {

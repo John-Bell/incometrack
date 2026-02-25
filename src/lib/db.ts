@@ -5,8 +5,6 @@ export interface Profile {
     name: string;
     partner1Name?: string;
     partner2Name?: string;
-    partner1Color?: string; // e.g. 'blue', 'pink'
-    partner2Color?: string; // e.g. 'purple'
     createdAt: number;
 }
 
@@ -19,7 +17,6 @@ export interface Account {
     // New fields
     institutionName: string;
     institutionCode: string; // e.g. 'S', 'B', 'H'
-    institutionColor: string; // e.g. 'red', 'blue', 'gray'
     interestRate: number; // Percentage, e.g. 5.25
     updatedAt: number;
     notes?: string;

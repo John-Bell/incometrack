@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -10,6 +11,59 @@ export function AccountsPage() {
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
+
+    const [selectedTab, setSelectedTab] = useState('Joint');
+
+    const accounts = [
+        {
+            institutionCode: 'S',
+            institutionColor: 'red',
+            accountName: 'Santander eSaver',
+            ownerTag: 'Joint',
+            ownerTagColor: 'purple',
+            balance: '£85,000',
+            rate: '5.20%',
+            updatedAt: '2 days ago',
+            alertText: 'Bonus ends Oct 24',
+            alertType: 'warning'
+        },
+        {
+            institutionCode: 'B',
+            institutionColor: 'blue',
+            accountName: 'Barclays Rainy Day',
+            ownerTag: p1Name,
+            ownerTagColor: 'blue',
+            balance: '£5,000',
+            rate: '5.12%',
+            updatedAt: '12 Oct 23'
+        },
+        {
+            institutionCode: 'N',
+            institutionColor: 'gray',
+            accountName: 'Nationwide FlexDirect',
+            ownerTag: p2Name,
+            ownerTagColor: 'pink',
+            balance: '£1,500',
+            rate: '1.00%',
+            isStale: true,
+            isWarned: true,
+            updatedAt: 'Today',
+            alertText: 'Rate dropped',
+            alertType: 'error'
+        },
+        {
+            institutionCode: 'L',
+            institutionColor: 'green',
+            accountName: 'Lloyds Club',
+            ownerTag: 'Joint',
+            ownerTagColor: 'purple',
+            balance: '£50,000',
+            rate: '4.50%',
+            updatedAt: '30 Sep 23'
+        }
+    ] as const;
+
+    const filteredAccounts = accounts.filter(acc => acc.ownerTag === selectedTab);
 
     return (
         <AppLayout
@@ -34,8 +88,8 @@ export function AccountsPage() {
                 <PortfolioOverview totalSavings="£452,000" blendedRate="4.2%" trend="up" />
                 <Tabs
                     options={[p1Name, p2Name, 'Joint']}
-                    selected="Joint"
-                    onValueChange={() => { }}
+                    selected={selectedTab}
+                    onValueChange={setSelectedTab}
                     className="mb-2"
                 />
             </div>
@@ -50,55 +104,12 @@ export function AccountsPage() {
                 </div>
 
                 <div className="space-y-3 relative">
-                    <AccountCard
-                        institutionCode="S"
-                        institutionColor="red"
-                        accountName="Santander eSaver"
-                        ownerTag="Joint"
-                        ownerTagColor="purple"
-                        balance="£85,000"
-                        rate="5.20%"
-                        updatedAt="2 days ago"
-                        alertText="Bonus ends Oct 24"
-                        alertType="warning"
-                    />
-
-                    <AccountCard
-                        institutionCode="B"
-                        institutionColor="blue"
-                        accountName="Barclays Rainy Day"
-                        ownerTag="Spouse A"
-                        ownerTagColor="blue"
-                        balance="£5,000"
-                        rate="5.12%"
-                        updatedAt="12 Oct 23"
-                    />
-
-                    <AccountCard
-                        institutionCode="N"
-                        institutionColor="gray"
-                        accountName="Nationwide FlexDirect"
-                        ownerTag={p2Name}
-                        ownerTagColor="pink"
-                        balance="£1,500"
-                        rate="1.00%"
-                        isStale
-                        isWarned
-                        updatedAt="Today"
-                        alertText="Rate dropped"
-                        alertType="error"
-                    />
-
-                    <AccountCard
-                        institutionCode="L"
-                        institutionColor="green"
-                        accountName="Lloyds Club"
-                        ownerTag="Joint"
-                        ownerTagColor="purple"
-                        balance="£50,000"
-                        rate="4.50%"
-                        updatedAt="30 Sep 23"
-                    />
+                    {filteredAccounts.map((account, index) => (
+                        <AccountCard
+                            key={index}
+                            {...account}
+                        />
+                    ))}
                 </div>
             </div>
 

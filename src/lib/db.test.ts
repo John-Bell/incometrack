@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from './db';
-import type { Account, Income, Profile } from './db';
+import type { Account, Income, Profile, TaxYearRule } from './db';
+import { getTaxConstants } from '../constants/taxConstants';
 
 describe('Database Schema', () => {
     beforeEach(async () => {
@@ -15,6 +16,7 @@ describe('Database Schema', () => {
         expect(db.settings).toBeDefined();
         expect(db.monthlyArchives).toBeDefined();
         expect(db.notifications).toBeDefined();
+        expect(db.taxRules).toBeDefined();
     });
 
     it('should support new Account fields', async () => {
@@ -30,7 +32,8 @@ describe('Database Schema', () => {
             updatedAt: Date.now(),
             notes: 'Test note',
             alertText: 'Test alert',
-            alertType: 'warning'
+            alertType: 'warning',
+            taxWrapper: 'Standard'
         };
 
         await db.accounts.add(account);
@@ -40,6 +43,7 @@ describe('Database Schema', () => {
         expect(savedAccount?.institutionName).toBe('Bank A');
         expect(savedAccount?.institutionCode).toBe('B');
         expect(savedAccount?.interestRate).toBe(4.5);
+        expect(savedAccount?.taxWrapper).toBe('Standard');
     });
 
     it('should support new Profile fields', async () => {
@@ -65,7 +69,8 @@ describe('Database Schema', () => {
             name: 'Salary',
             amount: 5000,
             frequency: 'monthly',
-            type: 'salary'
+            type: 'salary',
+            taxCategory: 'Earned'
         };
 
         await db.incomes.add(income);
@@ -73,6 +78,7 @@ describe('Database Schema', () => {
 
         expect(savedIncome).toEqual(income);
         expect(savedIncome?.type).toBe('salary');
+        expect(savedIncome?.taxCategory).toBe('Earned');
     });
 
     it('should support Settings table', async () => {
@@ -88,5 +94,19 @@ describe('Database Schema', () => {
         const savedSettings = await db.settings.get('default');
 
         expect(savedSettings).toEqual(settings);
+    });
+
+    it('should support TaxYearRule table', async () => {
+        const constants = getTaxConstants('2024-2025');
+        const taxRule: TaxYearRule = {
+            id: '2024-2025',
+            ...constants
+        };
+
+        await db.taxRules.add(taxRule);
+        const savedRule = await db.taxRules.get('2024-2025');
+
+        expect(savedRule).toEqual(taxRule);
+        expect(savedRule?.BasicRate).toBe(0.2);
     });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { db } from './db';
-import type { Account, Income } from './db';
+import type { Account, Income, Profile } from './db';
 
 describe('Database Schema', () => {
     beforeEach(async () => {
@@ -25,9 +25,10 @@ describe('Database Schema', () => {
             type: 'savings',
             balance: 1000,
             institutionName: 'Bank A',
+            institutionCode: 'B',
+            institutionColor: 'blue',
             interestRate: 4.5,
             updatedAt: Date.now(),
-            color: 'blue',
             notes: 'Test note',
             alertText: 'Test alert',
             alertType: 'warning'
@@ -38,7 +39,27 @@ describe('Database Schema', () => {
 
         expect(savedAccount).toEqual(account);
         expect(savedAccount?.institutionName).toBe('Bank A');
+        expect(savedAccount?.institutionCode).toBe('B');
+        expect(savedAccount?.institutionColor).toBe('blue');
         expect(savedAccount?.interestRate).toBe(4.5);
+    });
+
+    it('should support new Profile color fields', async () => {
+        const profile: Profile = {
+            id: 'default',
+            name: 'Smith Family',
+            partner1Name: 'John',
+            partner2Name: 'Jane',
+            partner1Color: 'blue',
+            partner2Color: 'pink',
+            createdAt: Date.now()
+        };
+
+        await db.profile.add(profile);
+        const savedProfile = await db.profile.get('default');
+
+        expect(savedProfile?.partner1Color).toBe('blue');
+        expect(savedProfile?.partner2Color).toBe('pink');
     });
 
     it('should support new Income fields', async () => {

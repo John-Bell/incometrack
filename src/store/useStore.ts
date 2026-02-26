@@ -71,7 +71,7 @@ export const useStore = create<AppState>()((set) => ({
                 await seedDummyMonthlyArchives();
             }
 
-            set({
+           set({
                 isHydrated: true,
                 profile: activeProfile,
                 taxService,

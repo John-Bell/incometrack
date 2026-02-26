@@ -15,17 +15,16 @@ export interface Account {
     id: string;
     ownerId: string;
     name: string;
-    type: string;
     balance: number;
-    institutionName: string;
-    institutionCode: string; // e.g. 'S', 'B', 'H'
     interestRate: number; // Percentage, e.g. 5.25
     updatedAt: number;
     notes?: string;
     alertText?: string;
     alertType?: 'warning' | 'error' | 'info';
-    // --- New Tax Optimization Field ---
-    taxWrapper: string; // e.g., 'ISA', 'SIPP', 'Premium Bonds', 'Standard'
+    category: string; // e.g., 'Cash', 'Investments', 'Pensions'
+    // --- Bonus Rate Fields ---
+    bonusRateActive?: boolean;
+    bonusEndDate?: number; // timestamp
 }
 
 export interface Income {
@@ -92,7 +91,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
 // Schema version 1
 db.version(1).stores({
     profile: '&id',
-    accounts: '&id, ownerId, name, type',
+    accounts: '&id, ownerId, name',
     incomes: '&id, ownerId, name, frequency',
     scenarios: '&id, name'
 });
@@ -100,7 +99,7 @@ db.version(1).stores({
 // Schema version 2 - Update schema
 db.version(2).stores({
     profile: '&id',
-    accounts: '&id, ownerId, name, type, institutionName',
+    accounts: '&id, ownerId, name',
     incomes: '&id, ownerId, name, frequency, type',
     scenarios: '&id, name',
     settings: '&id',
@@ -113,7 +112,7 @@ db.version(3).stores({
     // Inherit everything from v2...
     profile: '&id',
     // Added taxWrapper as an index in case you want to query all ISAs quickly
-    accounts: '&id, ownerId, name, type, institutionName, taxWrapper',
+    accounts: '&id, ownerId, name',
     // Added taxCategory as an index to quickly sum up just pension income
     incomes: '&id, ownerId, name, frequency, type, taxCategory',
     scenarios: '&id, name',
@@ -121,5 +120,29 @@ db.version(3).stores({
     monthlyArchives: '&id, month, year',
     notifications: '&id, date, read',
     // New table. Just need the primary key indexed.
+    taxRules: '&id'
+});
+
+// Schema version 4 - Added bonus rate fields to Account
+db.version(4).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id'
+});
+
+// Schema version 5 - Added category to Account
+db.version(5).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
     taxRules: '&id'
 });

@@ -1,11 +1,15 @@
 import type { HTMLAttributes } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 
 interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
-    institutionCode: string;
-    institutionColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
+    id: string;
+    ownerId: string;
+    accountIcon: string;
+    iconColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
     accountName: string;
+    category?: string;
     ownerTag: string;
     ownerTagColor: 'purple' | 'blue' | 'pink';
     balance: string;
@@ -17,7 +21,7 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     alertType?: 'warning' | 'error' | 'info';
 }
 
-const instColorMap = {
+const iconColorMap = {
     red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
     blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
     gray: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
@@ -39,9 +43,11 @@ const alertColorMap = {
 };
 
 export function AccountCard({
-    institutionCode,
-    institutionColor,
+    id,
+    accountIcon,
+    iconColor,
     accountName,
+    category,
     ownerTag,
     ownerTagColor,
     balance,
@@ -52,8 +58,11 @@ export function AccountCard({
     alertText,
     alertType = 'warning',
     className,
+    ownerId, // destructure ownerId to prevent it being passed to DOM via ...props
     ...props
 }: AccountCardProps) {
+    const navigate = useNavigate();
+
     return (
         <div
             className={cn(
@@ -65,18 +74,26 @@ export function AccountCard({
         >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg', instColorMap[institutionColor])}>
-                        {institutionCode}
+                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg', iconColorMap[iconColor])}>
+                        {accountIcon}
                     </div>
                     <div>
                         <h3 className="font-bold text-slate-900 dark:text-white text-base">{accountName}</h3>
-                        <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium', ownerTagColorMap[ownerTagColor])}>
-                            {ownerTag}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium', ownerTagColorMap[ownerTagColor])}>
+                                {ownerTag}
+                            </span>
+                            {category && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    {category}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <button
                     aria-label="Quick Update"
+                    onClick={() => navigate(`/accounts/edit/${id}`)}
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-black transition-colors"
                 >
                     <Icon name="edit" />

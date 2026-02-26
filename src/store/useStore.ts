@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { db, type Profile } from '@/lib/db';
+import { syncTaxRules, seedDummyAccounts } from '@/lib/seed';
 
 export interface AppState {
     isHydrated: boolean;
@@ -24,6 +25,15 @@ export const useStore = create<AppState>()((set) => ({
                 // Load the first profile
                 const profiles = await db.profile.toArray();
                 activeProfile = profiles[0] || null;
+            }
+
+            // Run seed scripts
+            await syncTaxRules();
+
+            // Only seed dummy accounts if there are absolutely no accounts
+            const accountCount = await db.accounts.count();
+            if (accountCount === 0) {
+                await seedDummyAccounts();
             }
 
             set({

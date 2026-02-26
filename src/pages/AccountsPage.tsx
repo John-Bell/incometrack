@@ -1,15 +1,52 @@
+import { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { useStore } from '@/store/useStore';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
-import { Tabs } from '../components/ui/Tabs';
 import { PortfolioOverview } from '../components/accounts/PortfolioOverview';
 import { AccountCard } from '../components/accounts/AccountCard';
-import { useStore } from '@/store/useStore';
 
 export function AccountsPage() {
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
+
+    const [selectedTab, setSelectedTab] = useState('joint');
+
+    const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
+
+    const mappedAccounts = rawAccounts.map(acc => {
+        let ownerTagColor: 'blue' | 'pink' | 'purple' = 'purple';
+
+        if (acc.ownerId === 'person1') {
+            ownerTagColor = 'blue';
+        } else if (acc.ownerId === 'person2') {
+            ownerTagColor = 'pink';
+        }
+
+        let institutionColor: 'red' | 'blue' | 'gray' | 'green' = 'gray';
+        if (acc.institutionCode === 'S') institutionColor = 'red';
+        else if (acc.institutionCode === 'B') institutionColor = 'blue';
+        else if (acc.institutionCode === 'L') institutionColor = 'green';
+
+        return {
+            ownerId: acc.ownerId, // used for filtering
+            institutionCode: acc.institutionCode,
+            institutionColor,
+            accountName: acc.name,
+            ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
+            ownerTagColor,
+            balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(acc.balance),
+            rate: acc.interestRate.toFixed(2) + '%',
+            updatedAt: 'Recently', // Keep it simple for now, instead of computing relative time from acc.updatedAt
+            alertText: acc.alertText,
+            alertType: acc.alertType as any,
+        };
+    });
+
+    const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === selectedTab);
 
     return (
         <AppLayout
@@ -32,12 +69,20 @@ export function AccountsPage() {
         >
             <div className="px-4 pb-4">
                 <PortfolioOverview totalSavings="£452,000" blendedRate="4.2%" trend="up" />
-                <Tabs
-                    options={[p1Name, p2Name, 'Joint']}
-                    selected="Joint"
-                    onValueChange={() => { }}
-                    className="mb-2"
-                />
+                <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
+                    {['person1', 'person2', 'joint'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setSelectedTab(tab)}
+                            className={`flex-1 py-1.5 rounded-lg text-center transition-all ${selectedTab === tab
+                                ? 'bg-white dark:bg-[#1a2b25] text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                : 'text-slate-500 dark:text-[#7d998f] hover:text-slate-700 dark:hover:text-[#9db9b0]'
+                                }`}
+                        >
+                            {tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="px-4 pb-6">
@@ -50,55 +95,12 @@ export function AccountsPage() {
                 </div>
 
                 <div className="space-y-3 relative">
-                    <AccountCard
-                        institutionCode="S"
-                        institutionColor="red"
-                        accountName="Santander eSaver"
-                        ownerTag="Joint"
-                        ownerTagColor="purple"
-                        balance="£85,000"
-                        rate="5.20%"
-                        updatedAt="2 days ago"
-                        alertText="Bonus ends Oct 24"
-                        alertType="warning"
-                    />
-
-                    <AccountCard
-                        institutionCode="B"
-                        institutionColor="blue"
-                        accountName="Barclays Rainy Day"
-                        ownerTag="Spouse A"
-                        ownerTagColor="blue"
-                        balance="£5,000"
-                        rate="5.12%"
-                        updatedAt="12 Oct 23"
-                    />
-
-                    <AccountCard
-                        institutionCode="N"
-                        institutionColor="gray"
-                        accountName="Nationwide FlexDirect"
-                        ownerTag={p2Name}
-                        ownerTagColor="pink"
-                        balance="£1,500"
-                        rate="1.00%"
-                        isStale
-                        isWarned
-                        updatedAt="Today"
-                        alertText="Rate dropped"
-                        alertType="error"
-                    />
-
-                    <AccountCard
-                        institutionCode="L"
-                        institutionColor="green"
-                        accountName="Lloyds Club"
-                        ownerTag="Joint"
-                        ownerTagColor="purple"
-                        balance="£50,000"
-                        rate="4.50%"
-                        updatedAt="30 Sep 23"
-                    />
+                    {filteredAccounts.map((account, index) => (
+                        <AccountCard
+                            key={index}
+                            {...account}
+                        />
+                    ))}
                 </div>
             </div>
 

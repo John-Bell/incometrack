@@ -31,7 +31,6 @@ export function AddAccountPage() {
             id: crypto.randomUUID(),
             ownerId,
             name: accountName,
-            type: 'Savings', // Defaulting type
             balance: parseFloat(balance),
             institutionName: defaultInstitutionName,
             institutionCode: defaultInstitutionCode,

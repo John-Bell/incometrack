@@ -24,11 +24,8 @@ describe('Database Schema', () => {
             id: 'acc1',
             ownerId: 'user1',
             name: 'My Savings',
-            type: 'savings',
             category: 'Cash',
             balance: 1000,
-            institutionName: 'Bank A',
-            institutionCode: 'B',
             interestRate: 4.5,
             updatedAt: Date.now(),
             notes: 'Test note',
@@ -40,8 +37,6 @@ describe('Database Schema', () => {
         const savedAccount = await db.accounts.get('acc1');
 
         expect(savedAccount).toEqual(account);
-        expect(savedAccount?.institutionName).toBe('Bank A');
-        expect(savedAccount?.institutionCode).toBe('B');
         expect(savedAccount?.interestRate).toBe(4.5);
     });
 

@@ -6,8 +6,8 @@ import { Icon } from '@/components/ui/Icon';
 interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     id: string;
     ownerId: string;
-    institutionCode: string;
-    institutionColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
+    accountIcon: string;
+    iconColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
     accountName: string;
     ownerTag: string;
     ownerTagColor: 'purple' | 'blue' | 'pink';
@@ -20,7 +20,7 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     alertType?: 'warning' | 'error' | 'info';
 }
 
-const instColorMap = {
+const iconColorMap = {
     red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
     blue: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
     gray: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
@@ -43,8 +43,8 @@ const alertColorMap = {
 
 export function AccountCard({
     id,
-    institutionCode,
-    institutionColor,
+    accountIcon,
+    iconColor,
     accountName,
     ownerTag,
     ownerTagColor,
@@ -72,8 +72,8 @@ export function AccountCard({
         >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg', instColorMap[institutionColor])}>
-                        {institutionCode}
+                    <div className={cn('w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg', iconColorMap[iconColor])}>
+                        {accountIcon}
                     </div>
                     <div>
                         <h3 className="font-bold text-slate-900 dark:text-white text-base">{accountName}</h3>

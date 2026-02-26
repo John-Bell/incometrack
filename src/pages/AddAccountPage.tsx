@@ -19,11 +19,6 @@ export function AddAccountPage() {
     const [bonusEndDate, setBonusEndDate] = useState('');
     const [ownerId, setOwnerId] = useState('joint'); // 'person1', 'person2', 'joint'
 
-    // Mock institutions for now - you might want to fetch these or make it a dropdown if required
-    // Defaulting to 'B' (Blue) and a placeholder name for new accounts since design doesn't show it
-    const defaultInstitutionCode = 'B';
-    const defaultInstitutionName = 'Bank';
-
     const handleSave = async () => {
         if (!accountName || !balance || !interestRate || !category) return;
 
@@ -32,8 +27,6 @@ export function AddAccountPage() {
             ownerId,
             name: accountName,
             balance: parseFloat(balance),
-            institutionName: defaultInstitutionName,
-            institutionCode: defaultInstitutionCode,
             interestRate: parseFloat(interestRate),
             category,
             bonusRateActive,

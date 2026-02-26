@@ -28,16 +28,17 @@ export function AccountsPage() {
             ownerTagColor = 'pink';
         }
 
-        let institutionColor: 'red' | 'blue' | 'gray' | 'green' = 'gray';
-        if (acc.institutionCode === 'S') institutionColor = 'red';
-        else if (acc.institutionCode === 'B') institutionColor = 'blue';
-        else if (acc.institutionCode === 'L') institutionColor = 'green';
+        const accountIcon = acc.name ? acc.name.charAt(0).toUpperCase() : '?';
+        let iconColor: 'red' | 'blue' | 'gray' | 'green' = 'gray';
+        if (accountIcon === 'S') iconColor = 'red';
+        else if (accountIcon === 'B') iconColor = 'blue';
+        else if (accountIcon === 'L') iconColor = 'green';
 
         return {
             id: acc.id,
             ownerId: acc.ownerId, // used for filtering
-            institutionCode: acc.institutionCode,
-            institutionColor,
+            accountIcon,
+            iconColor,
             accountName: acc.name,
             ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
             ownerTagColor,

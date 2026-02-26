@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -75,6 +76,18 @@ export function SettingsPage() {
                                 <Icon name="chevron_right" className="text-sm" />
                             </div>
                         </div>
+
+                        <Link to="/income-config" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="tune" />
+                                </div>
+                                <p className="font-medium">Income Configuration</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary">
+                                <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </Link>
                     </div>
                 </section>
 

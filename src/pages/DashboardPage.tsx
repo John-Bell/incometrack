@@ -7,12 +7,55 @@ import { SummaryCard } from '../components/dashboard/SummaryCard';
 import { AllowanceCard } from '../components/dashboard/AllowanceCard';
 import { NotificationCard } from '../components/dashboard/NotificationCard';
 import { useStore } from '@/store/useStore';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 
 export function DashboardPage() {
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
     const combinedName = profile?.name || `${p1Name} & ${p2Name}`;
+
+    // Calculate savings interest
+    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+
+    let p1Interest = 0;
+    let p2Interest = 0;
+
+    accounts.forEach(acc => {
+        // We assume balance is in pounds and rate is a percentage
+        const annualInterest = (acc.balance * acc.interestRate) / 100;
+
+        if (acc.ownerId === 'person1') {
+            p1Interest += annualInterest;
+        } else if (acc.ownerId === 'person2') {
+            p2Interest += annualInterest;
+        } else if (acc.ownerId === 'joint') {
+            p1Interest += annualInterest / 2;
+            p2Interest += annualInterest / 2;
+        }
+    });
+
+    const combinedInterest = p1Interest + p2Interest;
+    const monthlyInterest = combinedInterest / 12;
+
+    const p1TotalAllowance = 1000;
+    const p2TotalAllowance = 500;
+
+    const p1Remaining = Math.max(0, p1TotalAllowance - p1Interest);
+    const p2Remaining = Math.max(0, p2TotalAllowance - p2Interest);
+
+    const p1Percent = Math.min(100, Math.round((p1Interest / p1TotalAllowance) * 100));
+    const p2Percent = Math.min(100, Math.round((p2Interest / p2TotalAllowance) * 100));
+
+    // Format currency helper
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-GB', {
+            style: 'currency',
+            currency: 'GBP',
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
 
     return (
         <AppLayout
@@ -41,7 +84,7 @@ export function DashboardPage() {
                         iconBgColor="bg-primary/20"
                         iconColor="text-primary"
                         label="Monthly Interest"
-                        value="£1,450"
+                        value={formatCurrency(monthlyInterest)}
                         trendIcon="arrow_upward"
                         trendText="+2.1%"
                         trendColor="text-primary"
@@ -71,19 +114,19 @@ export function DashboardPage() {
                         initials={p1Name.slice(0, 2).toUpperCase()}
                         name={p1Name}
                         taxPayerType="Basic Rate Taxpayer"
-                        usedAmount="£800"
-                        totalAmount="£1,000"
-                        percentage={80}
-                        remainingText="£200 remaining"
+                        usedAmount={formatCurrency(p1Interest)}
+                        totalAmount={formatCurrency(p1TotalAllowance)}
+                        percentage={p1Percent}
+                        remainingText={`${formatCurrency(p1Remaining)} remaining`}
                     />
                     <AllowanceCard
                         initials={p2Name.slice(0, 2).toUpperCase()}
                         name={p2Name}
                         taxPayerType="Higher Rate Taxpayer"
-                        usedAmount="£225"
-                        totalAmount="£500"
-                        percentage={45}
-                        remainingText="£275 remaining"
+                        usedAmount={formatCurrency(p2Interest)}
+                        totalAmount={formatCurrency(p2TotalAllowance)}
+                        percentage={p2Percent}
+                        remainingText={`${formatCurrency(p2Remaining)} remaining`}
                     />
                 </div>
 

@@ -6,6 +6,7 @@ import { ScenariosPage } from '@/pages/ScenariosPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { SimplifiedAppSetupPage } from '@/pages/SimplifiedAppSetupPage';
 import { StreamlinedIncomeConfigurationPage } from '@/pages/StreamlinedIncomeConfigurationPage';
+import { IncomeConfigPage } from '@/pages/IncomeConfigPage';
 import { AddAccountPage } from '@/pages/AddAccountPage';
 import { EditAccountPage } from '@/pages/EditAccountPage';
 import { useStore } from '@/store/useStore';
@@ -37,6 +38,7 @@ function AppRoutes() {
       <Route path="/accounts/edit/:id" element={<EditAccountPage />} />
       <Route path="/scenarios" element={<ScenariosPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/income-config" element={<IncomeConfigPage />} />
 
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />

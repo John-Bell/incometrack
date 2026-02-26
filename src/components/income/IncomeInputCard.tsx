@@ -5,11 +5,13 @@ import { Icon } from '@/components/ui/Icon';
 interface IncomeInputCardProps {
     label: string;
     value: string;
+    frequency?: 'annual' | 'monthly';
     tooltipText?: string;
     onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+    onFrequencyChange?: (frequency: 'annual' | 'monthly') => void;
 }
 
-export function IncomeInputCard({ label, value, tooltipText, onChange }: IncomeInputCardProps) {
+export function IncomeInputCard({ label, value, frequency = 'annual', tooltipText, onChange, onFrequencyChange }: IncomeInputCardProps) {
     const inputProps = onChange ? { value, onChange } : { defaultValue: value };
 
     return (
@@ -32,8 +34,14 @@ export function IncomeInputCard({ label, value, tooltipText, onChange }: IncomeI
                     {...inputProps}
                 />
                 <div className="flex bg-slate-100 dark:bg-[#111816] rounded-lg p-1 h-[52px]">
-                    <button className="px-3 rounded-[0.2rem] text-xs font-semibold bg-white dark:bg-[#2f3e37] text-slate-900 dark:text-white shadow-sm h-full">Yr</button>
-                    <button className="px-3 rounded-[0.2rem] text-xs font-semibold text-slate-400 dark:text-[#5f7e73] hover:text-slate-600 dark:hover:text-[#9db9b0] h-full">Mo</button>
+                    <button
+                        className={`px-3 rounded-[0.2rem] text-xs font-semibold shadow-sm h-full transition-colors ${frequency === 'annual' ? 'bg-white dark:bg-[#2f3e37] text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[#5f7e73] hover:text-slate-600 dark:hover:text-[#9db9b0] bg-transparent'}`}
+                        onClick={() => onFrequencyChange && onFrequencyChange('annual')}
+                    >Yr</button>
+                    <button
+                        className={`px-3 rounded-[0.2rem] text-xs font-semibold shadow-sm h-full transition-colors ${frequency === 'monthly' ? 'bg-white dark:bg-[#2f3e37] text-slate-900 dark:text-white' : 'text-slate-400 dark:text-[#5f7e73] hover:text-slate-600 dark:hover:text-[#9db9b0] bg-transparent'}`}
+                        onClick={() => onFrequencyChange && onFrequencyChange('monthly')}
+                    >Mo</button>
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { Icon } from '@/components/ui/Icon';
+import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
 
 export function EditAccountPage() {
     const { id } = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ export function EditAccountPage() {
     const account = useLiveQuery(() => db.accounts.get(id || ''), [id]);
 
     const [accountName, setAccountName] = useState('');
+    const [category, setCategory] = useState<AccountCategory | ''>('');
     const [balance, setBalance] = useState('');
     const [interestRate, setInterestRate] = useState('');
     const [bonusRateActive, setBonusRateActive] = useState(false);
@@ -26,6 +28,7 @@ export function EditAccountPage() {
     useEffect(() => {
         if (account) {
             setAccountName(account.name);
+            setCategory((account.category as AccountCategory) || '');
             setBalance(account.balance.toString());
             setInterestRate(account.interestRate.toString());
             setBonusRateActive(account.bonusRateActive || false);
@@ -42,11 +45,12 @@ export function EditAccountPage() {
     }, [account]);
 
     const handleSave = async () => {
-        if (!id || !accountName || !balance || !interestRate) return;
+        if (!id || !accountName || !balance || !interestRate || !category) return;
 
         try {
             await db.accounts.update(id, {
                 name: accountName,
+                category,
                 balance: parseFloat(balance),
                 interestRate: parseFloat(interestRate),
                 bonusRateActive,
@@ -95,6 +99,24 @@ export function EditAccountPage() {
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                     />
+                </div>
+
+                {/* Category Field */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Category</label>
+                    <div className="relative">
+                        <select
+                            className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value as AccountCategory)}
+                        >
+                            <option value="" disabled>Select Category</option>
+                            {ACCOUNT_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-slate-400">expand_more</span>
+                    </div>
                 </div>
 
                 {/* Balance Field */}
@@ -198,7 +220,7 @@ export function EditAccountPage() {
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!accountName || !balance || !interestRate}
+                    disabled={!accountName || !balance || !interestRate || !category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Save Changes

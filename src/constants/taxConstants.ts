@@ -43,6 +43,29 @@ export type TaxYearConstants = {
   StartingBand: string;
 };
 
+export type AccountCategory =
+  | 'Current Account'
+  | 'Easy Access Savings'
+  | 'Fixed Term Savings'
+  | 'Notice Savings'
+  | 'Stocks & Shares'
+  | 'Cash ISA'
+  | 'Shares ISA'
+  | 'Premium Bonds'
+  | 'DC Pension';
+
+export const ACCOUNT_CATEGORIES: AccountCategory[] = [
+  'Current Account',
+  'Easy Access Savings',
+  'Fixed Term Savings',
+  'Notice Savings',
+  'Stocks & Shares',
+  'Cash ISA',
+  'Shares ISA',
+  'Premium Bonds',
+  'DC Pension'
+];
+
 const DEFAULT_TAX_YEAR = '2025-2026';
 
 export const TAX_YEAR_CONSTANTS: Record<string, TaxYearConstants> = {

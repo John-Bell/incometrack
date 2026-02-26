@@ -24,8 +24,7 @@ export interface Account {
     notes?: string;
     alertText?: string;
     alertType?: 'warning' | 'error' | 'info';
-    // --- New Tax Optimization Field ---
-    taxWrapper: string; // e.g., 'ISA', 'SIPP', 'Premium Bonds', 'Standard'
+    category: string; // e.g., 'Cash', 'Investments', 'Pensions'
     // --- Bonus Rate Fields ---
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
@@ -116,7 +115,7 @@ db.version(3).stores({
     // Inherit everything from v2...
     profile: '&id',
     // Added taxWrapper as an index in case you want to query all ISAs quickly
-    accounts: '&id, ownerId, name, type, institutionName, taxWrapper',
+    accounts: '&id, ownerId, name, type, institutionName',
     // Added taxCategory as an index to quickly sum up just pension income
     incomes: '&id, ownerId, name, frequency, type, taxCategory',
     scenarios: '&id, name',
@@ -130,7 +129,19 @@ db.version(3).stores({
 // Schema version 4 - Added bonus rate fields to Account
 db.version(4).stores({
     profile: '&id',
-    accounts: '&id, ownerId, name, type, institutionName, taxWrapper, bonusRateActive, bonusEndDate',
+    accounts: '&id, ownerId, name, type, institutionName, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id'
+});
+
+// Schema version 5 - Added category to Account
+db.version(5).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, type, category, institutionName, bonusRateActive, bonusEndDate',
     incomes: '&id, ownerId, name, frequency, type, taxCategory',
     scenarios: '&id, name',
     settings: '&id',

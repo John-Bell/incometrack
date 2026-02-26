@@ -42,7 +42,7 @@ export const seedDummyAccounts = async () => {
             id: "acc-santander-001",
             ownerId: "joint",
             name: "Santander eSaver",
-            type: "Savings",
+            category: "Easy Access Savings",
             balance: 85000,
             institutionName: "Santander",
             institutionCode: "S",
@@ -50,25 +50,28 @@ export const seedDummyAccounts = async () => {
             updatedAt: 1708722000000,
             alertText: "Bonus ends Oct 24",
             alertType: "warning",
-            taxWrapper: "Standard"
+            bonusRateActive: true,
+            bonusEndDate: 1730332800000,
+            notes: "Joint account for house deposit"
         },
         {
             id: "acc-barclays-002",
             ownerId: "person1",
             name: "Barclays Rainy Day",
-            type: "Savings",
+            category: "Easy Access Savings",
             balance: 5000,
             institutionName: "Barclays",
             institutionCode: "B",
             interestRate: 5.12,
             updatedAt: 1697068800000,
-            taxWrapper: "Standard"
+            bonusRateActive: false,
+            notes: "Emergency fund"
         },
         {
             id: "acc-nationwide-003",
             ownerId: "person2",
             name: "Nationwide FlexDirect",
-            type: "Current",
+            category: "Current Account",
             balance: 1500,
             institutionName: "Nationwide",
             institutionCode: "N",
@@ -76,19 +79,21 @@ export const seedDummyAccounts = async () => {
             updatedAt: 1708894800000,
             alertText: "Rate dropped",
             alertType: "error",
-            taxWrapper: "Standard"
+            bonusRateActive: false,
+            notes: "Everyday spending"
         },
         {
             id: "acc-lloyds-004",
             ownerId: "joint",
             name: "Lloyds Club",
-            type: "Savings",
+            category: "Easy Access Savings",
             balance: 50000,
             institutionName: "Lloyds",
             institutionCode: "L",
             interestRate: 4.50,
             updatedAt: 1696032000000,
-            taxWrapper: "Standard"
+            bonusRateActive: false,
+            notes: "Holiday fund"
         }
     ];
 

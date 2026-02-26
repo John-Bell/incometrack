@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { Icon } from '@/components/ui/Icon';
+import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
 
 export function AddAccountPage() {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ export function AddAccountPage() {
     const p2Name = profile?.partner2Name || 'Partner 2';
 
     const [accountName, setAccountName] = useState('');
+    const [category, setCategory] = useState<AccountCategory | ''>('');
     const [balance, setBalance] = useState('');
     const [interestRate, setInterestRate] = useState('');
     const [bonusRateActive, setBonusRateActive] = useState(false);
@@ -23,7 +25,7 @@ export function AddAccountPage() {
     const defaultInstitutionName = 'Bank';
 
     const handleSave = async () => {
-        if (!accountName || !balance || !interestRate) return;
+        if (!accountName || !balance || !interestRate || !category) return;
 
         const newAccount = {
             id: crypto.randomUUID(),
@@ -34,7 +36,7 @@ export function AddAccountPage() {
             institutionName: defaultInstitutionName,
             institutionCode: defaultInstitutionCode,
             interestRate: parseFloat(interestRate),
-            taxWrapper: 'Standard', // Default tax wrapper
+            category,
             bonusRateActive,
             // Convert 'YYYY-MM-DD' back to timestamp if active, else undefined
             bonusEndDate: bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
@@ -73,6 +75,24 @@ export function AddAccountPage() {
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
                     />
+                </div>
+
+                {/* Category Field */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Category</label>
+                    <div className="relative">
+                        <select
+                            className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value as AccountCategory)}
+                        >
+                            <option value="" disabled>Select Category</option>
+                            {ACCOUNT_CATEGORIES.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-slate-400">expand_more</span>
+                    </div>
                 </div>
 
                 {/* Balance Field */}
@@ -178,7 +198,7 @@ export function AddAccountPage() {
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!accountName || !balance || !interestRate}
+                    disabled={!accountName || !balance || !interestRate || !category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Add Account

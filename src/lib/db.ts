@@ -26,6 +26,9 @@ export interface Account {
     alertType?: 'warning' | 'error' | 'info';
     // --- New Tax Optimization Field ---
     taxWrapper: string; // e.g., 'ISA', 'SIPP', 'Premium Bonds', 'Standard'
+    // --- Bonus Rate Fields ---
+    bonusRateActive?: boolean;
+    bonusEndDate?: number; // timestamp
 }
 
 export interface Income {
@@ -121,5 +124,17 @@ db.version(3).stores({
     monthlyArchives: '&id, month, year',
     notifications: '&id, date, read',
     // New table. Just need the primary key indexed.
+    taxRules: '&id'
+});
+
+// Schema version 4 - Added bonus rate fields to Account
+db.version(4).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, type, institutionName, taxWrapper, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
     taxRules: '&id'
 });

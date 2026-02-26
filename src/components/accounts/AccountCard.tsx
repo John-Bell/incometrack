@@ -1,8 +1,11 @@
 import type { HTMLAttributes } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 
 interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
+    id: string;
+    ownerId: string;
     institutionCode: string;
     institutionColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
     accountName: string;
@@ -39,6 +42,7 @@ const alertColorMap = {
 };
 
 export function AccountCard({
+    id,
     institutionCode,
     institutionColor,
     accountName,
@@ -52,8 +56,11 @@ export function AccountCard({
     alertText,
     alertType = 'warning',
     className,
+    ownerId, // destructure ownerId to prevent it being passed to DOM via ...props
     ...props
 }: AccountCardProps) {
+    const navigate = useNavigate();
+
     return (
         <div
             className={cn(
@@ -77,6 +84,7 @@ export function AccountCard({
                 </div>
                 <button
                     aria-label="Quick Update"
+                    onClick={() => navigate(`/accounts/edit/${id}`)}
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-primary hover:text-black transition-colors"
                 >
                     <Icon name="edit" />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
@@ -9,6 +10,7 @@ import { PortfolioOverview } from '../components/accounts/PortfolioOverview';
 import { AccountCard } from '../components/accounts/AccountCard';
 
 export function AccountsPage() {
+    const navigate = useNavigate();
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
@@ -32,6 +34,7 @@ export function AccountsPage() {
         else if (acc.institutionCode === 'L') institutionColor = 'green';
 
         return {
+            id: acc.id,
             ownerId: acc.ownerId, // used for filtering
             institutionCode: acc.institutionCode,
             institutionColor,
@@ -45,6 +48,17 @@ export function AccountsPage() {
             alertType: acc.alertType as any,
         };
     });
+
+    const totalSavingsValue = rawAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+    const formattedTotalSavings = new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        maximumFractionDigits: 0
+    }).format(totalSavingsValue);
+
+    const totalInterestValue = rawAccounts.reduce((sum, acc) => sum + (acc.balance * (acc.interestRate / 100)), 0);
+    const blendedRateValue = totalSavingsValue > 0 ? (totalInterestValue / totalSavingsValue) * 100 : 0;
+    const formattedBlendedRate = `${blendedRateValue.toFixed(2)}%`;
 
     const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === selectedTab);
 
@@ -68,7 +82,7 @@ export function AccountsPage() {
             }
         >
             <div className="px-4 pb-4">
-                <PortfolioOverview totalSavings="£452,000" blendedRate="4.2%" trend="up" />
+                <PortfolioOverview totalSavings={formattedTotalSavings} blendedRate={formattedBlendedRate} trend="up" />
                 <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
                     {['person1', 'person2', 'joint'].map((tab) => (
                         <button
@@ -95,16 +109,19 @@ export function AccountsPage() {
                 </div>
 
                 <div className="space-y-3 relative">
-                    {filteredAccounts.map((account, index) => (
+                    {filteredAccounts.map((account) => (
                         <AccountCard
-                            key={index}
+                            key={account.id}
                             {...account}
                         />
                     ))}
                 </div>
             </div>
 
-            <button className="fixed z-30 bottom-24 right-4 w-14 h-14 bg-primary text-black rounded-full shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform hover:brightness-110">
+            <button
+                onClick={() => navigate('/accounts/add')}
+                className="fixed z-30 bottom-24 right-4 w-14 h-14 bg-primary text-black rounded-full shadow-lg shadow-primary/30 flex items-center justify-center active:scale-95 transition-transform hover:brightness-110"
+            >
                 <Icon name="add" className="text-3xl" />
             </button>
 

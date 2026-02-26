@@ -9,6 +9,7 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     accountIcon: string;
     iconColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
     accountName: string;
+    category?: string;
     ownerTag: string;
     ownerTagColor: 'purple' | 'blue' | 'pink';
     balance: string;
@@ -46,6 +47,7 @@ export function AccountCard({
     accountIcon,
     iconColor,
     accountName,
+    category,
     ownerTag,
     ownerTagColor,
     balance,
@@ -77,9 +79,16 @@ export function AccountCard({
                     </div>
                     <div>
                         <h3 className="font-bold text-slate-900 dark:text-white text-base">{accountName}</h3>
-                        <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium', ownerTagColorMap[ownerTagColor])}>
-                            {ownerTag}
-                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium', ownerTagColorMap[ownerTagColor])}>
+                                {ownerTag}
+                            </span>
+                            {category && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    {category}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 <button

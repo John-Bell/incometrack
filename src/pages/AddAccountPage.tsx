@@ -19,19 +19,25 @@ export function AddAccountPage() {
     const [bonusEndDate, setBonusEndDate] = useState('');
     const [ownerId, setOwnerId] = useState('joint'); // 'person1', 'person2', 'joint'
 
+    const showAER = category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
+    const showBonus = category === '' || ['Easy Access Savings', 'Cash ISA', 'Current Account'].includes(category as string);
+
     const handleSave = async () => {
-        if (!accountName || !balance || !interestRate || !category) return;
+        if (!accountName || !balance || !category) return;
+        if (showAER && !interestRate) return;
+
+        const finalInterestRate = showAER ? parseFloat(interestRate) : 0;
 
         const newAccount = {
             id: crypto.randomUUID(),
             ownerId,
             name: accountName,
             balance: parseFloat(balance),
-            interestRate: parseFloat(interestRate),
+            interestRate: finalInterestRate,
             category,
-            bonusRateActive,
+            bonusRateActive: showBonus ? bonusRateActive : false,
             // Convert 'YYYY-MM-DD' back to timestamp if active, else undefined
-            bonusEndDate: bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
+            bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
             updatedAt: Date.now(),
         };
 
@@ -103,53 +109,57 @@ export function AddAccountPage() {
                 </div>
 
                 {/* Interest Rate Field */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
-                    <div className="relative flex items-center">
-                        <input
-                            className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
-                            type="number"
-                            step="0.01"
-                            placeholder="5.20"
-                            value={interestRate}
-                            onChange={(e) => setInterestRate(e.target.value)}
-                        />
-                        <span className="absolute right-4 text-slate-400 font-bold">%</span>
+                {showAER && (
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
+                        <div className="relative flex items-center">
+                            <input
+                                className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                                type="number"
+                                step="0.01"
+                                placeholder="5.20"
+                                value={interestRate}
+                                onChange={(e) => setInterestRate(e.target.value)}
+                            />
+                            <span className="absolute right-4 text-slate-400 font-bold">%</span>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Bonus Rate Section */}
-                <div className="p-5 rounded-xl border border-primary/20 bg-primary/5 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-bold text-slate-900 dark:text-slate-100">Bonus Rate</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Additional interest for a limited period</p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                checked={bonusRateActive}
-                                onChange={(e) => setBonusRateActive(e.target.checked)}
-                            />
-                            <div className="w-11 h-6 bg-slate-200 dark:bg-primary/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                        </label>
-                    </div>
-
-                    {bonusRateActive && (
-                        <div className="space-y-2 fade-in">
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
-                            <div className="relative">
-                                <input
-                                    className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
-                                    type="date"
-                                    value={bonusEndDate}
-                                    onChange={(e) => setBonusEndDate(e.target.value)}
-                                />
+                {showBonus && (
+                    <div className="p-5 rounded-xl border border-primary/20 bg-primary/5 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="font-bold text-slate-900 dark:text-slate-100">Bonus Rate</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Additional interest for a limited period</p>
                             </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={bonusRateActive}
+                                    onChange={(e) => setBonusRateActive(e.target.checked)}
+                                />
+                                <div className="w-11 h-6 bg-slate-200 dark:bg-primary/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
                         </div>
-                    )}
-                </div>
+
+                        {bonusRateActive && (
+                            <div className="space-y-2 fade-in">
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
+                                <div className="relative">
+                                    <input
+                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
+                                        type="date"
+                                        value={bonusEndDate}
+                                        onChange={(e) => setBonusEndDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Ownership Selection */}
                 <div className="space-y-3">
@@ -190,7 +200,7 @@ export function AddAccountPage() {
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!accountName || !balance || !interestRate || !category}
+                    disabled={!accountName || !balance || (showAER && !interestRate) || !category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Add Account

@@ -6,15 +6,18 @@ export interface AppState {
     isHydrated: boolean;
     profile: Profile | null;
     hydratingError: string | null;
+    activeAccountsTab: string;
 
     initStore: () => Promise<void>;
     setProfile: (profile: Profile) => Promise<void>;
+    setActiveAccountsTab: (tab: string) => void;
 }
 
 export const useStore = create<AppState>()((set) => ({
     isHydrated: false,
     profile: null,
     hydratingError: null,
+    activeAccountsTab: 'joint',
 
     initStore: async () => {
         try {
@@ -53,5 +56,7 @@ export const useStore = create<AppState>()((set) => ({
     setProfile: async (profile: Profile) => {
         await db.profile.put(profile);
         set({ profile });
-    }
+    },
+
+    setActiveAccountsTab: (tab: string) => set({ activeAccountsTab: tab })
 }));

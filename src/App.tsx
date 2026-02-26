@@ -7,12 +7,12 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { SimplifiedAppSetupPage } from '@/pages/SimplifiedAppSetupPage';
 import { StreamlinedIncomeConfigurationPage } from '@/pages/StreamlinedIncomeConfigurationPage';
 import { IncomeConfigPage } from '@/pages/IncomeConfigPage';
-import { IncomePage } from '@/pages/IncomePage';
+import { IncomePage } from '@/pages/IncomePage'; // Keep your local additions
 import { AddAccountPage } from '@/pages/AddAccountPage';
+import { EditBudgetPage } from '@/pages/EditBudgetPage'; // Make sure these remain
+import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { EditAccountPage } from '@/pages/EditAccountPage';
 import { BudgetsPage } from '@/pages/BudgetsPage';
-import { EditBudgetPage } from '@/pages/EditBudgetPage';
-import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { useStore } from '@/store/useStore';
 
 function AppRoutes() {
@@ -47,7 +47,6 @@ function AppRoutes() {
       <Route path="/budgets" element={<BudgetsPage />} />
       <Route path="/budgets/add" element={<AddBudgetPage />} />
       <Route path="/budgets/edit/:id" element={<EditBudgetPage />} />
-
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
       <Route path="/income-setup" element={<StreamlinedIncomeConfigurationPage />} />

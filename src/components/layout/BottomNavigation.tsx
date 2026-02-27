@@ -10,7 +10,7 @@ export function BottomNavigation() {
     const tabs = [
         { name: 'Dashboard', path: '/', icon: 'dashboard' },
         { name: 'Accounts', path: '/accounts', icon: 'account_balance_wallet' },
-        { name: 'Income', path: '/income-config', icon: 'payments' },
+        { name: 'Income', path: '/income', icon: 'payments' },
         { name: 'Simulation', path: '/scenarios', icon: 'calculate' },
     ];
 
@@ -55,7 +55,6 @@ export function BottomNavigation() {
                     );
                 })}
             </div>
-            <div className="h-5 w-full bg-[#1c2723]"></div>
         </nav >
     );
 }

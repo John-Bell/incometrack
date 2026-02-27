@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
@@ -12,6 +13,7 @@ import { useStore } from '@/store/useStore';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function IncomeConfigPage() {
+    const navigate = useNavigate();
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
@@ -88,6 +90,7 @@ export function IncomeConfigPage() {
                 };
             });
             await db.incomes.bulkPut(updates);
+            navigate('/income');
         } catch (error) {
             console.error("Failed to save incomes:", error);
         } finally {
@@ -119,7 +122,6 @@ export function IncomeConfigPage() {
 
     return (
         <AppLayout
-            hideBottomNav
             header={
                 <Header
                     title="Income Configuration"
@@ -196,7 +198,16 @@ export function IncomeConfigPage() {
                 </p>
             </div>
 
-            <div className="h-6"></div>
+            <div className="px-4 pb-24">
+                <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="w-full h-14 bg-[#13eca4] text-[#10221c] font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:bg-[#11d896] hover:shadow-[0_6px_20px_rgba(19,236,164,0.23)] transition-all disabled:opacity-50 active:scale-[0.98]"
+                >
+                    <Icon name="check" className="text-2xl" />
+                    {isSaving ? 'Saving...' : 'Save & Calculate'}
+                </button>
+            </div>
         </AppLayout>
     );
 }

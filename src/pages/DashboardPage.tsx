@@ -9,6 +9,7 @@ import { NotificationCard } from '../components/dashboard/NotificationCard';
 import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function DashboardPage() {
     const { profile } = useStore();
@@ -64,9 +65,7 @@ export function DashboardPage() {
                     subtitle="Good morning,"
                     title={combinedName}
                     rightElement={
-                        <button className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-200 dark:bg-surface-dark text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-[#2a4038] transition-colors">
-                            <Icon name="account_circle" />
-                        </button>
+                        <MainHeaderActions onSave={() => { }} />
                     }
                 />
             }

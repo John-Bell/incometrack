@@ -10,8 +10,8 @@ export function BottomNavigation() {
     const tabs = [
         { name: 'Dashboard', path: '/', icon: 'dashboard' },
         { name: 'Accounts', path: '/accounts', icon: 'account_balance_wallet' },
-        { name: 'Scenarios', path: '/scenarios', icon: 'monitoring' },
-        { name: 'Settings', path: '/settings', icon: 'settings' },
+        { name: 'Income', path: '/income-config', icon: 'payments' },
+        { name: 'Simulation', path: '/scenarios', icon: 'calculate' },
     ];
 
     return (

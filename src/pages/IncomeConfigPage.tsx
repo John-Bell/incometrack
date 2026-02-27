@@ -5,10 +5,11 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { Tabs } from '../components/ui/Tabs';
-import { Button } from '../components/ui/Button';
+
 import { TaxBandVisualizer } from '../components/income/TaxBandVisualizer';
 import { IncomeInputCard } from '../components/income/IncomeInputCard';
 import { useStore } from '@/store/useStore';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function IncomeConfigPage() {
     const { profile } = useStore();
@@ -128,6 +129,7 @@ export function IncomeConfigPage() {
                             <Icon name="arrow_back" className="text-2xl text-slate-900 dark:text-slate-100" />
                         </button>
                     }
+                    rightElement={<MainHeaderActions onSave={handleSave} isSaving={isSaving} />}
                 />
             }
         >
@@ -194,18 +196,7 @@ export function IncomeConfigPage() {
                 </p>
             </div>
 
-            <div className="h-24"></div>
-
-            <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-gradient-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark pointer-events-none z-30 max-w-md mx-auto">
-                <Button
-                    className="w-full py-3.5 pointer-events-auto shadow-lg shadow-primary/20 text-lg"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                >
-                    <Icon name={isSaving ? "hourglass_empty" : "check"} className="font-bold" />
-                    {isSaving ? "Saving..." : "Save & Calculate"}
-                </Button>
-            </div>
+            <div className="h-6"></div>
         </AppLayout>
     );
 }

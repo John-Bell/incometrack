@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { ScenarioSetup } from '../components/scenarios/ScenarioSetup';
 import { FinancialImpactCard } from '../components/scenarios/FinancialImpactCard';
 import { useStore } from '@/store/useStore';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function ScenariosPage() {
     const { profile } = useStore();
@@ -17,10 +18,7 @@ export function ScenariosPage() {
                 <Header
                     title="Rebalance Simulator"
                     rightElement={
-                        <button className="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors flex items-center gap-1">
-                            <Icon name="restart_alt" className="text-[18px]" />
-                            Reset
-                        </button>
+                        <MainHeaderActions onSave={() => { }} />
                     }
                 />
             }

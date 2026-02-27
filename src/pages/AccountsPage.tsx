@@ -10,6 +10,7 @@ import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { PortfolioOverview } from '../components/accounts/PortfolioOverview';
 import { AccountCard } from '../components/accounts/AccountCard';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function AccountsPage() {
     const navigate = useNavigate();
@@ -88,9 +89,7 @@ export function AccountsPage() {
                         </div>
                     }
                     rightElement={
-                        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                            <Icon name="notifications" className="text-slate-600 dark:text-[#9db9b0]" />
-                        </button>
+                        <MainHeaderActions onSave={() => { }} />
                     }
                 />
             }

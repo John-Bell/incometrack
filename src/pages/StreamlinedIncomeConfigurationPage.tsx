@@ -131,7 +131,7 @@ export function StreamlinedIncomeConfigurationPage() {
             </div>
 
             {/* Save & Calculate Footer Button */}
-            <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-gradient-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark pointer-events-none z-30 max-w-md mx-auto">
+            <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-gradient-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark pointer-events-none z-30 w-full md:max-w-2xl lg:max-w-4xl mx-auto">
                 <Button className="pointer-events-auto w-full bg-primary hover:bg-[#0fd693] text-[#10221c] font-bold text-lg py-3.5 px-6 rounded-lg shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] h-auto">
                     <Icon name="check" className="font-bold" />
                     Save & Calculate
@@ -139,7 +139,7 @@ export function StreamlinedIncomeConfigurationPage() {
             </div>
 
             {/* Bottom Nav Bar from UI Spec */}
-            <div className="fixed bottom-0 z-40 w-full max-w-md mx-auto border-t border-slate-200 dark:border-[#283933] bg-background-light dark:bg-[#1c2723] px-4 pb-6 pt-2 shrink-0">
+            <div className="fixed bottom-0 z-40 w-full md:max-w-2xl lg:max-w-4xl mx-auto border-t border-slate-200 dark:border-[#283933] bg-background-light dark:bg-[#1c2723] px-4 pb-6 pt-2 shrink-0">
                 <div className="flex gap-2">
                     <a href="#" className="flex flex-1 flex-col items-center justify-end gap-1 rounded-full text-slate-900 dark:text-white">
                         <div className="text-slate-900 dark:text-primary flex h-8 items-center justify-center">

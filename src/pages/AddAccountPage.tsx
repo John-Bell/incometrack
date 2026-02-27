@@ -50,7 +50,7 @@ export function AddAccountPage() {
     };
 
     return (
-        <div className="max-w-md mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl">
+        <div className="w-full max-w-3xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl">
             {/* TopAppBar */}
             <header className="flex items-center p-4 border-b border-primary/10">
                 <button

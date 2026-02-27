@@ -17,7 +17,7 @@ export function SettingsPage() {
                 />
             }
         >
-            <div className="flex-1 max-w-md mx-auto w-full pb-8">
+            <div className="flex-1 w-full mx-auto pb-8">
                 <section className="mt-6 px-4">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">iCloud Sync</h2>
                     <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl overflow-hidden">

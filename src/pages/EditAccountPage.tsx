@@ -83,7 +83,7 @@ export function EditAccountPage() {
     if (!account) return <div className="p-4 text-center">Loading...</div>;
 
     return (
-        <div className="max-w-md mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
+        <div className="w-full max-w-3xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
             {/* TopAppBar */}
             <header className="flex items-center p-4 border-b border-primary/10">
                 <button

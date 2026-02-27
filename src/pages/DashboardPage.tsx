@@ -77,7 +77,7 @@ export function DashboardPage() {
                     description="Excellent work. You are currently utilizing <span class='text-primary font-bold'>92%</span> of your combined allowances."
                 />
 
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-4">
                     <SummaryCard
                         icon="savings"
                         iconBgColor="bg-primary/20"
@@ -129,7 +129,7 @@ export function DashboardPage() {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-6">
                     <Button variant="primary" className="py-4">
                         <Icon name="add_circle" />
                         <span>Add Account</span>

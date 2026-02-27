@@ -16,7 +16,7 @@ export function BottomNavigation() {
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#1c2723] border-t border-[#283933] pb-safe-area-inset-bottom">
-            <div className="flex justify-around items-center max-w-md mx-auto px-2 py-3">
+            <div className="flex justify-around items-center max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-2 py-3">
                 {tabs.map((tab) => {
                     const isActive = currentPath === tab.path;
                     return (

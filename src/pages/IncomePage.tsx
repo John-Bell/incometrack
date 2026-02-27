@@ -20,7 +20,7 @@ export function IncomePage() {
                 />
             }
         >
-            <div className="mx-auto p-4 space-y-6">
+            <div className="max-w-md mx-auto p-4 space-y-6">
                 {/* Summary Stats Grid */}
                 <div className="grid grid-cols-3 gap-3">
                     <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">

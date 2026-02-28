@@ -11,6 +11,8 @@ import { IncomePage } from '@/pages/IncomePage';
 import { AddAccountPage } from '@/pages/AddAccountPage';
 import { EditAccountPage } from '@/pages/EditAccountPage';
 import { BudgetsPage } from '@/pages/BudgetsPage';
+import { EditBudgetPage } from '@/pages/EditBudgetPage';
+import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { useStore } from '@/store/useStore';
 
 function AppRoutes() {
@@ -43,6 +45,8 @@ function AppRoutes() {
       <Route path="/income" element={<IncomePage />} />
       <Route path="/income-config" element={<IncomeConfigPage />} />
       <Route path="/budgets" element={<BudgetsPage />} />
+      <Route path="/budgets/add" element={<AddBudgetPage />} />
+      <Route path="/budgets/edit/:id" element={<EditBudgetPage />} />
 
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />

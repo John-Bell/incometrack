@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
 
 export function BudgetsPage() {
+    const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
 
     return (
@@ -49,6 +51,14 @@ export function BudgetsPage() {
             }
         >
             <div className="flex flex-col gap-8 px-4 py-6 pb-24">
+                <button
+                    onClick={() => navigate('/budgets/add')}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-black font-semibold py-3 rounded-xl shadow-[0_4px_14px_0_rgba(255,184,80,0.39)] hover:brightness-110 active:scale-[0.98] transition-all"
+                >
+                    <Icon name="add" className="text-xl" />
+                    <span>Add Budget</span>
+                </button>
+
                 <section className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-lg font-bold text-primary flex items-center gap-2">
@@ -75,7 +85,7 @@ export function BudgetsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer" />
+                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
                             </div>
                         </div>
                         <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
@@ -94,7 +104,7 @@ export function BudgetsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer" />
+                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
                             </div>
                         </div>
                         <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
@@ -113,7 +123,7 @@ export function BudgetsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer" />
+                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
                             </div>
                         </div>
                     </div>
@@ -143,7 +153,7 @@ export function BudgetsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer" />
+                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
                             </div>
                         </div>
                         <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
@@ -162,7 +172,7 @@ export function BudgetsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer" />
+                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
                             </div>
                         </div>
                     </div>
@@ -192,7 +202,7 @@ export function BudgetsPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer" />
+                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
                             </div>
                         </div>
                     </div>

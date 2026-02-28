@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { SavingsTaxService } from './SavingsTaxService';
 import { BrbTracker } from '../models/BrbTracker';
-import { getTaxConstants } from '../constants/taxConstants';
+import { getTaxConstants, TAX_YEAR_CONSTANTS } from '../constants/taxConstants';
 
 const CURRENT_TAX_YEAR = '2025-2026';
 
 describe('SavingsTaxService', () => {
   it('calculates starting rate for savings correctly', () => {
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 10000;
     const grossNonSavingsIncome = 2000; // rental income
@@ -44,7 +44,7 @@ describe('SavingsTaxService', () => {
   });
 
   it('should apply savings allowance when savings push into higher rate', () => {
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const salary = 100800;
     const rentalIncome = 0;

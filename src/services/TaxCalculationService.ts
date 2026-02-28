@@ -1,4 +1,4 @@
-import { getDefaultTaxYear, getTaxConstants } from '../constants/taxConstants';
+import { getDefaultTaxYear, getTaxConstants, type TaxRulesByYear } from '../constants/taxConstants';
 import { BrbTracker } from '../models/BrbTracker';
 import { PersonalAllowanceTracker } from '../models/PersonalAllowanceTracker';
 import type { TaxCalculationInput } from '../models/TaxCalculationInput';
@@ -9,21 +9,23 @@ import { SavingsTaxService } from './SavingsTaxService';
 import { DividendTaxService } from './DividendTaxService';
 
 export class TaxCalculationService {
+  private taxRules: TaxRulesByYear;
   private generalTaxService: GeneralTaxService;
   private savingsTaxService: SavingsTaxService;
   private dividendTaxService: DividendTaxService;
   private taxYear?: string;
 
-  constructor(taxYear?: string) {
+  constructor(taxRules: TaxRulesByYear, taxYear?: string) {
+    this.taxRules = taxRules;
     this.taxYear = taxYear;
-    this.generalTaxService = new GeneralTaxService(taxYear);
-    this.savingsTaxService = new SavingsTaxService(taxYear);
-    this.dividendTaxService = new DividendTaxService(taxYear);
+    this.generalTaxService = new GeneralTaxService(taxRules, taxYear);
+    this.savingsTaxService = new SavingsTaxService(taxRules, taxYear);
+    this.dividendTaxService = new DividendTaxService(taxRules, taxYear);
   }
 
   calculateTax(input: TaxCalculationInput, taxYear?: string): TaxCalculationResult {
     const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
-    const taxConstants = getTaxConstants(resolvedTaxYear);
+    const taxConstants = this.taxRules[resolvedTaxYear];
     const incomeBreakdown: IncomeBreakdown = this.calculateIncomeBreakdown(input);
     const taxByBand: TaxBandResult[] = [];
 
@@ -107,7 +109,7 @@ export class TaxCalculationService {
     };
   }
 
-  private calculatePersonalAllowance(adjustedNetIncome: number, taxConstants = getTaxConstants()): number {
+  private calculatePersonalAllowance(adjustedNetIncome: number, taxConstants: ReturnType<typeof getTaxConstants>): number {
     if (adjustedNetIncome >= taxConstants.PersonalAllowanceRemovalThreshold) return 0;
     if (adjustedNetIncome <= taxConstants.PersonalAllowanceThreshold) return taxConstants.StandardPersonalAllowance;
     // Reduce allowance by 1 for every 2 over threshold

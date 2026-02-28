@@ -1,11 +1,13 @@
-import { getTaxConstants } from '../constants/taxConstants';
+import { getDefaultTaxYear, type TaxRulesByYear } from '../constants/taxConstants';
 import { BrbTracker } from '../models/BrbTracker';
 import type { TaxBandResult } from '../models/TaxBandResult';
 
 export class GeneralTaxService {
+  private taxRules: TaxRulesByYear;
   private readonly taxYear?: string;
 
-  constructor(taxYear?: string) {
+  constructor(taxRules: TaxRulesByYear, taxYear?: string) {
+    this.taxRules = taxRules;
     this.taxYear = taxYear;
   }
 
@@ -14,7 +16,8 @@ export class GeneralTaxService {
     brbTracker: BrbTracker,
     taxYear?: string
   ): TaxBandResult[] {
-    const taxConstants = getTaxConstants(taxYear ?? this.taxYear);
+    const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
+    const taxConstants = this.taxRules[resolvedTaxYear];
     const taxBands: TaxBandResult[] = [];
     let remainingIncome = income;
 

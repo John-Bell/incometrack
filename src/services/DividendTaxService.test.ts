@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DividendTaxService } from './DividendTaxService';
 import { BrbTracker } from '../models/BrbTracker';
-import { getTaxConstants } from '../constants/taxConstants';
+import { getTaxConstants, TAX_YEAR_CONSTANTS } from '../constants/taxConstants';
 
 const CURRENT_TAX_YEAR = '2025-2026';
 const PRIOR_TAX_YEAR = '2024-2025';
@@ -10,7 +10,7 @@ describe('DividendTaxService', () => {
   it('calculates dividend tax for dividends only (allowance and basic rate)', () => {
     const taxYear = CURRENT_TAX_YEAR;
     const constants = getTaxConstants(taxYear);
-    const service = new DividendTaxService(taxYear);
+    const service = new DividendTaxService(TAX_YEAR_CONSTANTS, taxYear);
     const dividendIncome = 10000;
     const brbTracker = new BrbTracker(constants.BasicRateBand); // All basic rate available
 
@@ -37,7 +37,7 @@ describe('DividendTaxService', () => {
   it('calculates dividend tax for higher rate taxpayer (allowance, basic, higher)', () => {
     const taxYear = CURRENT_TAX_YEAR;
     const constants = getTaxConstants(taxYear);
-    const service = new DividendTaxService(taxYear);
+    const service = new DividendTaxService(TAX_YEAR_CONSTANTS, taxYear);
     const dividendIncome = 50000; // Large enough for all bands
     const brbTracker = new BrbTracker(0); // No basic rate left
 
@@ -62,7 +62,7 @@ describe('DividendTaxService', () => {
   it('calculates dividend tax for additional rate taxpayer (all bands)', () => {
     const taxYear = CURRENT_TAX_YEAR;
     const constants = getTaxConstants(taxYear);
-    const service = new DividendTaxService(taxYear);
+    const service = new DividendTaxService(TAX_YEAR_CONSTANTS, taxYear);
     const dividendIncome = 200000; // Large enough for all bands
     const brbTracker = new BrbTracker(0); // No basic rate left
 
@@ -93,12 +93,12 @@ describe('DividendTaxService', () => {
   });
 
   it('uses the tax year specific dividend allowance', () => {
-    const priorYearService = new DividendTaxService(PRIOR_TAX_YEAR);
+    const priorYearService = new DividendTaxService(TAX_YEAR_CONSTANTS, PRIOR_TAX_YEAR);
     const priorConstants = getTaxConstants(PRIOR_TAX_YEAR);
     const priorResult = priorYearService.calculateDividendTax(2000, new BrbTracker(0), PRIOR_TAX_YEAR);
     const priorAllowance = priorResult.find(b => b.band === priorConstants.AllowanceBand);
 
-    const currentService = new DividendTaxService(CURRENT_TAX_YEAR);
+    const currentService = new DividendTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const currentConstants = getTaxConstants(CURRENT_TAX_YEAR);
     const currentResult = currentService.calculateDividendTax(2000, new BrbTracker(0), CURRENT_TAX_YEAR);
     const currentAllowance = currentResult.find(b => b.band === currentConstants.AllowanceBand);

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'; // Adjust this import path to where your Dexie instance lives
-import type { Account, Income } from '@/lib/db';
+import type { Account, Income, Budget } from '@/lib/db';
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export const syncTaxRules = async () => {
@@ -179,5 +179,71 @@ export const seedDummyIncomes = async () => {
         console.log('Successfully seeded dummy incomes into Dexie.');
     } catch (error) {
         console.error('Failed to seed dummy incomes:', error);
+    }
+};
+
+export const seedDummyBudgets = async () => {
+    const dummyBudgets: Budget[] = [
+        {
+            id: 'budg-transport-001',
+            category: 'transport',
+            name: 'Fuel',
+            amount: 80,
+            frequency: 'monthly',
+            paymentSource: 'monthly',
+            ownership: 'joint'
+        },
+        {
+            id: 'budg-transport-002',
+            category: 'transport',
+            name: 'Car Insurance',
+            amount: 45,
+            frequency: 'monthly',
+            paymentSource: 'annual',
+            ownership: 'joint'
+        },
+        {
+            id: 'budg-transport-003',
+            category: 'transport',
+            name: 'Car Tax',
+            amount: 15,
+            frequency: 'monthly',
+            paymentSource: 'annual',
+            ownership: 'joint'
+        },
+        {
+            id: 'budg-utilities-001',
+            category: 'utilities',
+            name: 'Electricity & Gas',
+            amount: 185,
+            frequency: 'monthly',
+            paymentSource: 'monthly',
+            ownership: 'joint'
+        },
+        {
+            id: 'budg-utilities-002',
+            category: 'utilities',
+            name: 'Water',
+            amount: 32,
+            frequency: 'monthly',
+            paymentSource: 'monthly',
+            ownership: 'joint'
+        },
+        {
+            id: 'budg-socializing-001',
+            category: 'socializing',
+            name: 'Eating Out',
+            amount: 150,
+            frequency: 'monthly',
+            paymentSource: 'monthly',
+            ownership: 'joint'
+        }
+    ];
+
+    try {
+        await db.budgets.bulkPut(dummyBudgets);
+        console.log('Successfully seeded dummy budgets into Dexie.');
+    } catch (error) {
+        console.error('Failed to seed dummy budgets:', error);
     }
 };

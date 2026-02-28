@@ -77,6 +77,16 @@ export interface TaxYearRule extends TaxYearConstants {
     id: string; // e.g., '2024-2025', '2025-2026'
 }
 
+export interface Budget {
+    id: string;
+    category: string;
+    name: string; // sub-category
+    amount: number;
+    frequency: string; // e.g. monthly, annual
+    paymentSource: string; // e.g. monthly, annual
+    ownership: string; // e.g. john, billie, joint
+}
+
 export const db = new Dexie('IncomeTrackDB') as Dexie & {
     profile: EntityTable<Profile, 'id'>;
     accounts: EntityTable<Account, 'id'>;
@@ -86,6 +96,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     monthlyArchives: EntityTable<MonthlyArchive, 'id'>;
     notifications: EntityTable<AppNotification, 'id'>;
     taxRules: EntityTable<TaxYearRule, 'id'>; // Added to DB instance
+    budgets: EntityTable<Budget, 'id'>;
 };
 
 // Schema version 1
@@ -145,4 +156,17 @@ db.version(5).stores({
     monthlyArchives: '&id, month, year',
     notifications: '&id, date, read',
     taxRules: '&id'
+});
+
+// Schema version 6 - Added budgets
+db.version(6).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership'
 });

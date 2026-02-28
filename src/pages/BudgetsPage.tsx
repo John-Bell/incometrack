@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
@@ -8,6 +10,36 @@ import { Icon } from '../components/ui/Icon';
 export function BudgetsPage() {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
+
+    const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+
+    // Group budgets by category
+    const groupedBudgets = budgets.reduce((acc, budget) => {
+        if (!acc[budget.category]) {
+            acc[budget.category] = [];
+        }
+        acc[budget.category].push(budget);
+        return acc;
+    }, {} as Record<string, typeof budgets>);
+
+    // Calculate totals based on viewMode
+    const totalAmount = budgets.reduce((sum, budget) => {
+        let monthly = budget.amount;
+        if (budget.frequency === 'annual') {
+            monthly = budget.amount / 12;
+        }
+        return sum + (viewMode === 'monthly' ? monthly : monthly * 12);
+    }, 0);
+
+    const categoryIcons: Record<string, string> = {
+        transport: 'directions_car',
+        utilities: 'payments',
+        socializing: 'celebration',
+        housing: 'home',
+        groceries: 'shopping_cart',
+        leisure: 'attractions',
+        default: 'label'
+    };
 
     return (
         <AppLayout
@@ -59,154 +91,58 @@ export function BudgetsPage() {
                     <span>Add Budget</span>
                 </button>
 
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-                            <Icon name="directions_car" className="text-xl" />
-                            Cars
-                        </h2>
-                        <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">5 Items</span>
-                    </div>
-                    <div className="space-y-3">
-                        {/* Subcategory Item */}
-                        <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">Petrol</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300">Monthly Account</span></p>
-                                    <div className="flex gap-4 mt-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£120.00</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
-                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£1,440.00</p>
+                {Object.entries(groupedBudgets).map(([category, categoryBudgets]) => (
+                    <section key={category} className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-lg font-bold text-primary flex items-center gap-2 capitalize">
+                                <Icon name={categoryIcons[category] || categoryIcons.default} className="text-xl" />
+                                {category}
+                            </h2>
+                            <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">
+                                {categoryBudgets.length} {categoryBudgets.length === 1 ? 'Item' : 'Items'}
+                            </span>
+                        </div>
+                        <div className="space-y-3">
+                            {categoryBudgets.map(budget => {
+                                const isAnnual = budget.frequency === 'annual';
+                                const monthlyAmount = isAnnual ? budget.amount / 12 : budget.amount;
+                                const annualAmount = isAnnual ? budget.amount : budget.amount * 12;
+
+                                return (
+                                    <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
+                                        <div className="flex justify-between items-start">
+                                            <div className="space-y-1">
+                                                <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300 capitalize">{budget.paymentSource} Account</span></p>
+                                                <div className="flex gap-4 mt-2">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
+                                                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£{monthlyAmount.toFixed(2)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
+                                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£{annualAmount.toFixed(2)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/budgets/edit/${budget.id}`)} />
                                         </div>
                                     </div>
-                                </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
-                            </div>
+                                );
+                            })}
                         </div>
-                        <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">Car Insurance</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300">Annual Account</span></p>
-                                    <div className="flex gap-4 mt-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£45.00</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
-                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£540.00</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
-                            </div>
+                    </section>
+                ))}
+
+                {budgets.length === 0 && (
+                    <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-slate-100 dark:bg-surface-dark rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Icon name="account_balance_wallet" className="text-3xl text-slate-400 dark:text-slate-500" />
                         </div>
-                        <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">Car Tax</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300">Annual Account</span></p>
-                                    <div className="flex gap-4 mt-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£15.00</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
-                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£180.00</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
-                            </div>
-                        </div>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">No Budgets Yet</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Add your first budget item to start tracking your expenses.</p>
                     </div>
-                </section>
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-                            <Icon name="payments" className="text-xl" />
-                            Utilities
-                        </h2>
-                        <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">3 Items</span>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">Electricity &amp; Gas</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300">Monthly Account</span></p>
-                                    <div className="flex gap-4 mt-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£185.00</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
-                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£2,220.00</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
-                            </div>
-                        </div>
-                        <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">Water</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300">Monthly Account</span></p>
-                                    <div className="flex gap-4 mt-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£32.00</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
-                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£384.00</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-                            <Icon name="celebration" className="text-xl" />
-                            Socializing
-                        </h2>
-                        <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">2 Items</span>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="font-semibold text-slate-900 dark:text-slate-100">Eating Out</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300">Monthly Account</span></p>
-                                    <div className="flex gap-4 mt-2">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
-                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£150.00</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
-                                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£1,800.00</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate('/budgets/edit/1')} />
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                )}
             </div>
         </AppLayout>
     );

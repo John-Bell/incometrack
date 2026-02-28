@@ -32,7 +32,7 @@ export function AppLayout({
 
             <main
                 className={cn(
-                    'flex-1 overflow-y-auto w-full max-w-md mx-auto relative',
+                    'flex-1 overflow-y-auto w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto relative',
                     !hideBottomNav && 'pb-24', // Ensure space for bottom navigation
                     mainClassName
                 )}

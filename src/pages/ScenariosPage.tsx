@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { ScenarioSetup } from '../components/scenarios/ScenarioSetup';
 import { FinancialImpactCard } from '../components/scenarios/FinancialImpactCard';
 import { useStore } from '@/store/useStore';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function ScenariosPage() {
     const { profile } = useStore();
@@ -17,10 +18,7 @@ export function ScenariosPage() {
                 <Header
                     title="Rebalance Simulator"
                     rightElement={
-                        <button className="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary text-sm font-medium transition-colors flex items-center gap-1">
-                            <Icon name="restart_alt" className="text-[18px]" />
-                            Reset
-                        </button>
+                        <MainHeaderActions onSave={() => { }} />
                     }
                 />
             }
@@ -67,8 +65,8 @@ export function ScenariosPage() {
                 <div className="h-4"></div>
             </div>
 
-            <div className="fixed bottom-[88px] left-0 right-0 px-4 z-40 max-w-md mx-auto w-full pointer-events-none">
-                <Button className="w-full py-4 pointer-events-auto shadow-lg shadow-primary/20 text-base">
+            <div className="px-4 pb-24">
+                <Button className="w-full h-14 bg-[#13eca4] text-[#10221c] font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:bg-[#11d896] hover:shadow-[0_6px_20px_rgba(19,236,164,0.23)] transition-all disabled:opacity-50 active:scale-[0.98]">
                     Apply Rebalance Strategy
                     <Icon name="arrow_forward" />
                 </Button>

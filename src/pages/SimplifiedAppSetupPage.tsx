@@ -54,7 +54,7 @@ export function SimplifiedAppSetupPage() {
                     </h2>
                 </div>
 
-                <div className="w-full max-w-md px-6 py-8 flex flex-col gap-8">
+                <div className="w-full mx-auto px-6 py-8 flex flex-col gap-8">
                     {/* Hero Section */}
                     <div className="text-center space-y-4">
                         <div className="mx-auto w-24 h-24 rounded-3xl bg-primary/20 flex items-center justify-center mb-6">

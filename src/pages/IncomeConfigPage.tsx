@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { Tabs } from '../components/ui/Tabs';
-import { Button } from '../components/ui/Button';
+
 import { TaxBandVisualizer } from '../components/income/TaxBandVisualizer';
 import { IncomeInputCard } from '../components/income/IncomeInputCard';
 import { useStore } from '@/store/useStore';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function IncomeConfigPage() {
+    const navigate = useNavigate();
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
@@ -17,25 +22,98 @@ export function IncomeConfigPage() {
 
     const [incomeData, setIncomeData] = useState({
         partner1: {
-            pension: "11500",
-            rental: "12000",
-            employment: "21070",
-            dividends: "0"
+            pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+            rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+            employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+            dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
         },
         partner2: {
-            pension: "0",
-            rental: "0",
-            employment: "0",
-            dividends: "0"
+            pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+            rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+            employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+            dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
         }
     });
+
+    const [isSaving, setIsSaving] = useState(false);
+    const dbIncomes = useLiveQuery(() => db.incomes.toArray());
+
+    useEffect(() => {
+        if (dbIncomes && dbIncomes.length > 0) {
+            setIncomeData(prev => {
+                const newData = {
+                    partner1: {
+                        pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+                        rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+                        employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+                        dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
+                    },
+                    partner2: {
+                        pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+                        rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+                        employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
+                        dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
+                    }
+                };
+                let hasChanges = false;
+
+                dbIncomes.forEach(inc => {
+                    const partnerKey = inc.ownerId === 'person1' ? 'partner1' : 'partner2';
+                    if (newData[partnerKey] && inc.type in newData[partnerKey]) {
+                        newData[partnerKey][inc.type as keyof typeof newData['partner1']] = {
+                            amount: inc.amount.toString(),
+                            frequency: (inc.frequency as 'annual' | 'monthly') || 'annual'
+                        };
+                        const prevField = prev[partnerKey][inc.type as keyof typeof newData['partner1']];
+                        if (prevField.amount !== inc.amount.toString() || prevField.frequency !== inc.frequency) {
+                            hasChanges = true;
+                        }
+                    }
+                });
+
+                return hasChanges ? newData : prev;
+            });
+        }
+    }, [dbIncomes]);
+
+    const handleSave = async () => {
+        if (!dbIncomes) return;
+        setIsSaving(true);
+        try {
+            const updates = dbIncomes.map(inc => {
+                const partnerKey = inc.ownerId === 'person1' ? 'partner1' : 'partner2';
+                const fieldData = incomeData[partnerKey][inc.type as keyof typeof incomeData['partner1']];
+                return {
+                    ...inc,
+                    amount: fieldData.amount ? parseFloat(fieldData.amount) || 0 : 0,
+                    frequency: fieldData.frequency
+                };
+            });
+            await db.incomes.bulkPut(updates);
+            navigate('/income');
+        } catch (error) {
+            console.error("Failed to save incomes:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleInputChange = (field: keyof typeof incomeData.partner1, value: string) => {
         setIncomeData(prev => ({
             ...prev,
             [activeTabKey]: {
                 ...prev[activeTabKey],
-                [field]: value
+                [field]: { ...prev[activeTabKey][field], amount: value }
+            }
+        }));
+    };
+
+    const handleFrequencyChange = (field: keyof typeof incomeData.partner1, freq: 'annual' | 'monthly') => {
+        setIncomeData(prev => ({
+            ...prev,
+            [activeTabKey]: {
+                ...prev[activeTabKey],
+                [field]: { ...prev[activeTabKey][field], frequency: freq }
             }
         }));
     };
@@ -44,7 +122,6 @@ export function IncomeConfigPage() {
 
     return (
         <AppLayout
-            hideBottomNav
             header={
                 <Header
                     title="Income Configuration"
@@ -54,6 +131,7 @@ export function IncomeConfigPage() {
                             <Icon name="arrow_back" className="text-2xl text-slate-900 dark:text-slate-100" />
                         </button>
                     }
+                    rightElement={<MainHeaderActions onSave={handleSave} isSaving={isSaving} />}
                 />
             }
         >
@@ -78,18 +156,24 @@ export function IncomeConfigPage() {
                 <div className="flex flex-col gap-4">
                     <IncomeInputCard
                         label="State / Private Pension"
-                        value={currentData.pension}
+                        value={currentData.pension.amount}
+                        frequency={currentData.pension.frequency}
                         onChange={(e) => handleInputChange('pension', e.target.value)}
+                        onFrequencyChange={(freq) => handleFrequencyChange('pension', freq)}
                     />
                     <IncomeInputCard
                         label="Rental Income (Net)"
-                        value={currentData.rental}
+                        value={currentData.rental.amount}
+                        frequency={currentData.rental.frequency}
                         onChange={(e) => handleInputChange('rental', e.target.value)}
+                        onFrequencyChange={(freq) => handleFrequencyChange('rental', freq)}
                     />
                     <IncomeInputCard
                         label="Employment / Other"
-                        value={currentData.employment}
+                        value={currentData.employment.amount}
+                        frequency={currentData.employment.frequency}
                         onChange={(e) => handleInputChange('employment', e.target.value)}
+                        onFrequencyChange={(freq) => handleFrequencyChange('employment', freq)}
                     />
                 </div>
             </div>
@@ -102,9 +186,11 @@ export function IncomeConfigPage() {
 
                 <IncomeInputCard
                     label="Total Dividends"
-                    value={currentData.dividends}
+                    value={currentData.dividends.amount}
+                    frequency={currentData.dividends.frequency}
                     tooltipText="Dividends are taxed differently but count towards your total income band."
                     onChange={(e) => handleInputChange('dividends', e.target.value)}
+                    onFrequencyChange={(freq) => handleFrequencyChange('dividends', freq)}
                 />
 
                 <p className="mt-3 text-xs text-slate-500 dark:text-[#9db9b0] leading-relaxed">
@@ -112,13 +198,15 @@ export function IncomeConfigPage() {
                 </p>
             </div>
 
-            <div className="h-24"></div>
-
-            <div className="fixed bottom-[72px] left-0 right-0 p-4 bg-gradient-to-t from-background-light via-background-light to-transparent dark:from-background-dark dark:via-background-dark pointer-events-none z-30 max-w-md mx-auto">
-                <Button className="w-full py-3.5 pointer-events-auto shadow-lg shadow-primary/20 text-lg">
-                    <Icon name="check" className="font-bold" />
-                    Save & Calculate
-                </Button>
+            <div className="px-4 pb-24">
+                <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="w-full h-14 bg-[#13eca4] text-[#10221c] font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:bg-[#11d896] hover:shadow-[0_6px_20px_rgba(19,236,164,0.23)] transition-all disabled:opacity-50 active:scale-[0.98]"
+                >
+                    <Icon name="check" className="text-2xl" />
+                    {isSaving ? 'Saving...' : 'Save & Calculate'}
+                </button>
             </div>
         </AppLayout>
     );

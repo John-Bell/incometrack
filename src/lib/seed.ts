@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'; // Adjust this import path to where your Dexie instance lives
-import type { Account } from '@/lib/db';
+import type { Account, Income } from '@/lib/db';
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export const syncTaxRules = async () => {
@@ -95,5 +95,89 @@ export const seedDummyAccounts = async () => {
         console.log('Successfully seeded dummy accounts into Dexie.');
     } catch (error) {
         console.error('Failed to seed dummy accounts:', error);
+    }
+};
+
+export const seedDummyIncomes = async () => {
+    const dummyIncomes: Income[] = [
+        {
+            id: "inc-p1-employment",
+            ownerId: "person1",
+            name: "Employment / Other",
+            amount: 21070,
+            frequency: "annual",
+            type: "employment",
+            taxCategory: "Earned"
+        },
+        {
+            id: "inc-p1-pension",
+            ownerId: "person1",
+            name: "State / Private Pension",
+            amount: 11500,
+            frequency: "annual",
+            type: "pension",
+            taxCategory: "Pension"
+        },
+        {
+            id: "inc-p1-rental",
+            ownerId: "person1",
+            name: "Rental Income (Net)",
+            amount: 12000,
+            frequency: "annual",
+            type: "rental",
+            taxCategory: "Earned"
+        },
+        {
+            id: "inc-p1-dividends",
+            ownerId: "person1",
+            name: "Total Dividends",
+            amount: 0,
+            frequency: "annual",
+            type: "dividends",
+            taxCategory: "Dividend"
+        },
+        {
+            id: "inc-p2-employment",
+            ownerId: "person2",
+            name: "Employment / Other",
+            amount: 0,
+            frequency: "annual",
+            type: "employment",
+            taxCategory: "Earned"
+        },
+        {
+            id: "inc-p2-pension",
+            ownerId: "person2",
+            name: "State / Private Pension",
+            amount: 0,
+            frequency: "annual",
+            type: "pension",
+            taxCategory: "Pension"
+        },
+        {
+            id: "inc-p2-rental",
+            ownerId: "person2",
+            name: "Rental Income (Net)",
+            amount: 0,
+            frequency: "annual",
+            type: "rental",
+            taxCategory: "Earned"
+        },
+        {
+            id: "inc-p2-dividends",
+            ownerId: "person2",
+            name: "Total Dividends",
+            amount: 0,
+            frequency: "annual",
+            type: "dividends",
+            taxCategory: "Dividend"
+        }
+    ];
+
+    try {
+        await db.incomes.bulkPut(dummyIncomes);
+        console.log('Successfully seeded dummy incomes into Dexie.');
+    } catch (error) {
+        console.error('Failed to seed dummy incomes:', error);
     }
 };

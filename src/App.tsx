@@ -9,10 +9,10 @@ import { StreamlinedIncomeConfigurationPage } from '@/pages/StreamlinedIncomeCon
 import { IncomeConfigPage } from '@/pages/IncomeConfigPage';
 import { IncomePage } from '@/pages/IncomePage'; // Keep your local additions
 import { AddAccountPage } from '@/pages/AddAccountPage';
-import { EditBudgetPage } from '@/pages/EditBudgetPage'; // Make sure these remain
-import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { EditAccountPage } from '@/pages/EditAccountPage';
 import { BudgetsPage } from '@/pages/BudgetsPage';
+import { EditBudgetPage } from '@/pages/EditBudgetPage';
+import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { useStore } from '@/store/useStore';
 
 function AppRoutes() {

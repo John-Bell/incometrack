@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { SavingsTaxService } from './SavingsTaxService';
 import { GeneralTaxService } from './GeneralTaxService';
 import { BrbTracker } from '../models/BrbTracker';
-import { getTaxConstants } from '../constants/taxConstants';
+import { getTaxConstants, TAX_YEAR_CONSTANTS } from '../constants/taxConstants';
 
 const CURRENT_TAX_YEAR = '2025-2026';
 const PRIOR_TAX_YEAR = '2024-2025';
@@ -10,7 +10,7 @@ const PRIOR_TAX_YEAR = '2024-2025';
 describe('GeneralTaxService (Savings Tax Scenarios)', () => {
   it('calculates savings tax for basic rate taxpayer (all covered by allowance)', () => {
     // Arrange
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 1000; // All covered by allowance
     const grossNonSavingsIncome = 35000; // Salary + rental
@@ -39,7 +39,7 @@ describe('GeneralTaxService (Savings Tax Scenarios)', () => {
   });
 
   it('calculates savings tax for higher rate taxpayer (partial allowance, rest taxed at 40%)', () => {
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 2000; // 500 allowance, 1500 taxed at 40%
     const grossNonSavingsIncome = 60000; // Higher rate
@@ -79,7 +79,7 @@ describe('GeneralTaxService (Savings Tax Scenarios)', () => {
   });
 
   it('returns no bands and zero tax when there is no savings income', () => {
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 0;
     const grossNonSavingsIncome = 20000;
@@ -99,7 +99,7 @@ describe('GeneralTaxService (Savings Tax Scenarios)', () => {
   });
 
   it('calculates savings tax using all bands (basic, higher, additional)', () => {
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 200000; // Large savings income
     const grossNonSavingsIncome = 0; // All bands available
@@ -122,7 +122,7 @@ describe('GeneralTaxService (Savings Tax Scenarios)', () => {
   });
 
   it('does not apply starting rate for savings if no personal allowance', () => {
-    const service = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 6000;
     const grossNonSavingsIncome = 130000; // High income
@@ -150,7 +150,7 @@ describe('GeneralTaxService (Savings Tax Scenarios)', () => {
       }
     ];
 
-    const priorYearService = new SavingsTaxService(PRIOR_TAX_YEAR);
+    const priorYearService = new SavingsTaxService(TAX_YEAR_CONSTANTS, PRIOR_TAX_YEAR);
     const priorYearConstants = getTaxConstants(PRIOR_TAX_YEAR);
     const priorYearResult = priorYearService.calculateSavingsTax(
       1500,
@@ -162,7 +162,7 @@ describe('GeneralTaxService (Savings Tax Scenarios)', () => {
     );
     const priorYearAllowance = priorYearResult.find(b => b.band === priorYearConstants.HigherBand && b.rate === 0);
 
-    const currentYearService = new SavingsTaxService(CURRENT_TAX_YEAR);
+    const currentYearService = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const currentYearConstants = getTaxConstants(CURRENT_TAX_YEAR);
     const currentYearResult = currentYearService.calculateSavingsTax(
       1500,
@@ -192,7 +192,7 @@ describe('GeneralTaxService', () => {
   it('calculates basic rate tax correctly', () => {
     const taxYear = CURRENT_TAX_YEAR;
     const constants = getTaxConstants(taxYear);
-    const service = new GeneralTaxService(taxYear);
+    const service = new GeneralTaxService(TAX_YEAR_CONSTANTS, taxYear);
     const income = 50000;
     const brbTracker = new BrbTracker(constants.BasicRateBand);
     const taxBands = service.calculateGeneralIncomeTax(income, brbTracker, taxYear);
@@ -205,7 +205,7 @@ describe('GeneralTaxService', () => {
   it('calculates higher rate tax correctly', () => {
     const taxYear = CURRENT_TAX_YEAR;
     const constants = getTaxConstants(taxYear);
-    const service = new GeneralTaxService(taxYear);
+    const service = new GeneralTaxService(TAX_YEAR_CONSTANTS, taxYear);
     const income = 100000;
     const brbTracker = new BrbTracker(constants.BasicRateBand);
     const taxBands = service.calculateGeneralIncomeTax(income, brbTracker, taxYear);
@@ -218,7 +218,7 @@ describe('GeneralTaxService', () => {
   it('calculates additional rate tax correctly', () => {
     const taxYear = CURRENT_TAX_YEAR;
     const constants = getTaxConstants(taxYear);
-    const service = new GeneralTaxService(taxYear);
+    const service = new GeneralTaxService(TAX_YEAR_CONSTANTS, taxYear);
     const income = 200000;
     const brbTracker = new BrbTracker(constants.BasicRateBand);
     const taxBands = service.calculateGeneralIncomeTax(income, brbTracker, taxYear);

@@ -68,7 +68,9 @@ export const ACCOUNT_CATEGORIES: AccountCategory[] = [
 
 const DEFAULT_TAX_YEAR = '2025-2026';
 
-export const TAX_YEAR_CONSTANTS: Record<string, TaxYearConstants> = {
+export type TaxRulesByYear = Record<string, TaxYearConstants>;
+
+export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
   '2024-2025': {
     StandardPersonalAllowance: 12570,
     PersonalAllowanceThreshold: 100000,

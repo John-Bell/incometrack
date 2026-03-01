@@ -1,12 +1,16 @@
 import { create } from 'zustand';
 import { db, type Profile } from '@/lib/db';
 import { syncTaxRules, seedDummyAccounts, seedDummyIncomes } from '@/lib/seed';
+import { TaxCalculationService } from '@/services/TaxCalculationService';
+import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
 
 export interface AppState {
     isHydrated: boolean;
     profile: Profile | null;
     hydratingError: string | null;
     activeAccountsTab: string;
+    taxService: TaxCalculationService | null;
+    taxYear: string | null;
 
     initStore: () => Promise<void>;
     setProfile: (profile: Profile) => Promise<void>;
@@ -18,6 +22,8 @@ export const useStore = create<AppState>()((set) => ({
     profile: null,
     hydratingError: null,
     activeAccountsTab: 'joint',
+    taxService: null,
+    taxYear: null,
 
     initStore: async () => {
         try {
@@ -32,6 +38,20 @@ export const useStore = create<AppState>()((set) => ({
 
             // Run seed scripts
             await syncTaxRules();
+
+            // Load tax rules from database and create a map
+            const taxRulesArray = await db.taxRules.toArray();
+            const taxRulesMap: TaxRulesByYear = {};
+            taxRulesArray.forEach(rule => {
+                taxRulesMap[rule.id] = rule;
+            });
+
+            // Get the current settings to find the tax year
+            const settings = await db.settings.get('default');
+            const currentTaxYear = settings?.taxYear || getDefaultTaxYear();
+
+            // Instantiate the tax service
+            const taxService = new TaxCalculationService(taxRulesMap, currentTaxYear);
 
             // Only seed dummy accounts if there are absolutely no accounts
             const accountCount = await db.accounts.count();
@@ -48,6 +68,8 @@ export const useStore = create<AppState>()((set) => ({
             set({
                 isHydrated: true,
                 profile: activeProfile,
+                taxService,
+                taxYear: currentTaxYear,
                 hydratingError: null
             });
         } catch (error) {

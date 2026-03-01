@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TaxCalculationService } from './TaxCalculationService';
-import { getTaxConstants } from '../constants/taxConstants';
+import { getTaxConstants, TAX_YEAR_CONSTANTS } from '../constants/taxConstants';
 import type { TaxCalculationInput } from '../models/TaxCalculationInput';
 
 const CURRENT_TAX_YEAR = '2025-2026';
@@ -9,7 +9,7 @@ const PRIOR_TAX_YEAR = '2024-2025';
 describe('TaxCalculationService', () => {
   it('calculates tax for a basic rate taxpayer (salary, rental, savings, dividends)', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
-    const service = new TaxCalculationService(CURRENT_TAX_YEAR);
+    const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 30000,
       rentalIncome: 5000,
@@ -34,7 +34,7 @@ describe('TaxCalculationService', () => {
 
   it('calculates tax for a high earner with personal allowance reduction', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
-    const service = new TaxCalculationService(CURRENT_TAX_YEAR);
+    const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 110000,
       rentalIncome: 0,
@@ -50,7 +50,7 @@ describe('TaxCalculationService', () => {
 
   it('calculates tax for an additional rate taxpayer (no personal allowance)', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
-    const service = new TaxCalculationService(CURRENT_TAX_YEAR);
+    const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 150000,
       rentalIncome: 0,
@@ -75,7 +75,7 @@ describe('TaxCalculationService', () => {
 
   it('calculates tax with extended basic rate band due to pension contributions', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
-    const service = new TaxCalculationService(CURRENT_TAX_YEAR);
+    const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 110270,
       rentalIncome: 0,
@@ -95,7 +95,7 @@ describe('TaxCalculationService', () => {
 
   it('calculates tax for a complex scenario (rental, savings, dividends, pension contrib)', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
-    const service = new TaxCalculationService(CURRENT_TAX_YEAR);
+    const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 0,
       rentalIncome: 25000,
@@ -120,7 +120,7 @@ describe('TaxCalculationService', () => {
   it('uses the supplied tax year when calculating tax', () => {
     const priorConstants = getTaxConstants(PRIOR_TAX_YEAR);
     const currentConstants = getTaxConstants(CURRENT_TAX_YEAR);
-    const service = new TaxCalculationService();
+    const service = new TaxCalculationService(TAX_YEAR_CONSTANTS);
 
     const commonInput: TaxCalculationInput = {
       salary: 0,

@@ -5,6 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
+import { calculateTotalSavings, calculateBlendedRate } from '@/services/accountCalculations';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -62,17 +63,14 @@ export function AccountsPage() {
         };
     });
 
-    const totalSavingsValue = rawAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+    const totalSavingsValue = calculateTotalSavings(rawAccounts);
     const formattedTotalSavings = new Intl.NumberFormat('en-GB', {
         style: 'currency',
         currency: 'GBP',
         maximumFractionDigits: 0
     }).format(totalSavingsValue);
 
-    const accountsWithRate = rawAccounts.filter(acc => acc.interestRate && acc.interestRate > 0);
-    const totalSavingsValueForRate = accountsWithRate.reduce((sum, acc) => sum + acc.balance, 0);
-    const totalInterestValue = accountsWithRate.reduce((sum, acc) => sum + (acc.balance * (acc.interestRate / 100)), 0);
-    const blendedRateValue = totalSavingsValueForRate > 0 ? (totalInterestValue / totalSavingsValueForRate) * 100 : 0;
+    const blendedRateValue = calculateBlendedRate(rawAccounts);
     const formattedBlendedRate = `${blendedRateValue.toFixed(2)}%`;
 
     const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === activeAccountsTab);

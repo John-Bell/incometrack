@@ -4,6 +4,7 @@ import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { MonthlyCloseOut } from '../components/settings/MonthlyCloseOut';
 import { HistoryLogItem } from '../components/settings/HistoryLogItem';
+import { archiveCurrentMonth } from '@/services/archiveService';
 
 export function SettingsPage() {
     return (
@@ -44,7 +45,7 @@ export function SettingsPage() {
                     <MonthlyCloseOut
                         description="Archives current balances and interest rates to history and prepares the ledger for the new month. This action is final."
                         monthString="October 2025"
-                        onArchive={() => { }}
+                        onArchive={() => archiveCurrentMonth()}
                     />
                 </section>
 

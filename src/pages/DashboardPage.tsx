@@ -10,6 +10,7 @@ import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
+import { archiveCurrentMonth } from '@/services/archiveService';
 
 export function DashboardPage() {
     const { profile } = useStore();
@@ -145,7 +146,7 @@ export function DashboardPage() {
                     description="Archive your July data now"
                     icon="archive"
                     buttonText="Close Month"
-                    onClick={() => { }}
+                    onClick={() => archiveCurrentMonth()}
                 />
 
                 <div className="mb-2">

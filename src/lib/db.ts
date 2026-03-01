@@ -57,6 +57,7 @@ export interface MonthlyArchive {
     month: string; // "October 2025"
     year: number;
     totalInterest: number;
+    estimatedAccruedInterest: number;
     closedAt: number;
     data: any; // Snapshot of accounts/incomes and calculated tax results
 }
@@ -160,6 +161,19 @@ db.version(5).stores({
 
 // Schema version 6 - Added budgets
 db.version(6).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership'
+});
+
+// Schema version 7 - Added estimatedAccruedInterest to MonthlyArchive
+db.version(7).stores({
     profile: '&id',
     accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
     incomes: '&id, ownerId, name, frequency, type, taxCategory',

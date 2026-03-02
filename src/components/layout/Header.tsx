@@ -17,7 +17,7 @@ export function Header({
     className,
 }: HeaderProps) {
     return (
-        <header className={cn('flex items-center justify-between px-6 py-4', className)}>
+        <header className={cn('w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto flex items-center justify-between px-6 py-4', className)}>
             <div className="flex items-center gap-3">
                 {leftElement}
                 <div className="flex flex-col">

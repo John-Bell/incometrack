@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'; // Adjust this import path to where your Dexie instance lives
-import type { Account, Income, Budget, MonthlyArchive } from '@/lib/db';
+import type { Account, Income, Transaction, Budget, MonthlyArchive } from '@/lib/db';
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export const syncTaxRules = async () => {
@@ -179,6 +179,84 @@ export const seedDummyIncomes = async () => {
         console.log('Successfully seeded dummy incomes into Dexie.');
     } catch (error) {
         console.error('Failed to seed dummy incomes:', error);
+    }
+};
+
+export const seedDummyTransactions = async () => {
+    // Generate dates based on today
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterday = today - 24 * 60 * 60 * 1000;
+    const pastDate = new Date(2023, 9, 24).getTime(); // Oct 24, 2023
+
+    const dummyTransactions: Transaction[] = [
+        {
+            id: 'txn-1',
+            date: today,
+            payee: 'Shell',
+            amount: 45.00,
+            category: 'Petrol',
+            subCategory: 'Groceries/Incidentals',
+            type: 'expense',
+            icon: 'directions_car'
+        },
+        {
+            id: 'txn-2',
+            date: today,
+            payee: 'Thames Water',
+            amount: 30.00,
+            category: 'Water & Utilities',
+            subCategory: 'Annual Bills',
+            type: 'expense',
+            icon: 'electric_bolt'
+        },
+        {
+            id: 'txn-3',
+            date: yesterday,
+            payee: 'Ivy',
+            amount: 62.50,
+            category: 'Eating Out',
+            subCategory: 'Groceries/Incidentals',
+            type: 'expense',
+            icon: 'restaurant'
+        },
+        {
+            id: 'txn-4',
+            date: yesterday,
+            payee: 'Tesco',
+            amount: 12.20,
+            category: 'Groceries',
+            subCategory: 'Groceries/Incidentals',
+            type: 'expense',
+            icon: 'shopping_bag'
+        },
+        {
+            id: 'txn-5',
+            date: yesterday,
+            payee: 'Monthly Salary',
+            amount: 2450.00,
+            category: 'Salary Deposit',
+            subCategory: 'Annual Bills',
+            type: 'income',
+            icon: 'payments'
+        },
+        {
+            id: 'txn-6',
+            date: pastDate,
+            payee: 'HSBC Mortgage',
+            amount: 1200.00,
+            category: 'Mortgage Payment',
+            subCategory: 'Monthly Bills',
+            type: 'expense',
+            icon: 'home'
+        }
+    ];
+
+    try {
+        await db.transactions.bulkPut(dummyTransactions);
+        console.log('Successfully seeded dummy transactions into Dexie.');
+    } catch (error) {
+        console.error('Failed to seed dummy transactions:', error);
     }
 };
 

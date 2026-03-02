@@ -73,6 +73,18 @@ export interface AppNotification {
     actionUrl?: string;
 }
 
+// --- Transactions Table Interface ---
+export interface Transaction {
+    id: string;
+    date: number; // timestamp
+    payee: string;
+    amount: number;
+    category: string;
+    subCategory: string;
+    type: 'income' | 'expense';
+    icon: string;
+}
+
 // --- New Table Interface ---
 export interface TaxYearRule extends TaxYearConstants {
     id: string; // e.g., '2024-2025', '2025-2026'
@@ -97,6 +109,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     monthlyArchives: EntityTable<MonthlyArchive, 'id'>;
     notifications: EntityTable<AppNotification, 'id'>;
     taxRules: EntityTable<TaxYearRule, 'id'>; // Added to DB instance
+    transactions: EntityTable<Transaction, 'id'>;
     budgets: EntityTable<Budget, 'id'>;
 };
 
@@ -183,4 +196,18 @@ db.version(7).stores({
     notifications: '&id, date, read',
     taxRules: '&id',
     budgets: '&id, category, name, paymentSource, ownership'
+});
+
+// Schema version 8 - Added transactions
+db.version(8).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership',
+    transactions: '&id, date, category, type'
 });

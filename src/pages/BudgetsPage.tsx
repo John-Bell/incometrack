@@ -22,15 +22,6 @@ export function BudgetsPage() {
         return acc;
     }, {} as Record<string, typeof budgets>);
 
-    // Calculate totals based on viewMode
-    const totalAmount = budgets.reduce((sum, budget) => {
-        let monthly = budget.amount;
-        if (budget.frequency === 'annual') {
-            monthly = budget.amount / 12;
-        }
-        return sum + (viewMode === 'monthly' ? monthly : monthly * 12);
-    }, 0);
-
     const categoryIcons: Record<string, string> = {
         transport: 'directions_car',
         utilities: 'payments',

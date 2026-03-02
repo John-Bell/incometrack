@@ -3,8 +3,62 @@ import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
 import { Link } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { useStore } from '@/store/useStore';
 
 export function IncomePage() {
+    const { profile } = useStore();
+    const p1Name = profile?.partner1Name || 'Person 1';
+    const p2Name = profile?.partner2Name || 'Person 2';
+
+    const dbAccounts = useLiveQuery(() => db.accounts.toArray());
+    const dbIncomes = useLiveQuery(() => db.incomes.toArray());
+
+    const p1Incomes = { employment: 0, rental: 0, dividends: 0, interest: 0 };
+    const p2Incomes = { employment: 0, rental: 0, dividends: 0, interest: 0 };
+
+    if (dbIncomes) {
+        dbIncomes.forEach(inc => {
+            const amount = inc.frequency === 'monthly' ? inc.amount * 12 : inc.amount;
+            const target = inc.ownerId === 'person1' ? p1Incomes : p2Incomes;
+
+            if (inc.type === 'employment' || inc.type === 'pension') target.employment += amount;
+            else if (inc.type === 'rental') target.rental += amount;
+            else if (inc.type === 'dividends') target.dividends += amount;
+        });
+    }
+
+    if (dbAccounts) {
+        dbAccounts.forEach(acc => {
+            const amount = (acc.balance || 0) * ((acc.interestRate || 0) / 100);
+            if (acc.ownerId === 'person1') p1Incomes.interest += amount;
+            else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
+            else if (acc.ownerId === 'joint') {
+                p1Incomes.interest += amount / 2;
+                p2Incomes.interest += amount / 2;
+            }
+        });
+    }
+
+    const p1Total = p1Incomes.employment + p1Incomes.rental + p1Incomes.dividends + p1Incomes.interest;
+    const p2Total = p2Incomes.employment + p2Incomes.rental + p2Incomes.dividends + p2Incomes.interest;
+
+    const totalRental = p1Incomes.rental + p2Incomes.rental;
+    const p1RentalPct = totalRental > 0 ? Math.round((p1Incomes.rental / totalRental) * 100) : 50;
+    const p2RentalPct = totalRental > 0 ? Math.round((p2Incomes.rental / totalRental) * 100) : 50;
+
+    const totalInterest = p1Incomes.interest + p2Incomes.interest;
+    const p1InterestPct = totalInterest > 0 ? Math.round((p1Incomes.interest / totalInterest) * 100) : 50;
+    const p2InterestPct = totalInterest > 0 ? Math.round((p2Incomes.interest / totalInterest) * 100) : 50;
+
+    const totalDividends = p1Incomes.dividends + p2Incomes.dividends;
+    const p1DividendsPct = totalDividends > 0 ? Math.round((p1Incomes.dividends / totalDividends) * 100) : 50;
+    const p2DividendsPct = totalDividends > 0 ? Math.round((p2Incomes.dividends / totalDividends) * 100) : 50;
+
+    const formatCurr = (v: number) => `£${v.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
+    const formatCurrK = (v: number) => `£${(v / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`;
+
     return (
         <AppLayout
             header={
@@ -48,15 +102,15 @@ export function IncomePage() {
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
                                 <label className="text-sm font-semibold">Rental Income Split</label>
-                                <span className="text-xs font-bold text-primary">20% / 80%</span>
+                                <span className="text-xs font-bold text-primary">{p1RentalPct}% / {p2RentalPct}%</span>
                             </div>
                             <div className="relative h-2 w-full bg-slate-200 dark:bg-primary/20 rounded-full overflow-hidden">
-                                <div className="absolute top-0 left-0 h-full bg-primary/40 w-1/5"></div>
-                                <div className="absolute top-0 right-0 h-full bg-primary w-4/5"></div>
+                                <div className="absolute top-0 left-0 h-full bg-primary/40" style={{ width: `${p1RentalPct}%` }}></div>
+                                <div className="absolute top-0 right-0 h-full bg-primary" style={{ width: `${p2RentalPct}%` }}></div>
                             </div>
-                            <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                                <span>JOHN (£2k)</span>
-                                <span>BILLIE (£8k)</span>
+                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                                <span>{p1Name} ({formatCurrK(p1Incomes.rental)})</span>
+                                <span>{p2Name} ({formatCurrK(p2Incomes.rental)})</span>
                             </div>
                         </div>
 
@@ -64,15 +118,15 @@ export function IncomePage() {
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
                                 <label className="text-sm font-semibold">Savings Interest</label>
-                                <span className="text-xs font-bold text-primary">50% / 50%</span>
+                                <span className="text-xs font-bold text-primary">{p1InterestPct}% / {p2InterestPct}%</span>
                             </div>
                             <div className="relative h-2 w-full bg-slate-200 dark:bg-primary/20 rounded-full overflow-hidden">
-                                <div className="absolute top-0 left-0 h-full bg-primary/40 w-1/2"></div>
-                                <div className="absolute top-0 right-0 h-full bg-primary w-1/2"></div>
+                                <div className="absolute top-0 left-0 h-full bg-primary/40" style={{ width: `${p1InterestPct}%` }}></div>
+                                <div className="absolute top-0 right-0 h-full bg-primary" style={{ width: `${p2InterestPct}%` }}></div>
                             </div>
-                            <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                                <span>JOHN (£450)</span>
-                                <span>BILLIE (£450)</span>
+                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                                <span>{p1Name} ({formatCurr(p1Incomes.interest)})</span>
+                                <span>{p2Name} ({formatCurr(p2Incomes.interest)})</span>
                             </div>
                         </div>
 
@@ -80,14 +134,15 @@ export function IncomePage() {
                         <div className="space-y-3">
                             <div className="flex justify-between items-end">
                                 <label className="text-sm font-semibold">Dividends</label>
-                                <span className="text-xs font-bold text-primary">0% / 100%</span>
+                                <span className="text-xs font-bold text-primary">{p1DividendsPct}% / {p2DividendsPct}%</span>
                             </div>
                             <div className="relative h-2 w-full bg-slate-200 dark:bg-primary/20 rounded-full overflow-hidden">
-                                <div className="absolute top-0 right-0 h-full bg-primary w-full"></div>
+                                <div className="absolute top-0 left-0 h-full bg-primary/40" style={{ width: `${p1DividendsPct}%` }}></div>
+                                <div className="absolute top-0 right-0 h-full bg-primary" style={{ width: `${p2DividendsPct}%` }}></div>
                             </div>
-                            <div className="flex justify-between text-[10px] font-bold text-slate-500">
-                                <span>JOHN (£0)</span>
-                                <span>BILLIE (£5,000)</span>
+                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
+                                <span>{p1Name} ({formatCurr(p1Incomes.dividends)})</span>
+                                <span>{p2Name} ({formatCurr(p2Incomes.dividends)})</span>
                             </div>
                         </div>
                     </div>
@@ -100,8 +155,8 @@ export function IncomePage() {
                         {/* John's Bar */}
                         <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">J</div>
-                                <span className="font-bold">John</span>
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{p1Name.charAt(0).toUpperCase()}</div>
+                                <span className="font-bold">{p1Name}</span>
                             </div>
                             <div className="space-y-1">
                                 <div className="relative h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex">
@@ -119,8 +174,8 @@ export function IncomePage() {
                         {/* Billie's Bar */}
                         <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5 space-y-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark font-bold">B</div>
-                                <span className="font-bold">Billie</span>
+                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark font-bold">{p2Name.charAt(0).toUpperCase()}</div>
+                                <span className="font-bold">{p2Name}</span>
                             </div>
                             <div className="space-y-1">
                                 <div className="relative h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex">
@@ -150,37 +205,37 @@ export function IncomePage() {
                             <thead className="bg-slate-50 dark:bg-primary/10 text-slate-500 dark:text-primary/60">
                                 <tr>
                                     <th className="px-4 py-3 font-bold">Source</th>
-                                    <th className="px-4 py-3 font-bold text-right">John</th>
-                                    <th className="px-4 py-3 font-bold text-right">Billie</th>
+                                    <th className="px-4 py-3 font-bold text-right">{p1Name}</th>
+                                    <th className="px-4 py-3 font-bold text-right">{p2Name}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/10 bg-white dark:bg-background-dark/50">
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Salary / Pension</td>
-                                    <td className="px-4 py-4 text-right">£45,000</td>
-                                    <td className="px-4 py-4 text-right">£62,000</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment)}</td>
                                 </tr>
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Rental Income</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">£2,000</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">£8,000</td>
+                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.rental)}</td>
+                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.rental)}</td>
                                 </tr>
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Dividends</td>
-                                    <td className="px-4 py-4 text-right">£0</td>
-                                    <td className="px-4 py-4 text-right">£5,000</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.dividends)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.dividends)}</td>
                                 </tr>
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Interest</td>
-                                    <td className="px-4 py-4 text-right">£450</td>
-                                    <td className="px-4 py-4 text-right">£450</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.interest)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.interest)}</td>
                                 </tr>
                             </tbody>
                             <tfoot className="bg-slate-50 dark:bg-primary/5 font-extrabold">
                                 <tr>
                                     <td className="px-4 py-4">Total Gross</td>
-                                    <td className="px-4 py-4 text-right">£47,450</td>
-                                    <td className="px-4 py-4 text-right">£75,450</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Total)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Total)}</td>
                                 </tr>
                             </tfoot>
                         </table>

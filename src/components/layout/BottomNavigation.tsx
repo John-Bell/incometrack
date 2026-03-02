@@ -11,8 +11,8 @@ export function BottomNavigation() {
         { name: 'Dashboard', path: '/', icon: 'dashboard' },
         { name: 'Accounts', path: '/accounts', icon: 'account_balance_wallet' },
         { name: 'Budgets', path: '/budgets', icon: 'pie_chart' },
+        { name: 'Transactions', path: '/transactions', icon: 'receipt_long' },
         { name: 'Income', path: '/income', icon: 'payments' },
-        { name: 'Simulation', path: '/scenarios', icon: 'calculate' },
     ];
 
     return (

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db, type Profile } from '@/lib/db';
-import { syncTaxRules, seedDummyAccounts, seedDummyIncomes, seedDummyMonthlyArchives } from '@/lib/seed';
+import { syncTaxRules, seedDummyAccounts, seedDummyIncomes, seedDummyTransactions, seedDummyMonthlyArchives } from '@/lib/seed';
 import { TaxCalculationService } from '@/services/TaxCalculationService';
 import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
 
@@ -71,7 +71,13 @@ export const useStore = create<AppState>()((set) => ({
                 await seedDummyMonthlyArchives();
             }
 
-           set({
+            // Seed dummy transactions if there are absolutely no transactions
+            const transactionCount = await db.transactions.count();
+            if (transactionCount === 0) {
+                await seedDummyTransactions();
+            }
+
+            set({
                 isHydrated: true,
                 profile: activeProfile,
                 taxService,

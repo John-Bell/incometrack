@@ -3,46 +3,21 @@ import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
 import { Link } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
+import { useTaxCalculations } from '@/hooks/useTaxCalculations';
+import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 
 export function IncomePage() {
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Person 1';
     const p2Name = profile?.partner2Name || 'Person 2';
 
-    const dbAccounts = useLiveQuery(() => db.accounts.toArray());
-    const dbIncomes = useLiveQuery(() => db.incomes.toArray());
-
-    const p1Incomes = { employment: 0, rental: 0, dividends: 0, interest: 0 };
-    const p2Incomes = { employment: 0, rental: 0, dividends: 0, interest: 0 };
-
-    if (dbIncomes) {
-        dbIncomes.forEach(inc => {
-            const amount = inc.frequency === 'monthly' ? inc.amount * 12 : inc.amount;
-            const target = inc.ownerId === 'person1' ? p1Incomes : p2Incomes;
-
-            if (inc.type === 'employment' || inc.type === 'pension') target.employment += amount;
-            else if (inc.type === 'rental') target.rental += amount;
-            else if (inc.type === 'dividends') target.dividends += amount;
-        });
-    }
-
-    if (dbAccounts) {
-        dbAccounts.forEach(acc => {
-            const amount = (acc.balance || 0) * ((acc.interestRate || 0) / 100);
-            if (acc.ownerId === 'person1') p1Incomes.interest += amount;
-            else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
-            else if (acc.ownerId === 'joint') {
-                p1Incomes.interest += amount / 2;
-                p2Incomes.interest += amount / 2;
-            }
-        });
-    }
-
-    const p1Total = p1Incomes.employment + p1Incomes.rental + p1Incomes.dividends + p1Incomes.interest;
-    const p2Total = p2Incomes.employment + p2Incomes.rental + p2Incomes.dividends + p2Incomes.interest;
+    const {
+        p1Incomes, p2Incomes,
+        p1TaxResult, p2TaxResult,
+        p1TotalIncome: p1Total, p2TotalIncome: p2Total,
+        combinedNet, combinedEffectiveRate
+    } = useTaxCalculations();
 
     const totalRental = p1Incomes.rental + p2Incomes.rental;
     const p1RentalPct = totalRental > 0 ? Math.round((p1Incomes.rental / totalRental) * 100) : 50;
@@ -58,6 +33,43 @@ export function IncomePage() {
 
     const formatCurr = (v: number) => `£${v.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
     const formatCurrK = (v: number) => `£${(v / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`;
+
+    const renderTaxBar = (name: string, income: number, taxResult: TaxCalculationResult | null, isPrimary: boolean) => {
+        const pa = taxResult?.personalAllowance || 12570;
+        const brb = taxResult?.brbExtended || 50270;
+
+        // Scale to a reasonable max, e.g. 150k or income if higher
+        const maxScale = Math.max(150000, income, brb + 20000);
+
+        const paWidth = (Math.min(income, pa) / maxScale) * 100;
+        const basicInc = Math.max(0, Math.min(income - pa, brb - pa));
+        const basicWidth = (basicInc / maxScale) * 100;
+        const higherInc = Math.max(0, income - brb);
+        const higherWidth = (higherInc / maxScale) * 100;
+
+        return (
+            <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isPrimary ? 'bg-primary/20 text-primary' : 'bg-primary text-background-dark'}`}>
+                        {name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-bold">{name}</span>
+                </div>
+                <div className="space-y-1">
+                    <div className="relative h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex">
+                        {paWidth > 0 && <div className="h-full bg-primary/30 border-r border-slate-900/10 dark:border-white/10" style={{ width: `${paWidth}%` }} title="Personal Allowance"></div>}
+                        {basicWidth > 0 && <div className="h-full bg-primary border-r border-slate-900/10 dark:border-white/10" style={{ width: `${basicWidth}%` }} title="Basic Rate"></div>}
+                        {higherWidth > 0 && <div className="h-full bg-primary/80" style={{ width: `${higherWidth}%` }} title="Higher Rate"></div>}
+                    </div>
+                    <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
+                        <span>{formatCurrK(pa)} PA</span>
+                        <span>{formatCurrK(brb)} Basic</span>
+                        <span>Higher</span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <AppLayout
@@ -79,18 +91,18 @@ export function IncomePage() {
                 <div className="grid grid-cols-3 gap-3">
                     <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">
                         <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-primary/60">Tax Saved</p>
-                        <p className="text-lg font-extrabold text-primary">£4,250</p>
-                        <p className="text-[10px] text-emerald-500 font-bold">+£120</p>
+                        <p className="text-lg font-extrabold text-primary">--</p>
+                        <p className="text-[10px] text-emerald-500 font-bold">&nbsp;</p>
                     </div>
                     <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">
                         <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-primary/60">Combined Net</p>
-                        <p className="text-lg font-extrabold">£8,420</p>
-                        <p className="text-[10px] text-emerald-500 font-bold">+5.2%</p>
+                        <p className="text-lg font-extrabold">{formatCurr(combinedNet)}</p>
+                        <p className="text-[10px] text-emerald-500 font-bold">&nbsp;</p>
                     </div>
                     <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">
                         <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-primary/60">Eff. Rate</p>
-                        <p className="text-lg font-extrabold">18.4%</p>
-                        <p className="text-[10px] text-rose-500 font-bold">-0.8%</p>
+                        <p className="text-lg font-extrabold">{combinedEffectiveRate.toFixed(1)}%</p>
+                        <p className="text-[10px] text-rose-500 font-bold">&nbsp;</p>
                     </div>
                 </div>
 
@@ -152,43 +164,8 @@ export function IncomePage() {
                 <section className="space-y-4">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40 px-1">Tax Band Utilization</h2>
                     <div className="grid grid-cols-1 gap-4">
-                        {/* John's Bar */}
-                        <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5 space-y-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">{p1Name.charAt(0).toUpperCase()}</div>
-                                <span className="font-bold">{p1Name}</span>
-                            </div>
-                            <div className="space-y-1">
-                                <div className="relative h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex">
-                                    <div className="h-full bg-primary/30 w-[25%] border-r border-slate-900/10 dark:border-white/10" title="Personal Allowance"></div>
-                                    <div className="h-full bg-primary w-[45%] border-r border-slate-900/10 dark:border-white/10" title="Basic Rate"></div>
-                                </div>
-                                <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
-                                    <span>£12.5k PA</span>
-                                    <span>£50.2k Basic</span>
-                                    <span>Higher</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Billie's Bar */}
-                        <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5 space-y-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-background-dark font-bold">{p2Name.charAt(0).toUpperCase()}</div>
-                                <span className="font-bold">{p2Name}</span>
-                            </div>
-                            <div className="space-y-1">
-                                <div className="relative h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex">
-                                    <div className="h-full bg-primary/30 w-[25%] border-r border-slate-900/10 dark:border-white/10"></div>
-                                    <div className="h-full bg-primary w-[75%]"></div>
-                                </div>
-                                <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
-                                    <span>£12.5k PA</span>
-                                    <span>£50.2k Basic</span>
-                                    <span>Higher</span>
-                                </div>
-                            </div>
-                        </div>
+                        {renderTaxBar(p1Name, p1Total, p1TaxResult, true)}
+                        {renderTaxBar(p2Name, p2Total, p2TaxResult, false)}
                     </div>
                 </section>
 
@@ -212,8 +189,8 @@ export function IncomePage() {
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/10 bg-white dark:bg-background-dark/50">
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Salary / Pension</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment)}</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment + p1Incomes.pension)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment + p2Incomes.pension)}</td>
                                 </tr>
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Rental Income</td>

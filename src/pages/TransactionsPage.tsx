@@ -4,6 +4,7 @@ import { Icon } from '../components/ui/Icon';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { Transaction } from '@/lib/db';
+import { Link } from 'react-router-dom';
 
 export function TransactionsPage() {
     const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray()) || [];
@@ -35,14 +36,14 @@ export function TransactionsPage() {
         <AppLayout
             header={
                 <Header
-                    title="Transactions"
+                    title="Payments"
                     leftElement={
                         <Icon name="search" className="text-2xl text-primary" />
                     }
                     rightElement={
-                        <button className="bg-primary text-background-dark size-10 rounded-full flex items-center justify-center shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+                        <Link to="/transactions/add" className="bg-primary text-background-dark size-10 rounded-full flex items-center justify-center shadow-lg shadow-primary/20 active:scale-95 transition-transform">
                             <span className="material-symbols-outlined font-bold text-black" style={{ fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>add</span>
-                        </button>
+                        </Link>
                     }
                 />
             }
@@ -55,7 +56,7 @@ export function TransactionsPage() {
                         </div>
                         <div className="space-y-1">
                             {dailyTransactions.map((tx) => (
-                                <div key={tx.id} className="flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
+                                <Link to={`/transactions/edit/${tx.id}`} key={tx.id} className="flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
                                     <div className="size-12 min-w-[3rem] rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                         <Icon name={tx.icon} />
                                     </div>
@@ -77,7 +78,7 @@ export function TransactionsPage() {
                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 uppercase">{tx.subCategory}</span>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     </section>

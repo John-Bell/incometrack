@@ -8,11 +8,10 @@ export function BottomNavigation() {
     const currentPath = location.pathname;
 
     const tabs = [
-        { name: 'Dashboard', path: '/', icon: 'dashboard' },
         { name: 'Accounts', path: '/accounts', icon: 'account_balance_wallet' },
+        { name: 'Payments', path: '/transactions', icon: 'receipt_long' },
         { name: 'Budgets', path: '/budgets', icon: 'pie_chart' },
-        { name: 'Transactions', path: '/transactions', icon: 'receipt_long' },
-        { name: 'Income', path: '/income', icon: 'payments' },
+        { name: 'Incomes', path: '/income', icon: 'payments' },
     ];
 
     return (

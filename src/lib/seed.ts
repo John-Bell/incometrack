@@ -1,5 +1,5 @@
 import { db } from '@/lib/db'; // Adjust this import path to where your Dexie instance lives
-import type { Account, Income, Budget } from '@/lib/db';
+import type { Account, Income, Budget, MonthlyArchive } from '@/lib/db';
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export const syncTaxRules = async () => {
@@ -179,6 +179,72 @@ export const seedDummyIncomes = async () => {
         console.log('Successfully seeded dummy incomes into Dexie.');
     } catch (error) {
         console.error('Failed to seed dummy incomes:', error);
+    }
+};
+
+export const seedDummyMonthlyArchives = async () => {
+    const dummyArchives: MonthlyArchive[] = [
+        {
+            id: '2024-01',
+            month: 'January',
+            year: 2024,
+            totalInterest: 150.25,
+            estimatedAccruedInterest: 155.00,
+            closedAt: new Date('2024-01-31T23:59:59Z').getTime(),
+            data: {
+                accounts: [
+                    { name: 'Santander eSaver', balance: 80000, category: 'Easy Access Savings' },
+                    { name: 'Barclays Rainy Day', balance: 5000, category: 'Easy Access Savings' }
+                ],
+                taxMetrics: {
+                    totalInterest: 150.25,
+                    remainingAllowance: 849.75
+                }
+            }
+        },
+        {
+            id: '2024-02',
+            month: 'February',
+            year: 2024,
+            totalInterest: 165.50,
+            estimatedAccruedInterest: 170.00,
+            closedAt: new Date('2024-02-29T23:59:59Z').getTime(),
+            data: {
+                accounts: [
+                    { name: 'Santander eSaver', balance: 82000, category: 'Easy Access Savings' },
+                    { name: 'Barclays Rainy Day', balance: 5000, category: 'Easy Access Savings' }
+                ],
+                taxMetrics: {
+                    totalInterest: 165.50,
+                    remainingAllowance: 684.25
+                }
+            }
+        },
+        {
+            id: '2024-03',
+            month: 'March',
+            year: 2024,
+            totalInterest: 175.75,
+            estimatedAccruedInterest: 180.00,
+            closedAt: new Date('2024-03-31T23:59:59Z').getTime(),
+            data: {
+                accounts: [
+                    { name: 'Santander eSaver', balance: 85000, category: 'Easy Access Savings' },
+                    { name: 'Barclays Rainy Day', balance: 5000, category: 'Easy Access Savings' }
+                ],
+                taxMetrics: {
+                    totalInterest: 175.75,
+                    remainingAllowance: 508.50
+                }
+            }
+        }
+    ];
+
+    try {
+        await db.monthlyArchives.bulkPut(dummyArchives);
+        console.log('Successfully seeded dummy monthly archives into Dexie.');
+    } catch (error) {
+        console.error('Failed to seed dummy monthly archives:', error);
     }
 };
 

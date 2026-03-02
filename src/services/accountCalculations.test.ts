@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { calculateTotalSavings, calculateBlendedRate } from './accountCalculations';
-import { Account } from '@/lib/db';
+import { type Account } from '@/lib/db';
 
 describe('accountCalculations', () => {
     const createMockAccount = (balance: number, interestRate: number): Account => ({
@@ -79,7 +79,7 @@ describe('accountCalculations', () => {
         });
 
         it('should handle accounts with 0 balance correctly', () => {
-             const accounts = [
+            const accounts = [
                 createMockAccount(1000, 5),
                 createMockAccount(0, 10)
             ];

@@ -1,4 +1,4 @@
-import { Account } from '@/lib/db';
+import { type Account } from '@/lib/db';
 
 export function calculateTotalSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);

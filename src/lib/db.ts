@@ -197,3 +197,17 @@ db.version(7).stores({
     taxRules: '&id',
     budgets: '&id, category, name, paymentSource, ownership'
 });
+
+// Schema version 8 - Added transactions
+db.version(8).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership',
+    transactions: '&id, date, category, type'
+});

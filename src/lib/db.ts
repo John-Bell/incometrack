@@ -83,6 +83,7 @@ export interface Transaction {
     subCategory: string;
     type: 'income' | 'expense';
     icon: string;
+    budgetId?: string; // Links transaction to a specific budget
 }
 
 // --- New Table Interface ---
@@ -210,4 +211,18 @@ db.version(8).stores({
     taxRules: '&id',
     budgets: '&id, category, name, paymentSource, ownership',
     transactions: '&id, date, category, type'
+});
+
+// Schema version 9 - Link transactions to budgets
+db.version(9).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership',
+    transactions: '&id, date, category, type, budgetId'
 });

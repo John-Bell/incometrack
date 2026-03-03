@@ -34,6 +34,12 @@ export function EditPaymentPage() {
         e.preventDefault();
         if (!id) return;
 
+        // Find matching budget
+        const budgets = await db.budgets.toArray();
+        const matchingBudget = budgets.find(
+            b => b.category.toLowerCase() === category.toLowerCase() && b.name.toLowerCase() === subCategory.toLowerCase()
+        );
+
         await db.transactions.update(id, {
             date: new Date(date).getTime(),
             payee,
@@ -41,7 +47,8 @@ export function EditPaymentPage() {
             category,
             subCategory,
             type,
-            icon: type === 'expense' ? 'shopping_cart' : 'payments'
+            icon: type === 'expense' ? 'shopping_cart' : 'payments',
+            budgetId: matchingBudget?.id
         });
 
         navigate('/transactions');

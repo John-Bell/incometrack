@@ -18,6 +18,12 @@ export function AddPaymentPage() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Find matching budget
+        const budgets = await db.budgets.toArray();
+        const matchingBudget = budgets.find(
+            b => b.category.toLowerCase() === category.toLowerCase() && b.name.toLowerCase() === subCategory.toLowerCase()
+        );
+
         await db.transactions.add({
             id: uuidv4(),
             date: new Date(date).getTime(),
@@ -26,7 +32,8 @@ export function AddPaymentPage() {
             category,
             subCategory,
             type,
-            icon: type === 'expense' ? 'shopping_cart' : 'payments'
+            icon: type === 'expense' ? 'shopping_cart' : 'payments',
+            budgetId: matchingBudget?.id
         });
 
         navigate('/transactions');

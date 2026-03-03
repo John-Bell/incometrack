@@ -17,13 +17,17 @@ import { TransactionsPage } from '@/pages/TransactionsPage';
 import { AddPaymentPage } from '@/pages/AddPaymentPage';
 import { EditPaymentPage } from '@/pages/EditPaymentPage';
 import { useStore } from '@/store/useStore';
+import { syncService } from '@/services/syncService';
 
 function AppRoutes() {
   const { isHydrated, profile, initStore } = useStore();
   const location = useLocation();
 
   useEffect(() => {
-    initStore();
+    initStore().then(() => {
+      // Attempt to reconnect to cloud sync after store is hydrated
+      syncService.reconnect();
+    });
   }, [initStore]);
 
   if (!isHydrated) {

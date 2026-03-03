@@ -11,10 +11,14 @@ export interface AppState {
     activeAccountsTab: string;
     taxService: TaxCalculationService | null;
     taxYear: string | null;
+    syncStatus: 'disconnected' | 'connected' | 'permission_needed';
+    lastSynced: number | null;
 
     initStore: () => Promise<void>;
     setProfile: (profile: Profile) => Promise<void>;
     setActiveAccountsTab: (tab: string) => void;
+    setSyncStatus: (status: 'disconnected' | 'connected' | 'permission_needed') => void;
+    setLastSynced: (timestamp: number | null) => void;
 }
 
 export const useStore = create<AppState>()((set) => ({
@@ -24,6 +28,8 @@ export const useStore = create<AppState>()((set) => ({
     activeAccountsTab: 'joint',
     taxService: null,
     taxYear: null,
+    syncStatus: 'disconnected',
+    lastSynced: null,
 
     initStore: async () => {
         try {
@@ -104,5 +110,7 @@ export const useStore = create<AppState>()((set) => ({
         set({ profile });
     },
 
-    setActiveAccountsTab: (tab: string) => set({ activeAccountsTab: tab })
+    setActiveAccountsTab: (tab: string) => set({ activeAccountsTab: tab }),
+    setSyncStatus: (status: 'disconnected' | 'connected' | 'permission_needed') => set({ syncStatus: status }),
+    setLastSynced: (timestamp: number | null) => set({ lastSynced: timestamp })
 }));

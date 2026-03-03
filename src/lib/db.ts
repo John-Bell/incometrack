@@ -9,6 +9,7 @@ export interface Profile {
     partner1Name?: string;
     partner2Name?: string;
     createdAt: number;
+    updatedAt?: number;
 }
 
 export interface Account {
@@ -36,12 +37,14 @@ export interface Income {
     // --- Updated Tax Optimization Fields ---
     type: string; // e.g., 'salary', 'rental', 'other'
     taxCategory: string; // e.g., 'Pension', 'State Pension', 'Dividend', 'Tax-Free', 'Earned'
+    updatedAt?: number;
 }
 
 export interface Scenario {
     id: string;
     name: string;
     description?: string;
+    updatedAt?: number;
 }
 
 export interface Settings {
@@ -50,6 +53,8 @@ export interface Settings {
     taxYear: string; // Acts as the FK pointing to TaxYearRule.id
     icloudSync: boolean;
     lastSynced?: number;
+    updatedAt?: number;
+    cloudHandle?: any; // FileSystemFileHandle
 }
 
 export interface MonthlyArchive {
@@ -60,6 +65,7 @@ export interface MonthlyArchive {
     estimatedAccruedInterest: number;
     closedAt: number;
     data: any; // Snapshot of accounts/incomes and calculated tax results
+    updatedAt?: number;
 }
 
 export interface AppNotification {
@@ -71,6 +77,7 @@ export interface AppNotification {
     read: boolean;
     actionLabel?: string;
     actionUrl?: string;
+    updatedAt?: number;
 }
 
 // --- Transactions Table Interface ---
@@ -84,11 +91,13 @@ export interface Transaction {
     type: 'income' | 'expense';
     icon: string;
     budgetId?: string; // Links transaction to a specific budget
+    updatedAt?: number;
 }
 
 // --- New Table Interface ---
 export interface TaxYearRule extends TaxYearConstants {
     id: string; // e.g., '2024-2025', '2025-2026'
+    updatedAt?: number;
 }
 
 export interface Budget {
@@ -99,6 +108,7 @@ export interface Budget {
     frequency: string; // e.g. monthly, annual
     paymentSource: string; // e.g. monthly, annual
     ownership: string; // e.g. john, billie, joint
+    updatedAt?: number;
 }
 
 export const db = new Dexie('IncomeTrackDB') as Dexie & {
@@ -215,6 +225,49 @@ db.version(8).stores({
 
 // Schema version 9 - Link transactions to budgets
 db.version(9).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership',
+    transactions: '&id, date, category, type, budgetId'
+});
+
+// Add hooks to automatically update the updatedAt timestamp
+const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
+
+tablesToHook.forEach(tableName => {
+    (db as any)[tableName].hook('creating', function (primKey: any, obj: any, transaction: any) {
+        if (!obj.updatedAt) {
+            obj.updatedAt = Date.now();
+        }
+    });
+
+    (db as any)[tableName].hook('updating', function (modifications: any, primKey: any, obj: any, transaction: any) {
+        return { ...modifications, updatedAt: Date.now() };
+    });
+});
+
+// Schema version 10
+db.version(10).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership',
+    transactions: '&id, date, category, type, budgetId'
+});
+
+// Schema version 11 - Add updatedAt and cloudHandle support
+db.version(11).stores({
     profile: '&id',
     accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
     incomes: '&id, ownerId, name, frequency, type, taxCategory',

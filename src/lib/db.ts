@@ -141,129 +141,30 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
 // Schema version 1
 db.version(1).stores({
     profile: '&id',
-    accounts: '&id, ownerId, name',
-    incomes: '&id, ownerId, name, frequency',
-    scenarios: '&id, name'
-});
-
-// Schema version 2 - Update schema
-db.version(2).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name',
-    incomes: '&id, ownerId, name, frequency, type',
-    scenarios: '&id, name',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
     settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read'
-});
-
-// Schema version 3 - Tax Optimization & Rule Engine
-db.version(3).stores({
-    // Inherit everything from v2...
-    profile: '&id',
-    // Added taxWrapper as an index in case you want to query all ISAs quickly
-    accounts: '&id, ownerId, name',
-    // Added taxCategory as an index to quickly sum up just pension income
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    // New table. Just need the primary key indexed.
-    taxRules: '&id'
-});
-
-// Schema version 4 - Added bonus rate fields to Account
-db.version(4).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id'
-});
-
-// Schema version 5 - Added category to Account
-db.version(5).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id'
-});
-
-// Schema version 6 - Added budgets
-db.version(6).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership'
-});
-
-// Schema version 7 - Added estimatedAccruedInterest to MonthlyArchive
-db.version(7).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership'
-});
-
-// Schema version 8 - Added transactions
-db.version(8).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership',
-    transactions: '&id, date, category, type'
-});
-
-// Schema version 9 - Link transactions to budgets
-db.version(9).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership',
-    transactions: '&id, date, category, type, budgetId'
-});
-
-// Schema version 12 - Add Import Fields
-db.version(12).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate, importId, updatedAt',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership, importId, updatedAt',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, category, name, importId, updatedAt',
     transactions: '&id, date, category, type, budgetId, importId, updatedAt'
 });
+
+export const initDb = async () => {
+    try {
+        await db.open();
+    } catch (err: any) {
+        if (err.name === 'VersionError') {
+            console.warn('Database version downgrade detected. Wiping and recreating...');
+            await db.delete();
+            await db.open();
+        } else {
+            throw err;
+        }
+    }
+};
 
 // Add hooks to automatically update the updatedAt timestamp
 const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
@@ -283,30 +184,3 @@ tablesToHook.forEach(tableName => {
     });
 });
 
-// Schema version 10
-db.version(10).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership',
-    transactions: '&id, date, category, type, budgetId'
-});
-
-// Schema version 11 - Add updatedAt and cloudHandle support
-db.version(11).stores({
-    profile: '&id',
-    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate',
-    incomes: '&id, ownerId, name, frequency, type, taxCategory',
-    scenarios: '&id, name',
-    settings: '&id',
-    monthlyArchives: '&id, month, year',
-    notifications: '&id, date, read',
-    taxRules: '&id',
-    budgets: '&id, category, name, paymentSource, ownership',
-    transactions: '&id, date, category, type, budgetId'
-});

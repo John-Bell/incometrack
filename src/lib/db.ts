@@ -26,6 +26,9 @@ export interface Account {
     // --- Bonus Rate Fields ---
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
+    // --- Import Fields ---
+    importId?: string;
+    externalRef?: string;
 }
 
 export interface Income {
@@ -38,6 +41,9 @@ export interface Income {
     type: string; // e.g., 'salary', 'rental', 'other'
     taxCategory: string; // e.g., 'Pension', 'State Pension', 'Dividend', 'Tax-Free', 'Earned'
     updatedAt?: number;
+    // --- Import Fields ---
+    importId?: string;
+    externalRef?: string;
 }
 
 export interface Scenario {
@@ -92,6 +98,10 @@ export interface Transaction {
     icon: string;
     budgetId?: string; // Links transaction to a specific budget
     updatedAt?: number;
+    // --- Import Fields ---
+    importId?: string;
+    externalRef?: string;
+    rawDesc?: string;
 }
 
 // --- New Table Interface ---
@@ -109,6 +119,10 @@ export interface Budget {
     paymentSource: string; // e.g. monthly, annual
     ownership: string; // e.g. john, billie, joint
     updatedAt?: number;
+    // --- Import Fields ---
+    importId?: string;
+    externalRef?: string;
+    importMappingName?: string;
 }
 
 export const db = new Dexie('IncomeTrackDB') as Dexie & {
@@ -237,6 +251,20 @@ db.version(9).stores({
     transactions: '&id, date, category, type, budgetId'
 });
 
+// Schema version 12 - Add Import Fields
+db.version(12).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, bonusRateActive, bonusEndDate, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory',
+    scenarios: '&id, name',
+    settings: '&id',
+    monthlyArchives: '&id, month, year',
+    notifications: '&id, date, read',
+    taxRules: '&id',
+    budgets: '&id, category, name, paymentSource, ownership, importId, updatedAt',
+    transactions: '&id, date, category, type, budgetId, importId, updatedAt'
+});
+
 // Add hooks to automatically update the updatedAt timestamp
 const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
 
@@ -248,6 +276,9 @@ tablesToHook.forEach(tableName => {
     });
 
     (db as any)[tableName].hook('updating', function (modifications: any, primKey: any, obj: any, transaction: any) {
+        if (modifications.hasOwnProperty('updatedAt')) {
+            return modifications;
+        }
         return { ...modifications, updatedAt: Date.now() };
     });
 });

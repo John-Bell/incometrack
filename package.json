@@ -12,9 +12,11 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
+    "@types/papaparse": "^5.5.2",
     "clsx": "^2.1.1",
     "dexie": "^4.3.0",
     "dexie-react-hooks": "^4.2.0",
+    "papaparse": "^5.5.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.13.1",

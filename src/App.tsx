@@ -16,6 +16,7 @@ import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { TransactionsPage } from '@/pages/TransactionsPage';
 import { AddPaymentPage } from '@/pages/AddPaymentPage';
 import { EditPaymentPage } from '@/pages/EditPaymentPage';
+import { ImportProcessor } from '@/pages/ImportProcessor';
 import { useStore } from '@/store/useStore';
 import { syncService } from '@/services/syncService';
 
@@ -49,6 +50,7 @@ function AppRoutes() {
       <Route path="/accounts/edit/:id" element={<EditAccountPage />} />
       <Route path="/scenarios" element={<ScenariosPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/settings/import/:table" element={<ImportProcessor />} />
       <Route path="/income" element={<IncomePage />} />
       <Route path="/income-config" element={<IncomeConfigPage />} />
       <Route path="/budgets" element={<BudgetsPage />} />

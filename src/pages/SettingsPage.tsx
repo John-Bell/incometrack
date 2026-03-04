@@ -41,6 +41,47 @@ export function SettingsPage() {
                 </section>
 
                 <section className="mt-8 px-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Data Management</h2>
+                    <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl divide-y divide-slate-100 dark:divide-primary/5">
+                        <Link to="/settings/import/accounts" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="account_balance" />
+                                </div>
+                                <p className="font-medium">Import Accounts</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary">
+                                <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </Link>
+
+                        <Link to="/settings/import/budgets" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="account_balance_wallet" />
+                                </div>
+                                <p className="font-medium">Import Budgets</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary">
+                                <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </Link>
+
+                        <Link to="/settings/import/transactions" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="receipt_long" />
+                                </div>
+                                <p className="font-medium">Import Transactions</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-primary">
+                                <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </Link>
+                    </div>
+                </section>
+
+                <section className="mt-8 px-4">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Monthly Close-Out</h2>
                     <MonthlyCloseOut
                         description="Archives current balances and interest rates to history and prepares the ledger for the new month. This action is final."

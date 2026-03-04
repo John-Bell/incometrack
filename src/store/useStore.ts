@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { db, type Profile } from '@/lib/db';
+import { db, initDb, type Profile } from '@/lib/db';
 import { syncTaxRules, seedDummyAccounts, seedDummyIncomes, seedDummyTransactions, seedDummyMonthlyArchives, seedDummyBudgets } from '@/lib/seed';
 import { TaxCalculationService } from '@/services/TaxCalculationService';
 import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
@@ -33,6 +33,8 @@ export const useStore = create<AppState>()((set) => ({
 
     initStore: async () => {
         try {
+            await initDb();
+
             const profilesCount = await db.profile.count();
             let activeProfile: Profile | null = null;
 

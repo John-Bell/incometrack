@@ -1,6 +1,33 @@
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 
+class FallbackWritableFileStream {
+    private chunks: BlobPart[] = [];
+    private filename: string;
+
+    constructor(filename: string) {
+        this.filename = filename;
+    }
+
+    async write(data: BlobPart | { type: string, data: BlobPart }) {
+        if (typeof data === 'object' && 'data' in data) {
+             this.chunks.push(data.data);
+        } else {
+             this.chunks.push(data);
+        }
+    }
+
+    async close() {
+        const blob = new Blob(this.chunks, { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+}
+
 export const syncService = {
     async connectCloud() {
         try {
@@ -153,13 +180,9 @@ export const syncService = {
             }
 
             if (hasLocalChanges || Object.keys(cloudData).length === 0) {
-                const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = file.name || 'incometrack-sync.json';
-                a.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                const writable = new FallbackWritableFileStream(file.name || 'incometrack-sync.json');
+                await writable.write(JSON.stringify(currentData, null, 2));
+                await writable.close();
 
                 alert('Sync complete! A new file has been downloaded. Please save it to your iCloud folder to overwrite the old one.');
             } else {

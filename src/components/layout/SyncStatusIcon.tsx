@@ -12,10 +12,18 @@ export function SyncStatusIcon() {
         } else if (syncStatus === 'permission_needed') {
             const settings = await db.settings.get('default');
             if (settings && settings.cloudHandle) {
-                const permission = await settings.cloudHandle.requestPermission({ mode: 'readwrite' });
-                if (permission === 'granted') {
-                    useStore.getState().setSyncStatus('connected');
-                    syncService.sync().catch(console.error);
+                try {
+                    const permission = await settings.cloudHandle.requestPermission({ mode: 'readwrite' });
+                    if (permission === 'granted') {
+                        useStore.getState().setSyncStatus('connected');
+                        syncService.sync().catch(console.error);
+                    } else {
+                        // iOS 2026 PWA behavior: If the OS drops the handle or denies permission, fallback to manual pick
+                        await syncService.connectCloud();
+                    }
+                } catch (err) {
+                     // If requesting permission fails entirely (e.g., stale handle), trigger manual pick
+                     await syncService.connectCloud();
                 }
             } else if (settings && (settings as any).iosFallbackSync) {
                 useStore.getState().setSyncStatus('connected');

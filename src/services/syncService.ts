@@ -5,6 +5,7 @@ export const syncService = {
     async connectCloud() {
         try {
             if (!('showOpenFilePicker' in window)) {
+                alert('Cloud sync is not supported in this browser. Please use a browser that supports the File System Access API (like Chrome, Edge, or Safari on macOS).');
                 throw new Error('File System Access API is not supported in this browser.');
             }
 
@@ -55,8 +56,11 @@ export const syncService = {
             await this.sync();
 
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to connect cloud:', error);
+            if (error.name !== 'AbortError') {
+                alert(error.message || 'An error occurred while connecting to the cloud.');
+            }
             return false;
         }
     },

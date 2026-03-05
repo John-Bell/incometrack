@@ -170,13 +170,13 @@ export const initDb = async () => {
 const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
 
 tablesToHook.forEach(tableName => {
-    (db as any)[tableName].hook('creating', function (primKey: any, obj: any, transaction: any) {
+    (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {
         if (!obj.updatedAt) {
             obj.updatedAt = Date.now();
         }
     });
 
-    (db as any)[tableName].hook('updating', function (modifications: any, primKey: any, obj: any, transaction: any) {
+    (db as any)[tableName].hook('updating', function (modifications: any, _primKey: any, _obj: any, _transaction: any) {
         if (modifications.hasOwnProperty('updatedAt')) {
             return modifications;
         }

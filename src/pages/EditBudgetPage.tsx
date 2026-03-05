@@ -16,8 +16,6 @@ export function EditBudgetPage() {
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [paymentSource, setPaymentSource] = useState('monthly');
-    const [ownership, setOwnership] = useState('joint');
-
     useEffect(() => {
         if (budget) {
             setCategory(budget.category);
@@ -25,8 +23,7 @@ export function EditBudgetPage() {
             setAmount(budget.amount.toString());
             setFrequency(budget.frequency);
             setPaymentSource(budget.paymentSource);
-            setOwnership(budget.ownership);
-        }
+            }
     }, [budget]);
 
     const handleSave = async () => {
@@ -37,9 +34,8 @@ export function EditBudgetPage() {
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            paymentSource,
-            ownership
-        });
+            paymentSource
+        } );
         navigate('/budgets');
     };
 
@@ -147,40 +143,18 @@ export function EditBudgetPage() {
                     </div>
 
                     {/* Payment Source & Ownership */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Payment Source</label>
+                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Location</label>
                             <select
                                 value={paymentSource}
                                 onChange={(e) => setPaymentSource(e.target.value)}
                                 className="custom-select w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                             >
-                                <option value="monthly">Monthly Account</option>
-                                <option value="annual">Annual Account</option>
+                                <option value="Groceries / Incidentals">Groceries / Incidentals</option>
+                                <option value="Monthly Bills">Monthly Bills</option>
+                                <option value="Annual Bills">Annual Bills</option>
                             </select>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Ownership</label>
-                            <div className="flex p-1 bg-slate-200 dark:bg-primary/5 rounded-lg">
-                                <button
-                                    onClick={() => setOwnership('john')}
-                                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${ownership === 'john' ? 'bg-white dark:bg-primary text-slate-900 dark:text-background-dark shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-white/10'}`}
-                                >
-                                    John
-                                </button>
-                                <button
-                                    onClick={() => setOwnership('billie')}
-                                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${ownership === 'billie' ? 'bg-white dark:bg-primary text-slate-900 dark:text-background-dark shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-white/10'}`}
-                                >
-                                    Billie
-                                </button>
-                                <button
-                                    onClick={() => setOwnership('joint')}
-                                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${ownership === 'joint' ? 'bg-white dark:bg-primary text-slate-900 dark:text-background-dark shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-white/10'}`}
-                                >
-                                    Joint
-                                </button>
-                            </div>
                         </div>
                     </div>
 

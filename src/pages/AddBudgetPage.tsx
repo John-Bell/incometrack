@@ -83,49 +83,17 @@ export function AddBudgetPage() {
                         </div>
                     </div>
 
-                    {/* Payment Source */}
+                    {/* Location */}
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Payment Source</label>
-                        <div className="grid grid-cols-2 gap-3">
-                            <label className="relative flex cursor-pointer items-center justify-center rounded-xl border-2 border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 transition-all hover:bg-slate-50 dark:hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10 group">
-                                <input defaultChecked className="sr-only" name="payment_source" type="radio" value="monthly" />
-                                <div className="flex flex-col items-center gap-1">
-                                    <Icon name="calendar_month" className="text-slate-400 dark:text-primary/60 group-has-[:checked]:text-primary" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Monthly Acc</span>
-                                </div>
-                            </label>
-                            <label className="relative flex cursor-pointer items-center justify-center rounded-xl border-2 border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 transition-all hover:bg-slate-50 dark:hover:bg-primary/5 has-[:checked]:border-primary has-[:checked]:bg-primary/10 group">
-                                <input className="sr-only" name="payment_source" type="radio" value="annual" />
-                                <div className="flex flex-col items-center gap-1">
-                                    <Icon name="event_repeat" className="text-slate-400 dark:text-primary/60 group-has-[:checked]:text-primary" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Annual Acc</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* Ownership */}
-                    <div className="space-y-3">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Ownership</label>
-                        <div className="flex gap-2">
-                            <label className="flex-1 relative cursor-pointer group">
-                                <input defaultChecked className="sr-only" name="ownership" type="radio" value="john" />
-                                <div className="flex flex-col items-center p-3 rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 group-has-[:checked]:bg-primary group-has-[:checked]:border-primary group-has-[:checked]:text-background-dark transition-all">
-                                    <span className="text-sm font-bold">John</span>
-                                </div>
-                            </label>
-                            <label className="flex-1 relative cursor-pointer group">
-                                <input className="sr-only" name="ownership" type="radio" value="billie" />
-                                <div className="flex flex-col items-center p-3 rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 group-has-[:checked]:bg-primary group-has-[:checked]:border-primary group-has-[:checked]:text-background-dark transition-all">
-                                    <span className="text-sm font-bold">Billie</span>
-                                </div>
-                            </label>
-                            <label className="flex-1 relative cursor-pointer group">
-                                <input className="sr-only" name="ownership" type="radio" value="joint" />
-                                <div className="flex flex-col items-center p-3 rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 group-has-[:checked]:bg-primary group-has-[:checked]:border-primary group-has-[:checked]:text-background-dark transition-all">
-                                    <span className="text-sm font-bold">Joint</span>
-                                </div>
-                            </label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
+                        <div className="relative">
+                            <select name="paymentSource" defaultValue="" className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                                <option disabled value="">Select a location</option>
+                                <option value="Groceries / Incidentals">Groceries / Incidentals</option>
+                                <option value="Monthly Bills">Monthly Bills</option>
+                                <option value="Annual Bills">Annual Bills</option>
+                            </select>
+                            <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                         </div>
                     </div>
                 </div>

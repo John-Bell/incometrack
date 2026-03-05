@@ -117,7 +117,6 @@ export interface Budget {
     amount: number;
     frequency: string; // e.g. monthly, annual
     paymentSource: string; // e.g. monthly, annual
-    ownership: string; // e.g. john, billie, joint
     updatedAt?: number;
     // --- Import Fields ---
     importId?: string;

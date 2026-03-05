@@ -20,7 +20,7 @@ export function AppLayout({
     return (
         <div
             className={cn(
-                'bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen flex flex-col antialiased selection:bg-primary selection:text-background-dark overflow-hidden',
+                'bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display h-[100dvh] flex flex-col antialiased selection:bg-primary selection:text-background-dark overflow-hidden',
                 className
             )}
         >

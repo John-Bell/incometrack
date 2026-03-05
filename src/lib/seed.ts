@@ -334,8 +334,7 @@ export const seedDummyBudgets = async () => {
             name: 'Fuel',
             amount: 80,
             frequency: 'monthly',
-            paymentSource: 'monthly',
-            ownership: 'joint'
+            paymentSource: 'Monthly Bills',
         },
         {
             id: 'budg-transport-002',
@@ -343,8 +342,7 @@ export const seedDummyBudgets = async () => {
             name: 'Car Insurance',
             amount: 45,
             frequency: 'monthly',
-            paymentSource: 'annual',
-            ownership: 'joint'
+            paymentSource: 'Annual Bills',
         },
         {
             id: 'budg-transport-003',
@@ -352,8 +350,7 @@ export const seedDummyBudgets = async () => {
             name: 'Car Tax',
             amount: 15,
             frequency: 'monthly',
-            paymentSource: 'annual',
-            ownership: 'joint'
+            paymentSource: 'Annual Bills',
         },
         {
             id: 'budg-utilities-001',
@@ -361,8 +358,7 @@ export const seedDummyBudgets = async () => {
             name: 'Electricity & Gas',
             amount: 185,
             frequency: 'monthly',
-            paymentSource: 'monthly',
-            ownership: 'joint'
+            paymentSource: 'Monthly Bills',
         },
         {
             id: 'budg-utilities-002',
@@ -370,8 +366,7 @@ export const seedDummyBudgets = async () => {
             name: 'Water',
             amount: 32,
             frequency: 'monthly',
-            paymentSource: 'monthly',
-            ownership: 'joint'
+            paymentSource: 'Monthly Bills',
         },
         {
             id: 'budg-socializing-001',
@@ -379,8 +374,7 @@ export const seedDummyBudgets = async () => {
             name: 'Eating Out',
             amount: 150,
             frequency: 'monthly',
-            paymentSource: 'monthly',
-            ownership: 'joint'
+            paymentSource: 'Monthly Bills',
         }
     ];
 

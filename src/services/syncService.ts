@@ -28,11 +28,150 @@ class FallbackWritableFileStream {
     }
 }
 
+// Helper for custom UI prompts since native confirm/prompt is limited
+const promptOptions = (title: string, message: string, options: { label: string, value: string }[]): Promise<string | null> => {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col';
+
+        const header = document.createElement('div');
+        header.className = 'p-6 pb-4';
+        header.innerHTML = `
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">${title}</h3>
+            <p class="text-sm text-slate-600 dark:text-slate-300">${message}</p>
+        `;
+
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.className = 'flex flex-col gap-2 p-6 pt-0';
+
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-full py-3 px-4 bg-primary text-white rounded-xl font-medium hover:bg-primary-hover transition-colors active:scale-[0.98]';
+            btn.textContent = opt.label;
+            btn.onclick = () => {
+                document.body.removeChild(overlay);
+                resolve(opt.value);
+            };
+            buttonsContainer.appendChild(btn);
+        });
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'w-full py-3 px-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors active:scale-[0.98] mt-2';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.onclick = () => {
+            document.body.removeChild(overlay);
+            resolve(null);
+        };
+        buttonsContainer.appendChild(cancelBtn);
+
+        dialog.appendChild(header);
+        dialog.appendChild(buttonsContainer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+    });
+};
+
 export const syncService = {
+    async createNewCloudFile() {
+        try {
+            if (!('showSaveFilePicker' in window)) {
+                throw new Error('File System Access API is not supported in this browser.');
+            }
+
+            const fileHandle = await (window as any).showSaveFilePicker({
+                suggestedName: 'incometrack-sync.json',
+                id: 'finance-app-sync', // Remembers the last selected directory
+                types: [
+                    {
+                        description: 'JSON Files',
+                        accept: {
+                            'application/json': ['.json'],
+                        },
+                    },
+                ],
+            });
+
+            // Save the handle
+            let settings = await db.settings.get('default');
+            if (!settings) {
+                settings = {
+                    id: 'default',
+                    currency: 'GBP',
+                    taxYear: '2024-2025',
+                    icloudSync: true,
+                    cloudHandle: fileHandle,
+                    updatedAt: Date.now()
+                };
+                await db.settings.add(settings);
+            } else {
+                settings.icloudSync = true;
+                settings.cloudHandle = fileHandle;
+                settings.iosFallbackSync = false;
+                settings.updatedAt = Date.now();
+                await db.settings.put(settings);
+            }
+
+            useStore.getState().setSyncStatus('connected');
+
+            // Initial sync immediately after connecting
+            await this.sync();
+
+            return true;
+
+        } catch (error: any) {
+            console.error('Failed to create new cloud file:', error);
+            if (error.name !== 'AbortError') {
+                alert(error.message || 'An error occurred while creating the sync file.');
+            }
+            return false;
+        }
+    },
+
     async connectCloud() {
         try {
             if (!('showOpenFilePicker' in window)) {
                 // iOS Safari / Unsupported browser fallback
+                const choice = await promptOptions(
+                    'Setup iCloud Sync',
+                    'Would you like to start fresh or link an existing sync file?',
+                    [
+                        { label: 'Download Initial Sync File', value: 'create' },
+                        { label: 'Link Existing Sync File', value: 'link' }
+                    ]
+                );
+
+                if (!choice) return false;
+
+                if (choice === 'create') {
+                    alert('Download this file and move it to your shared iCloud folder to begin syncing.');
+
+                    let settings = await db.settings.get('default');
+                    if (!settings) {
+                        settings = {
+                            id: 'default',
+                            currency: 'GBP',
+                            taxYear: '2024-2025',
+                            icloudSync: true,
+                            iosFallbackSync: true,
+                            updatedAt: Date.now()
+                        };
+                        await db.settings.add(settings);
+                    } else {
+                        settings.icloudSync = true;
+                        settings.iosFallbackSync = true;
+                        settings.updatedAt = Date.now();
+                        await db.settings.put(settings);
+                    }
+                    useStore.getState().setSyncStatus('connected');
+                    await this.performFallbackSync(undefined, true);
+                    return true;
+                }
+
                 return new Promise((resolve) => {
                     const input = document.createElement('input');
                     input.type = 'file';
@@ -77,6 +216,21 @@ export const syncService = {
                     };
                     input.click();
                 });
+            }
+
+            const choice = await promptOptions(
+                'Setup iCloud Sync',
+                'Would you like to create a new sync file or link an existing one?',
+                [
+                    { label: 'Create New Sync File', value: 'create' },
+                    { label: 'Link Existing Sync File', value: 'link' }
+                ]
+            );
+
+            if (!choice) return false;
+
+            if (choice === 'create') {
+                return await this.createNewCloudFile();
             }
 
             const [fileHandle] = await (window as any).showOpenFilePicker({
@@ -136,11 +290,11 @@ export const syncService = {
         }
     },
 
-    async performFallbackSync(file?: File) {
+    async performFallbackSync(file?: File, isInit: boolean = false) {
         try {
             let cloudData: Record<string, any[]> = {};
 
-            if (!file) {
+            if (!file && !isInit) {
                 // For manual syncs, prompt user to select the latest file again
                 file = await new Promise<File | undefined>((resolve) => {
                     const input = document.createElement('input');
@@ -155,14 +309,19 @@ export const syncService = {
                 });
             }
 
-            if (!file) return;
+            if (!file && !isInit) return;
 
-            const text = await file.text();
-            if (text.trim()) {
-                cloudData = JSON.parse(text);
+            if (file) {
+                const text = await file.text();
+                if (text.trim()) {
+                    cloudData = JSON.parse(text);
+                }
             }
 
-            const hasLocalChanges = await this.mergeData(cloudData);
+            let hasLocalChanges = true;
+            if (Object.keys(cloudData).length > 0) {
+                hasLocalChanges = await this.mergeData(cloudData);
+            }
 
             const currentData: any = {};
             const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
@@ -180,13 +339,17 @@ export const syncService = {
             }
 
             if (hasLocalChanges || Object.keys(cloudData).length === 0) {
-                const writable = new FallbackWritableFileStream(file.name || 'incometrack-sync.json');
+                const writable = new FallbackWritableFileStream(file?.name || 'incometrack-sync.json');
                 await writable.write(JSON.stringify(currentData, null, 2));
                 await writable.close();
 
-                alert('Sync complete! A new file has been downloaded. Please save it to your iCloud folder to overwrite the old one.');
+                if (!isInit) {
+                    alert('Sync complete! A new file has been downloaded. Please save it to your iCloud folder to overwrite the old one.');
+                }
             } else {
-                alert('Sync complete! No local changes to export.');
+                if (!isInit) {
+                    alert('Sync complete! No local changes to export.');
+                }
             }
 
             // Save to OPFS Safety Mirror
@@ -318,7 +481,10 @@ export const syncService = {
             }
 
             // Merge
-            const hasLocalChanges = await this.mergeData(cloudData);
+            let hasLocalChanges = true;
+            if (Object.keys(cloudData).length > 0) {
+                hasLocalChanges = await this.mergeData(cloudData);
+            }
 
             // Fetch current state of DB
             const currentData: any = {};

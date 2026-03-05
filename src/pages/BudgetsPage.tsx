@@ -104,7 +104,7 @@ export function BudgetsPage() {
                                         <div className="flex justify-between items-start">
                                             <div className="space-y-1">
                                                 <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">Paid from: <span className="text-slate-700 dark:text-slate-300 capitalize">{budget.paymentSource} Account</span></p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">Location: <span className="text-slate-700 dark:text-slate-300 capitalize">{budget.paymentSource}</span></p>
                                                 <div className="flex gap-4 mt-2">
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>

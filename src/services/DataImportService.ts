@@ -128,8 +128,7 @@ export class DataImportService {
                 }
             } else if (targetTable === 'budgets') {
                 if (!mappedRow.frequency) mappedRow.frequency = 'monthly';
-                if (!mappedRow.paymentSource) mappedRow.paymentSource = 'monthly';
-                if (!mappedRow.ownership) mappedRow.ownership = 'joint';
+                if (!mappedRow.paymentSource) mappedRow.paymentSource = 'Monthly Bills';
             } else if (targetTable === 'accounts') {
                 if (!mappedRow.ownerId) mappedRow.ownerId = 'default';
                 if (mappedRow.balance === undefined) mappedRow.balance = 0;

@@ -4,9 +4,12 @@ import { Header } from '../components/layout/Header';
 import { useNavigate } from 'react-router-dom';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 export function AddPaymentPage() {
     const navigate = useNavigate();
+
+    const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
 
     const [payee, setPayee] = useState('');
     const [amount, setAmount] = useState('');
@@ -116,26 +119,50 @@ export function AddPaymentPage() {
 
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Category</label>
-                        <input
-                            type="text"
-                            required
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
-                            placeholder="E.g. Groceries"
-                        />
+                        <div className="relative">
+                            <select
+                                required
+                                value={category}
+                                onChange={(e) => {
+                                    setCategory(e.target.value);
+                                    setSubCategory('');
+                                }}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
+                            >
+                                <option value="" disabled>Select a category</option>
+                                {Array.from(new Set(budgets.map(b => b.category))).sort().map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                <span className="material-symbols-outlined">expand_more</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Sub-category</label>
-                        <input
-                            type="text"
-                            required
-                            value={subCategory}
-                            onChange={(e) => setSubCategory(e.target.value)}
-                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
-                            placeholder="E.g. Food"
-                        />
+                        <div className="relative">
+                            <select
+                                required
+                                value={subCategory}
+                                onChange={(e) => setSubCategory(e.target.value)}
+                                disabled={!category}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-900"
+                            >
+                                <option value="" disabled>Select a sub-category</option>
+                                {budgets
+                                    .filter(b => b.category === category)
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map(budget => (
+                                        <option key={budget.id} value={budget.name}>{budget.name}</option>
+                                    ))
+                                }
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                <span className="material-symbols-outlined">expand_more</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

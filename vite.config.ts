@@ -7,28 +7,33 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: process.env.VITE_BASE_PATH || '/',
+  base: "/incometrack/",
   plugins: [
     react(),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         name: 'The Chaser - Tax Optimizer',
         short_name: 'The Chaser',
         description: 'Optimize your taxes and income tracking',
         theme_color: '#ffffff',
+        start_url: '/incometrack/',
+        display: 'standalone',
         icons: [
           {
-            src: 'vite.svg',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'vite.svg',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png'
+          },
+          {
+            src: 'apple-touch-icon.png'
           }
         ]
       }

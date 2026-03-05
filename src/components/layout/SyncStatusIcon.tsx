@@ -57,8 +57,9 @@ export function SyncStatusIcon() {
 
     return (
         <button
+            type="button"
             onClick={handleClick}
-            className={`p-2 rounded-full hover:bg-slate-200 dark:hover:bg-primary/10 transition-colors flex items-center justify-center`}
+            className={`p-2 rounded-full hover:bg-slate-200 dark:hover:bg-primary/10 transition-colors flex items-center justify-center cursor-pointer`}
             title={tooltip}
             aria-label={tooltip}
         >

@@ -141,7 +141,7 @@ export class DataImportService {
 
         // Perform bulk upsert in a transaction
         await db.transaction('rw', db[targetTable], async () => {
-            await db[targetTable].bulkPut(recordsToInsert);
+            await (db as any)[targetTable].bulkPut(recordsToInsert);
         });
 
         return recordsToInsert.length;

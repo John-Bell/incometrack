@@ -87,11 +87,13 @@ export const syncService = {
         }
     },
 
-    async mergeData(cloudData: any) {
+    async mergeData(cloudData: Record<string, any[]>) {
         let hasLocalChanges = false;
         const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
 
-        await db.transaction('rw', db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, async () => {
+        const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets];
+
+        await db.transaction('rw', tableList, async () => {
             for (const table of tables) {
                 const dexieTable = (db as any)[table];
                 const localRecords = await dexieTable.toArray();
@@ -99,7 +101,8 @@ export const syncService = {
 
                 const localMap = new Map(localRecords.map((r: any) => [r.id, r]));
 
-                for (const cloudRecord of cloudRecords) {
+                for (let i = 0; i < cloudRecords.length; i++) {
+                    const cloudRecord = cloudRecords[i] as any;
                     const localRecord = localMap.get(cloudRecord.id);
 
                     if (!localRecord) {
@@ -107,14 +110,14 @@ export const syncService = {
                         await dexieTable.put(cloudRecord);
                     } else {
                         // Record exists in both -> Compare updatedAt
-                        const localTime = localRecord.updatedAt || 0;
-                        const cloudTime = cloudRecord.updatedAt || 0;
+                        const localTime = (localRecord as any).updatedAt || 0;
+                        const cloudTime = (cloudRecord as any).updatedAt || 0;
 
                         if (cloudTime > localTime) {
                             // Cloud is newer -> Update local
                             // Do not overwrite cloudHandle in settings
-                            if (table === 'settings' && localRecord.cloudHandle) {
-                                cloudRecord.cloudHandle = localRecord.cloudHandle;
+                            if (table === 'settings' && (localRecord as any).cloudHandle) {
+                                (cloudRecord as any).cloudHandle = (localRecord as any).cloudHandle;
                             }
                             await dexieTable.put(cloudRecord);
                         } else if (localTime > cloudTime) {
@@ -149,7 +152,7 @@ export const syncService = {
             }
 
             // Read cloud file
-            let cloudData = {};
+            let cloudData: Record<string, any[]> = {};
             try {
                 const file = await handle.getFile();
                 const text = await file.text();

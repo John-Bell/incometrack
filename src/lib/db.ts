@@ -166,6 +166,10 @@ export const initDb = async () => {
     }
 };
 
+export const dbHooks = {
+    onLocalChange: () => {}
+};
+
 // Add hooks to automatically update the updatedAt timestamp
 const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
 
@@ -174,13 +178,19 @@ tablesToHook.forEach(tableName => {
         if (!obj.updatedAt) {
             obj.updatedAt = Date.now();
         }
+        dbHooks.onLocalChange();
     });
 
     (db as any)[tableName].hook('updating', function (modifications: any, _primKey: any, _obj: any, _transaction: any) {
+        dbHooks.onLocalChange();
         if (modifications.hasOwnProperty('updatedAt')) {
             return modifications;
         }
         return { ...modifications, updatedAt: Date.now() };
+    });
+
+    (db as any)[tableName].hook('deleting', function (_primKey: any, _obj: any, _transaction: any) {
+        dbHooks.onLocalChange();
     });
 });
 

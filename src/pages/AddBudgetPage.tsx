@@ -1,9 +1,32 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Icon } from '../components/ui/Icon';
 
 export function AddBudgetPage() {
     const navigate = useNavigate();
+    const [category, setCategory] = useState('');
+    const [name, setName] = useState('');
+    const [amount, setAmount] = useState('');
+    const [frequency, setFrequency] = useState('monthly');
+    const [paymentSource, setPaymentSource] = useState('');
+
+    const handleSave = async () => {
+        if (!category || !name || !amount || !paymentSource) return;
+
+        await db.budgets.add({
+            id: crypto.randomUUID(),
+            category,
+            name,
+            amount: parseFloat(amount) || 0,
+            frequency,
+            paymentSource
+        });
+        navigate('/budgets');
+    };
+
+    const calculatedAnnual = frequency === 'monthly' ? (parseFloat(amount) || 0) * 12 : (parseFloat(amount) || 0);
 
     return (
         <AppLayout hideBottomNav>
@@ -17,7 +40,7 @@ export function AddBudgetPage() {
                         <Icon name="arrow_back" className="text-slate-700 dark:text-primary" />
                     </button>
                     <h1 className="text-xl font-bold ml-2 flex-1 text-slate-900 dark:text-slate-100">Add Budget Item</h1>
-                    <button className="p-2 text-primary font-bold text-sm uppercase tracking-wider hover:opacity-80 transition-opacity">
+                    <button onClick={handleSave} className="p-2 text-primary font-bold text-sm uppercase tracking-wider hover:opacity-80 transition-opacity">
                         Save
                     </button>
                 </div>
@@ -27,7 +50,7 @@ export function AddBudgetPage() {
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Category</label>
                         <div className="relative">
-                            <select defaultValue="" className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
                                 <option disabled value="">Select a category</option>
                                 <option value="housing">Housing</option>
                                 <option value="utilities">Utilities</option>
@@ -46,6 +69,8 @@ export function AddBudgetPage() {
                             className="w-full rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400"
                             placeholder="e.g. Weekly Food Shop"
                             type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                         />
                     </div>
 
@@ -60,14 +85,16 @@ export function AddBudgetPage() {
                                     placeholder="0.00"
                                     step="0.01"
                                     type="number"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
                                 />
                             </div>
                         </div>
                         <div className="space-y-2">
                             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Frequency</label>
                             <div className="flex p-1 bg-slate-200 dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10">
-                                <button className="flex-1 py-3 text-xs font-bold rounded-lg bg-primary text-background-dark shadow-sm">Monthly</button>
-                                <button className="flex-1 py-3 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-400 hover:bg-white/10 transition-colors">Annual</button>
+                                <button onClick={() => setFrequency('monthly')} className={`flex-1 py-3 text-xs font-bold rounded-lg shadow-sm transition-colors ${frequency === 'monthly' ? 'bg-primary text-background-dark' : 'text-slate-600 dark:text-slate-400 hover:bg-white/10'}`}>Monthly</button>
+                                <button onClick={() => setFrequency('annual')} className={`flex-1 py-3 text-xs font-bold rounded-lg transition-colors ${frequency === 'annual' ? 'bg-primary text-background-dark' : 'text-slate-600 dark:text-slate-400 hover:bg-white/10'}`}>Annual</button>
                             </div>
                         </div>
                     </div>
@@ -76,7 +103,7 @@ export function AddBudgetPage() {
                     <div className="bg-primary/10 dark:bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Annualised Equivalent</p>
-                            <p className="text-2xl font-bold text-slate-900 dark:text-primary">£0.00</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-primary">£{calculatedAnnual.toFixed(2)}</p>
                         </div>
                         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                             <Icon name="analytics" className="text-2xl" />
@@ -87,7 +114,7 @@ export function AddBudgetPage() {
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
                         <div className="relative">
-                            <select name="paymentSource" defaultValue="" className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                            <select name="paymentSource" value={paymentSource} onChange={(e) => setPaymentSource(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
                                 <option disabled value="">Select a location</option>
                                 <option value="Groceries / Incidentals">Groceries / Incidentals</option>
                                 <option value="Monthly Bills">Monthly Bills</option>
@@ -100,7 +127,7 @@ export function AddBudgetPage() {
 
                 {/* Sticky Footer */}
                 <div className="p-4 bg-white dark:bg-background-dark border-t border-slate-200 dark:border-primary/10 sticky bottom-0">
-                    <button className="w-full py-4 bg-primary text-background-dark font-bold rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+                    <button onClick={handleSave} className="w-full py-4 bg-primary text-background-dark font-bold rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
                         <Icon name="add_circle" className="text-xl" />
                         Add Budget Item
                     </button>

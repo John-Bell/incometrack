@@ -2,12 +2,7 @@ import { db } from '@/lib/db';
 
 export interface BackupData {
     version: number;
-    data: {
-        profile: any[];
-        accounts: any[];
-        incomes: any[];
-        scenarios: any[];
-    };
+    data: Record<string, any[]>;
 }
 
 export const exportDatabase = async () => {
@@ -19,8 +14,22 @@ export const exportDatabase = async () => {
                 accounts: await db.accounts.toArray(),
                 incomes: await db.incomes.toArray(),
                 scenarios: await db.scenarios.toArray(),
+                settings: await db.settings.toArray(),
+                monthlyArchives: await db.monthlyArchives.toArray(),
+                notifications: await db.notifications.toArray(),
+                taxRules: await db.taxRules.toArray(),
+                transactions: await db.transactions.toArray(),
+                budgets: await db.budgets.toArray(),
             }
         };
+
+        // Remove cloudHandle from settings before stringifying to avoid serialization issues
+        if (backup.data.settings) {
+            backup.data.settings = backup.data.settings.map((s: any) => {
+                const { cloudHandle, ...rest } = s;
+                return rest;
+            });
+        }
 
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
         const suggestedName = `incometrack-backup-${new Date().toISOString().split('T')[0]}.json`;
@@ -99,23 +108,35 @@ export const importDatabase = async () => {
         }
 
         const contents = await file.text();
-        const backup: BackupData = JSON.parse(contents);
+        const backupData: any = JSON.parse(contents);
 
-        if (backup.version !== 1) {
-            throw new Error(`Unsupported backup version: ${backup.version}`);
+        let parsedData: any;
+
+        if (backupData.version && backupData.data) {
+            if (backupData.version !== 1) {
+                throw new Error(`Unsupported backup version: ${backupData.version}`);
+            }
+            parsedData = backupData.data;
+        } else if (backupData.profile && Array.isArray(backupData.profile)) {
+            parsedData = backupData;
+        } else {
+            throw new Error('Unrecognized backup format');
         }
 
-        // Wrap in a transaction to ensure atomic restore
-        await db.transaction('rw', db.profile, db.accounts, db.incomes, db.scenarios, async () => {
-            await db.profile.clear();
-            await db.accounts.clear();
-            await db.incomes.clear();
-            await db.scenarios.clear();
+        const tables = [
+            'profile', 'accounts', 'incomes', 'scenarios', 'settings',
+            'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'
+        ];
+        const dexieTables = tables.map(t => (db as any)[t]);
 
-            await db.profile.bulkAdd(backup.data.profile || []);
-            await db.accounts.bulkAdd(backup.data.accounts || []);
-            await db.incomes.bulkAdd(backup.data.incomes || []);
-            await db.scenarios.bulkAdd(backup.data.scenarios || []);
+        // Wrap in a transaction to ensure atomic restore
+        await db.transaction('rw', dexieTables, async () => {
+            for (const table of tables) {
+                if (parsedData[table]) {
+                    await (db as any)[table].clear();
+                    await (db as any)[table].bulkAdd(parsedData[table]);
+                }
+            }
         });
 
         return true;

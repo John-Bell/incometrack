@@ -77,6 +77,20 @@ const promptOptions = (title: string, message: string, options: { label: string,
 };
 
 export const syncService = {
+    _syncTimeout: null as ReturnType<typeof setTimeout> | null,
+
+    autoSync() {
+        if (this._syncTimeout) {
+            clearTimeout(this._syncTimeout);
+        }
+        this._syncTimeout = setTimeout(async () => {
+            const status = useStore.getState().syncStatus;
+            if (status === 'connected') {
+                await this.sync();
+            }
+        }, 2000);
+    },
+
     async createNewCloudFile() {
         try {
             if (!('showSaveFilePicker' in window)) {

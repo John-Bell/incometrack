@@ -19,6 +19,7 @@ import { EditPaymentPage } from '@/pages/EditPaymentPage';
 import { ImportProcessor } from '@/pages/ImportProcessor';
 import { useStore } from '@/store/useStore';
 import { syncService } from '@/services/syncService';
+import { dbHooks } from '@/lib/db';
 
 function AppRoutes() {
   const { isHydrated, profile, initStore } = useStore();
@@ -28,6 +29,9 @@ function AppRoutes() {
     initStore().then(() => {
       // Attempt to reconnect to cloud sync after store is hydrated
       syncService.reconnect();
+
+      // Wire up auto-sync on local DB changes
+      dbHooks.onLocalChange = () => syncService.autoSync();
     });
   }, [initStore]);
 

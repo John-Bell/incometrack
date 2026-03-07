@@ -34,19 +34,6 @@ export const exportDatabase = async () => {
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
         const suggestedName = `incometrack-backup-${new Date().toISOString().split('T')[0]}.json`;
 
-        if (!('showSaveFilePicker' in window)) {
-            // Fallback for browsers that don't support showSaveFilePicker (like iOS Safari)
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = suggestedName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            return true;
-        }
-
         const fileHandle = await (window as any).showSaveFilePicker({
             suggestedName,
             types: [
@@ -83,38 +70,17 @@ export const importDatabase = async () => {
     try {
         let file: File;
 
-        if (!('showOpenFilePicker' in window)) {
-            // Fallback for browsers that don't support showOpenFilePicker (like iOS Safari)
-            file = await new Promise<File>((resolve, reject) => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = '.json,.chaser';
-                input.onchange = (e: any) => {
-                    const selectedFile = e.target.files[0];
-                    if (selectedFile) {
-                        resolve(selectedFile);
-                    } else {
-                        reject(new Error('No file selected'));
-                    }
-                };
-                input.oncancel = () => {
-                    reject(new Error('File selection cancelled'));
-                };
-                input.click();
-            });
-        } else {
-            const [fileHandle] = await (window as any).showOpenFilePicker({
-                types: [
-                    {
-                        description: 'JSON Files',
-                        accept: {
-                            'application/json': ['.json'],
-                        },
+        const [fileHandle] = await (window as any).showOpenFilePicker({
+            types: [
+                {
+                    description: 'JSON Files',
+                    accept: {
+                        'application/json': ['.json'],
                     },
-                ],
-            });
-            file = await fileHandle.getFile();
-        }
+                },
+            ],
+        });
+        file = await fileHandle.getFile();
 
         const contents = await file.text();
         const backupData: any = JSON.parse(contents);

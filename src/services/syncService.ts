@@ -61,7 +61,12 @@ export const syncService = {
         this._syncTimeout = setTimeout(async () => {
             const status = useStore.getState().syncStatus;
             if (status === 'connected') {
-                await this.sync();
+                if ((window.navigator as any).standalone) {
+                    // iOS PWA requires a user gesture to write files.
+                    useStore.getState().setSyncStatus('permission_needed');
+                } else {
+                    await this.sync();
+                }
             }
         }, 2000);
     },
@@ -353,9 +358,18 @@ export const syncService = {
                 });
             }
 
-            const writable = await handle.createWritable();
-            await writable.write(JSON.stringify(currentData, null, 2));
-            await writable.close();
+            try {
+                const writable = await handle.createWritable();
+                await writable.write(JSON.stringify(currentData, null, 2));
+                await writable.close();
+            } catch (writeError: any) {
+                if (writeError.name === 'QuotaExceededError' || (writeError.message && writeError.message.toLowerCase().includes('quota'))) {
+                    alert('Storage quota exceeded. Please free up space on your device.');
+                    throw writeError;
+                } else {
+                    throw writeError;
+                }
+            }
 
             // Save to OPFS Safety Mirror
             await this.saveToOPFS(currentData);

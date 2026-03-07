@@ -59,9 +59,18 @@ export const exportDatabase = async () => {
             ],
         });
 
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
+        try {
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } catch (writeError: any) {
+            if (writeError.name === 'QuotaExceededError' || (writeError.message && writeError.message.toLowerCase().includes('quota'))) {
+                alert('Storage quota exceeded. Please free up space on your device.');
+                throw writeError;
+            } else {
+                throw writeError;
+            }
+        }
 
         return true;
     } catch (error) {

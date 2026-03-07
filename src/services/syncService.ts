@@ -68,10 +68,6 @@ export const syncService = {
 
     async createNewCloudFile() {
         try {
-            if (!('showSaveFilePicker' in window)) {
-                throw new Error('File System Access API is not supported in this browser.');
-            }
-
             const fileHandle = await (window as any).showSaveFilePicker({
                 suggestedName: 'incometrack-sync.json',
                 id: 'finance-app-sync', // Remembers the last selected directory
@@ -144,7 +140,14 @@ export const syncService = {
 
     async connectCloud() {
         try {
-
+            if (!window.isSecureContext || !('showOpenFilePicker' in window) || !('showSaveFilePicker' in window)) {
+                await promptOptions(
+                    'Installation Guide',
+                    'To enable cloud sync, please install this app to your Home Screen: Tap the Share icon, then select "Add to Home Screen". Note: Secure context (HTTPS) is required.',
+                    [{ label: 'Got it', value: 'ok' }]
+                );
+                return false;
+            }
 
             const choice = await promptOptions(
                 'Setup iCloud Sync',

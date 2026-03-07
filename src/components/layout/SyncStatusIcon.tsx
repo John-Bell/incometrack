@@ -25,9 +25,6 @@ export function SyncStatusIcon() {
                      // If requesting permission fails entirely (e.g., stale handle), trigger manual pick
                      await syncService.connectCloud();
                 }
-            } else if (settings && (settings as any).iosFallbackSync) {
-                useStore.getState().setSyncStatus('connected');
-                syncService.sync().catch(console.error);
             }
         } else if (syncStatus === 'connected') {
             // Force a manual sync when tapped if already connected

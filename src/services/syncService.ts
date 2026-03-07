@@ -1,32 +1,7 @@
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 
-class FallbackWritableFileStream {
-    private chunks: BlobPart[] = [];
-    private filename: string;
 
-    constructor(filename: string) {
-        this.filename = filename;
-    }
-
-    async write(data: BlobPart | { type: string, data: BlobPart }) {
-        if (typeof data === 'object' && 'data' in data) {
-             this.chunks.push(data.data);
-        } else {
-             this.chunks.push(data);
-        }
-    }
-
-    async close() {
-        const blob = new Blob(this.chunks, { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = this.filename;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-}
 
 // Helper for custom UI prompts since native confirm/prompt is limited
 const promptOptions = (title: string, message: string, options: { label: string, value: string }[]): Promise<string | null> => {
@@ -110,6 +85,28 @@ export const syncService = {
                 ],
             });
 
+
+            // Fetch current state of DB to write initial data
+            const currentData: any = {};
+            const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
+
+            for (const table of tables) {
+                currentData[table] = await (db as any)[table].toArray();
+            }
+
+            // Remove cloudHandle from settings before stringifying
+            if (currentData.settings) {
+                currentData.settings = currentData.settings.map((s: any) => {
+                    const { cloudHandle, ...rest } = s;
+                    return rest;
+                });
+            }
+
+            // Write initial state to the newly created file using Native File System Access API
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify(currentData, null, 2));
+            await writable.close();
+
             // Save the handle
             let settings = await db.settings.get('default');
             if (!settings) {
@@ -125,7 +122,6 @@ export const syncService = {
             } else {
                 settings.icloudSync = true;
                 settings.cloudHandle = fileHandle;
-                settings.iosFallbackSync = false;
                 settings.updatedAt = Date.now();
                 await db.settings.put(settings);
             }
@@ -148,89 +144,7 @@ export const syncService = {
 
     async connectCloud() {
         try {
-            if (!('showOpenFilePicker' in window)) {
-                // iOS Safari / Unsupported browser fallback
-                const choice = await promptOptions(
-                    'Setup iCloud Sync',
-                    'Would you like to start fresh or link an existing sync file?',
-                    [
-                        { label: 'Download Initial Sync File', value: 'create' },
-                        { label: 'Link Existing Sync File', value: 'link' }
-                    ]
-                );
 
-                if (!choice) return false;
-
-                if (choice === 'create') {
-                    alert('Download this file and move it to your shared iCloud folder to begin syncing.');
-
-                    let settings = await db.settings.get('default');
-                    if (!settings) {
-                        settings = {
-                            id: 'default',
-                            currency: 'GBP',
-                            taxYear: '2024-2025',
-                            icloudSync: true,
-                            iosFallbackSync: true,
-                            updatedAt: Date.now()
-                        };
-                        await db.settings.add(settings);
-                    } else {
-                        settings.icloudSync = true;
-                        settings.iosFallbackSync = true;
-                        settings.updatedAt = Date.now();
-                        await db.settings.put(settings);
-                    }
-                    useStore.getState().setSyncStatus('connected');
-                    await this.performFallbackSync(undefined, true);
-                    return true;
-                }
-
-                return new Promise((resolve) => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    input.onchange = async (e: any) => {
-                        const file = e.target.files[0];
-                        if (!file) {
-                            resolve(false);
-                            return;
-                        }
-
-                        try {
-                            let settings = await db.settings.get('default');
-                            if (!settings) {
-                                settings = {
-                                    id: 'default',
-                                    currency: 'GBP',
-                                    taxYear: '2024-2025',
-                                    icloudSync: true,
-                                    iosFallbackSync: true,
-                                    updatedAt: Date.now()
-                                };
-                                await db.settings.add(settings);
-                            } else {
-                                settings.icloudSync = true;
-                                settings.iosFallbackSync = true;
-                                settings.updatedAt = Date.now();
-                                await db.settings.put(settings);
-                            }
-
-                            useStore.getState().setSyncStatus('connected');
-
-                            // Perform initial sync using the selected file
-                            await this.performFallbackSync(file);
-
-                            resolve(true);
-                        } catch (err: any) {
-                            console.error('Fallback sync failed:', err);
-                            alert('Failed to process sync file.');
-                            resolve(false);
-                        }
-                    };
-                    input.click();
-                });
-            }
 
             const choice = await promptOptions(
                 'Setup iCloud Sync',
@@ -284,7 +198,6 @@ export const syncService = {
             } else {
                 settings.icloudSync = true;
                 settings.cloudHandle = fileHandle;
-                settings.iosFallbackSync = false;
                 settings.updatedAt = Date.now();
                 await db.settings.put(settings);
             }
@@ -304,84 +217,7 @@ export const syncService = {
         }
     },
 
-    async performFallbackSync(file?: File, isInit: boolean = false) {
-        try {
-            let cloudData: Record<string, any[]> = {};
 
-            if (!file && !isInit) {
-                // For manual syncs, prompt user to select the latest file again
-                file = await new Promise<File | undefined>((resolve) => {
-                    const input = document.createElement('input');
-                    input.type = 'file';
-                    input.accept = '.json';
-                    input.onchange = (e: any) => resolve(e.target.files[0]);
-                    input.oncancel = () => resolve(undefined); // handle cancel if possible
-
-                    // Safari iOS might not fire oncancel, so we rely on change.
-                    // If user cancels, it will hang the promise, but that's a known limitation of <input type=file>
-                    input.click();
-                });
-            }
-
-            if (!file && !isInit) return;
-
-            if (file) {
-                const text = await file.text();
-                if (text.trim()) {
-                    cloudData = JSON.parse(text);
-                }
-            }
-
-            let hasLocalChanges = true;
-            if (Object.keys(cloudData).length > 0) {
-                hasLocalChanges = await this.mergeData(cloudData);
-            }
-
-            const currentData: any = {};
-            const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
-
-            for (const table of tables) {
-                currentData[table] = await (db as any)[table].toArray();
-            }
-
-            // Remove internal handles
-            if (currentData.settings) {
-                currentData.settings = currentData.settings.map((s: any) => {
-                    const { cloudHandle, ...rest } = s;
-                    return rest;
-                });
-            }
-
-            if (hasLocalChanges || Object.keys(cloudData).length === 0) {
-                const writable = new FallbackWritableFileStream(file?.name || 'incometrack-sync.json');
-                await writable.write(JSON.stringify(currentData, null, 2));
-                await writable.close();
-
-                if (!isInit) {
-                    alert('Sync complete! A new file has been downloaded. Please save it to your iCloud folder to overwrite the old one.');
-                }
-            } else {
-                if (!isInit) {
-                    alert('Sync complete! No local changes to export.');
-                }
-            }
-
-            // Save to OPFS Safety Mirror
-            await this.saveToOPFS(currentData);
-
-            useStore.getState().setSyncStatus('connected');
-            useStore.getState().setLastSynced(Date.now());
-
-            const settings = await db.settings.get('default');
-            if (settings) {
-                settings.lastSynced = Date.now();
-                await db.settings.put(settings);
-            }
-        } catch (e: any) {
-            console.error('Fallback sync processing failed:', e);
-            alert('Failed to sync with the selected file.');
-        }
-    },
 
     async saveToOPFS(data: any) {
         try {
@@ -465,11 +301,7 @@ export const syncService = {
 
         if (!settings) return;
 
-        // Use iOS fallback flow if active
-        if ((settings as any).iosFallbackSync) {
-            await this.performFallbackSync();
-            return;
-        }
+
 
         if (!settings.cloudHandle) return;
 
@@ -495,9 +327,8 @@ export const syncService = {
             }
 
             // Merge
-            let hasLocalChanges = true;
             if (Object.keys(cloudData).length > 0) {
-                hasLocalChanges = await this.mergeData(cloudData);
+                await this.mergeData(cloudData);
             }
 
             // Fetch current state of DB
@@ -509,19 +340,19 @@ export const syncService = {
             }
 
             // Write back to cloud if we had newer local records or cloud file was empty
-            if (hasLocalChanges || Object.keys(cloudData).length === 0) {
-                // Remove cloudHandle from settings before stringifying to avoid serialization issues
-                if (currentData.settings) {
-                    currentData.settings = currentData.settings.map((s: any) => {
-                        const { cloudHandle, ...rest } = s;
-                        return rest;
-                    });
-                }
 
-                const writable = await handle.createWritable();
-                await writable.write(JSON.stringify(currentData, null, 2));
-                await writable.close();
+            // In-place overwrite for iPadOS 2026 Native File System Access
+            // Remove cloudHandle from settings before stringifying to avoid serialization issues
+            if (currentData.settings) {
+                currentData.settings = currentData.settings.map((s: any) => {
+                    const { cloudHandle, ...rest } = s;
+                    return rest;
+                });
             }
+
+            const writable = await handle.createWritable();
+            await writable.write(JSON.stringify(currentData, null, 2));
+            await writable.close();
 
             // Save to OPFS Safety Mirror
             await this.saveToOPFS(currentData);
@@ -544,13 +375,7 @@ export const syncService = {
         try {
             const settings = await db.settings.get('default');
 
-            if (settings && (settings as any).iosFallbackSync) {
-                useStore.getState().setSyncStatus('connected');
-                if (settings.lastSynced) {
-                    useStore.getState().setLastSynced(settings.lastSynced);
-                }
-                return;
-            }
+
 
             if (settings && settings.cloudHandle) {
                 const handle = settings.cloudHandle;

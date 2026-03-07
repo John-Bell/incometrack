@@ -61,12 +61,7 @@ export const syncService = {
         this._syncTimeout = setTimeout(async () => {
             const status = useStore.getState().syncStatus;
             if (status === 'connected') {
-                if ((window.navigator as any).standalone) {
-                    // iOS PWA requires a user gesture to write files.
-                    useStore.getState().setSyncStatus('permission_needed');
-                } else {
-                    await this.sync();
-                }
+                await this.sync();
             }
         }, 2000);
     },
@@ -145,7 +140,7 @@ export const syncService = {
 
     async connectCloud() {
         try {
-            if (!window.isSecureContext || !('showOpenFilePicker' in window) || !('showSaveFilePicker' in window) || !(window.navigator as any).standalone) {
+            if (!window.isSecureContext || !('showOpenFilePicker' in window) || !('showSaveFilePicker' in window)) {
                 await promptOptions(
                     'Installation Guide',
                     'To enable cloud sync, please install this app to your Home Screen: Tap the Share icon, then select "Add to Home Screen". Note: Secure context (HTTPS) is required.',

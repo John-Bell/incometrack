@@ -18,25 +18,26 @@ export default defineConfig({
         name: 'The Chaser - Tax Optimizer',
         short_name: 'The Chaser',
         description: 'Optimize your taxes and income tracking',
+        background_color: '#ffffff',
         theme_color: '#ffffff',
         start_url: '/incometrack/',
         scope: '/incometrack/',
         display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: '/incometrack/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: 'pwa-512x512.png',
+            src: '/incometrack/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: 'apple-touch-icon.png'
+            src: '/incometrack/apple-touch-icon.png'
           }
         ]
       }

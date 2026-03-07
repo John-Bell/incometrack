@@ -140,7 +140,7 @@ export const syncService = {
 
     async connectCloud() {
         try {
-            if (!window.isSecureContext || !('showOpenFilePicker' in window) || !('showSaveFilePicker' in window)) {
+            if (!window.isSecureContext || !('showOpenFilePicker' in window) || !('showSaveFilePicker' in window) || !(window.navigator as any).standalone) {
                 await promptOptions(
                     'Installation Guide',
                     'To enable cloud sync, please install this app to your Home Screen: Tap the Share icon, then select "Add to Home Screen". Note: Secure context (HTTPS) is required.',

@@ -4,14 +4,21 @@ import { Button } from '@/components/ui/Button';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
-import { importDatabase } from '@/services/backupService';
+import { db } from '@/lib/db';
+import { getDefaultTaxYear } from '@/constants/taxConstants';
 
 export function SimplifiedAppSetupPage() {
     const navigate = useNavigate();
-    const { setProfile, initStore } = useStore();
+    const { setProfile } = useStore();
     const [partner1Name, setPartner1Name] = useState('');
     const [partner2Name, setPartner2Name] = useState('');
-    const [isImporting, setIsImporting] = useState(false);
+    const [syncServerUrl, setSyncServerUrl] = useState('');
+    const [syncPassphrase, setSyncPassphrase] = useState('');
+    const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
+
+    // For the Restore section
+    const [restoreSyncServerUrl, setRestoreSyncServerUrl] = useState('');
+    const [restoreSyncPassphrase, setRestoreSyncPassphrase] = useState('');
 
     const handleGetStarted = async () => {
         if (!partner1Name.trim()) return; // Require at least one name
@@ -24,21 +31,24 @@ export function SimplifiedAppSetupPage() {
             createdAt: Date.now()
         });
 
+        const existingSettings = await db.settings.get('default');
+
+        await db.settings.put({
+            id: 'default',
+            currency: existingSettings?.currency || 'GBP',
+            taxYear: existingSettings?.taxYear || getDefaultTaxYear(),
+            icloudSync: existingSettings?.icloudSync || false,
+            syncServerUrl: syncServerUrl.trim() || undefined,
+            syncPassphrase: syncPassphrase.trim() || undefined,
+            updatedAt: Date.now()
+        });
+
         navigate('/');
     };
 
-    const handleImport = async () => {
-        try {
-            setIsImporting(true);
-            await importDatabase();
-            await initStore(); // Refresh the store with imported data
-            navigate('/');
-        } catch (error) {
-            console.error('Failed to import config:', error);
-            alert('Failed to import configuration file. Please assure it is a valid backup.');
-        } finally {
-            setIsImporting(false);
-        }
+    const handleRestore = async () => {
+        // Empty fetch/restore logic for now
+        console.log("Fetching and Restoring backup from:", restoreSyncServerUrl);
     };
 
     return (
@@ -114,6 +124,52 @@ export function SimplifiedAppSetupPage() {
                                 />
                             </div>
 
+                            {/* Advanced / Remote Sync Accordion */}
+                            <div className="pt-2 border-t border-primary/10">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
+                                    className="flex items-center justify-between w-full text-left focus:outline-none group cursor-pointer"
+                                >
+                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">
+                                        Advanced / Remote Sync (Optional)
+                                    </span>
+                                    <Icon
+                                        name={isAdvancedExpanded ? "expand_less" : "expand_more"}
+                                        className="text-slate-400 group-hover:text-primary transition-colors"
+                                    />
+                                </button>
+
+                                {isAdvancedExpanded && (
+                                    <div className="mt-4 space-y-4">
+                                        <div className="space-y-3">
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                Sync Server URL
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. https://sync.yourdomain.xyz/sync"
+                                                value={syncServerUrl}
+                                                onChange={(e) => setSyncServerUrl(e.target.value)}
+                                                className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                            />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                                Encryption Passphrase
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. four random words"
+                                                value={syncPassphrase}
+                                                onChange={(e) => setSyncPassphrase(e.target.value)}
+                                                className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             <Button
                                 onClick={handleGetStarted}
                                 disabled={!partner1Name.trim()}
@@ -134,30 +190,49 @@ export function SimplifiedAppSetupPage() {
                         <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
                     </div>
 
-                    {/* Load Existing Section */}
+                    {/* Restore from Remote Server Section */}
                     <section className="space-y-4">
                         <div className="flex flex-col items-center text-center space-y-3">
-                            <h3 className="font-bold text-lg">Load Existing Configuration</h3>
+                            <h3 className="font-bold text-lg">Restore from Remote Server</h3>
                             <p className="text-sm text-slate-600 dark:text-slate-400 px-4">
-                                Already have a setup? Import your config file to restore your names, accounts, and full history instantly.
+                                Already have a setup? Connect to your sync server to restore your names, accounts, and full history instantly.
                             </p>
                         </div>
 
-                        <button
-                            onClick={handleImport}
-                            disabled={isImporting}
-                            className="w-full group bg-slate-100 dark:bg-[#111816] border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5 py-8 rounded-xl transition-all flex flex-col items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Icon name={isImporting ? "hourglass_empty" : "cloud_download"} className={`text-primary text-3xl ${isImporting ? 'animate-spin' : ''}`} />
+                        <div className="bg-slate-100 dark:bg-[#111816] border-2 border-primary/30 rounded-xl p-6 space-y-5 transition-all">
+                             <div className="space-y-3">
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    Sync Server URL
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. https://sync.yourdomain.xyz/sync"
+                                    value={restoreSyncServerUrl}
+                                    onChange={(e) => setRestoreSyncServerUrl(e.target.value)}
+                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                />
                             </div>
-                            <span className="font-bold text-slate-900 dark:text-slate-100">
-                                {isImporting ? 'Importing...' : 'Import Config File'}
-                            </span>
-                            <span className="text-xs text-slate-500">
-                                .json or .chaser files supported
-                            </span>
-                        </button>
+                            <div className="space-y-3">
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    Encryption Passphrase
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. four random words"
+                                    value={restoreSyncPassphrase}
+                                    onChange={(e) => setRestoreSyncPassphrase(e.target.value)}
+                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                />
+                            </div>
+                            <Button
+                                onClick={handleRestore}
+                                disabled={!restoreSyncServerUrl.trim() || !restoreSyncPassphrase.trim()}
+                                className="w-full bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 mt-4 text-base h-auto"
+                            >
+                                Fetch & Restore Backup
+                                <Icon name="cloud_download" className="font-bold" />
+                            </Button>
+                        </div>
                     </section>
                 </div>
             </div>

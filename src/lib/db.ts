@@ -61,6 +61,8 @@ export interface Settings {
     lastSynced?: number;
     updatedAt?: number;
     cloudHandle?: any; // FileSystemFileHandle
+    syncServerUrl?: string;
+    syncPassphrase?: string;
 }
 
 export interface MonthlyArchive {

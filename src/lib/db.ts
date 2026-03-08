@@ -63,6 +63,7 @@ export interface Settings {
     cloudHandle?: any; // FileSystemFileHandle
     syncServerUrl?: string;
     syncPassphrase?: string;
+    syncHeaderKey?: string;
 }
 
 export interface MonthlyArchive {

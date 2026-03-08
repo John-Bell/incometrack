@@ -55,4 +55,15 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'zustand'],
+          db: ['dexie', 'dexie-react-hooks'],
+          utils: ['papaparse', 'uuid', 'clsx', 'tailwind-merge']
+        }
+      }
+    }
+  }
 })

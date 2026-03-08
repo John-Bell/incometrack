@@ -14,11 +14,12 @@ export function SimplifiedAppSetupPage() {
     const [partner2Name, setPartner2Name] = useState('');
     const [syncServerUrl, setSyncServerUrl] = useState('');
     const [syncPassphrase, setSyncPassphrase] = useState('');
-    const [isAdvancedExpanded, setIsAdvancedExpanded] = useState(false);
+    const [syncHeaderKey, setSyncHeaderKey] = useState('');
 
     // For the Restore section
     const [restoreSyncServerUrl, setRestoreSyncServerUrl] = useState('');
     const [restoreSyncPassphrase, setRestoreSyncPassphrase] = useState('');
+    const [restoreSyncHeaderKey, setRestoreSyncHeaderKey] = useState('');
 
     const handleGetStarted = async () => {
         if (!partner1Name.trim()) return; // Require at least one name
@@ -40,6 +41,7 @@ export function SimplifiedAppSetupPage() {
             icloudSync: existingSettings?.icloudSync || false,
             syncServerUrl: syncServerUrl.trim() || undefined,
             syncPassphrase: syncPassphrase.trim() || undefined,
+            syncHeaderKey: syncHeaderKey.trim() || undefined,
             updatedAt: Date.now()
         });
 
@@ -124,50 +126,50 @@ export function SimplifiedAppSetupPage() {
                                 />
                             </div>
 
-                            {/* Advanced / Remote Sync Accordion */}
+                            {/* Advanced / Remote Sync */}
                             <div className="pt-2 border-t border-primary/10">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAdvancedExpanded(!isAdvancedExpanded)}
-                                    className="flex items-center justify-between w-full text-left focus:outline-none group cursor-pointer"
-                                >
-                                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">
-                                        Advanced / Remote Sync (Optional)
-                                    </span>
-                                    <Icon
-                                        name={isAdvancedExpanded ? "expand_less" : "expand_more"}
-                                        className="text-slate-400 group-hover:text-primary transition-colors"
-                                    />
-                                </button>
+                                <span className="block mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    Advanced / Remote Sync (Optional)
+                                </span>
 
-                                {isAdvancedExpanded && (
-                                    <div className="mt-4 space-y-4">
-                                        <div className="space-y-3">
-                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                                Sync Server URL
-                                            </label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. https://sync.yourdomain.xyz/sync"
-                                                value={syncServerUrl}
-                                                onChange={(e) => setSyncServerUrl(e.target.value)}
-                                                className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                                            />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                                Encryption Passphrase
-                                            </label>
-                                            <input
-                                                type="text"
-                                                placeholder="e.g. four random words"
-                                                value={syncPassphrase}
-                                                onChange={(e) => setSyncPassphrase(e.target.value)}
-                                                className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                                            />
-                                        </div>
+                                <div className="space-y-4">
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            Sync Server URL
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. https://sync.yourdomain.xyz/sync"
+                                            value={syncServerUrl}
+                                            onChange={(e) => setSyncServerUrl(e.target.value)}
+                                            className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                        />
                                     </div>
-                                )}
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            Header Key
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. my-secret-token"
+                                            value={syncHeaderKey}
+                                            onChange={(e) => setSyncHeaderKey(e.target.value)}
+                                            className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            Encryption Passphrase
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. four random words"
+                                            value={syncPassphrase}
+                                            onChange={(e) => setSyncPassphrase(e.target.value)}
+                                            className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <Button
@@ -200,7 +202,7 @@ export function SimplifiedAppSetupPage() {
                         </div>
 
                         <div className="bg-slate-100 dark:bg-[#111816] border-2 border-primary/30 rounded-xl p-6 space-y-5 transition-all">
-                             <div className="space-y-3">
+                            <div className="space-y-3">
                                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                     Sync Server URL
                                 </label>
@@ -209,6 +211,18 @@ export function SimplifiedAppSetupPage() {
                                     placeholder="e.g. https://sync.yourdomain.xyz/sync"
                                     value={restoreSyncServerUrl}
                                     onChange={(e) => setRestoreSyncServerUrl(e.target.value)}
+                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    Header Key
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. my-secret-token"
+                                    value={restoreSyncHeaderKey}
+                                    onChange={(e) => setRestoreSyncHeaderKey(e.target.value)}
                                     className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
                                 />
                             </div>

@@ -182,6 +182,7 @@ export const remoteSyncService = {
 
             const syncUrl = settings.syncServerUrl || (settings as any).syncUrl;
             const syncPassphrase = settings.syncPassphrase;
+            const syncHeaderKey = settings.syncHeaderKey;
 
             if (!syncUrl || !syncPassphrase) {
                 console.warn('Sync aborted: syncUrl or syncPassphrase is not configured.');
@@ -191,7 +192,12 @@ export const remoteSyncService = {
 
             // 1. Check Version
             let serverLastUpdated = 0;
-            const versionResponse = await fetch(`${syncUrl}/version`);
+            const customHeaders: Record<string, string> = {};
+            if (syncHeaderKey) {
+                customHeaders['x-chaser-token'] = syncHeaderKey;
+            }
+
+            const versionResponse = await fetch(`${syncUrl}/version`, { headers: customHeaders });
             if (versionResponse.ok) {
                 const versionData = await versionResponse.json();
                 serverLastUpdated = versionData.lastUpdated || 0;
@@ -207,7 +213,7 @@ export const remoteSyncService = {
 
             // 2. Pull & Merge (If Needed)
             if (serverLastUpdated > localLastSynced) {
-                const pullResponse = await fetch(syncUrl);
+                const pullResponse = await fetch(syncUrl, { headers: customHeaders });
                 if (pullResponse.ok) {
                     const buffer = await pullResponse.arrayBuffer();
                     if (buffer.byteLength > 0) {
@@ -244,6 +250,7 @@ export const remoteSyncService = {
                 const pushResponse = await fetch(syncUrl, {
                     method: 'POST',
                     headers: {
+                        ...customHeaders,
                         'Content-Type': 'application/octet-stream',
                     },
                     body: encryptedBlob,

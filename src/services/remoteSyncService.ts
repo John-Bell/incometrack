@@ -1,4 +1,5 @@
-import { db } from '@/lib/db';
+import { db, dbHooks } from '@/lib/db';
+import { useStore } from '@/store/useStore';
 
 /**
  * Derives a key from a passphrase using PBKDF2
@@ -37,6 +38,7 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
 
     const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets];
 
+    dbHooks.isSyncing = true;
     await db.transaction('rw', tableList, async () => {
         for (const table of tables) {
             const dexieTable = (db as any)[table];
@@ -79,6 +81,7 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
         }
     });
 
+    dbHooks.isSyncing = false;
     return hasLocalChanges;
 }
 
@@ -144,6 +147,29 @@ export async function decryptData(buffer: ArrayBuffer, passphrase: string): Prom
 // ==========================================
 
 export const remoteSyncService = {
+    _syncTimeout: null as ReturnType<typeof setTimeout> | null,
+
+    autoSync() {
+        if (this._syncTimeout) {
+            clearTimeout(this._syncTimeout);
+        }
+        this._syncTimeout = setTimeout(async () => {
+            const status = useStore.getState().syncStatus;
+            if (status === 'connected') {
+                await this.sync();
+            }
+        }, 2000);
+    },
+
+    async reconnect() {
+        // Just try to sync once on boot
+        try {
+            await this.sync();
+        } catch (e) {
+            // ignore
+        }
+    },
+
     async sync() {
         try {
             const settingsArray = await db.settings.toArray();
@@ -159,6 +185,7 @@ export const remoteSyncService = {
 
             if (!syncUrl || !syncPassphrase) {
                 console.warn('Sync aborted: syncUrl or syncPassphrase is not configured.');
+                useStore.getState().setSyncStatus('disconnected');
                 return false;
             }
 
@@ -231,9 +258,15 @@ export const remoteSyncService = {
             settings.lastSynced = Date.now();
             await db.settings.put(settings);
 
+            useStore.getState().setSyncStatus('connected');
+            useStore.getState().setLastSynced(Date.now());
+
             return true;
         } catch (error) {
             console.error('Sync failed:', error);
+            // We intentionally do not set status to 'disconnected' here.
+            // If the failure was just a temporary network drop, we don't want to
+            // break the autoSync background loop which only triggers if 'connected'
             throw error;
         }
     }

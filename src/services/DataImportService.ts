@@ -23,10 +23,10 @@ export class DataImportService {
                 Papa.parse(file, {
                     header: true,
                     skipEmptyLines: true,
-                    complete: (results) => {
+                    complete: (results: any) => {
                         resolve(results.data);
                     },
-                    error: (error) => {
+                    error: (error: any) => {
                         reject(error);
                     }
                 });

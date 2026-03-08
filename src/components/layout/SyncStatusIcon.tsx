@@ -1,35 +1,14 @@
 import { useStore } from '@/store/useStore';
-import { syncService } from '@/services/syncService';
+import { remoteSyncService } from '@/services/remoteSyncService';
 import { Icon } from '../ui/Icon';
-import { db } from '@/lib/db';
+
 
 export function SyncStatusIcon() {
     const { syncStatus, lastSynced } = useStore();
 
     const handleClick = async () => {
-        if (syncStatus === 'disconnected') {
-            await syncService.connectCloud();
-        } else if (syncStatus === 'permission_needed') {
-            const settings = await db.settings.get('default');
-            if (settings && settings.cloudHandle) {
-                try {
-                    const permission = await settings.cloudHandle.requestPermission({ mode: 'readwrite' });
-                    if (permission === 'granted') {
-                        useStore.getState().setSyncStatus('connected');
-                        syncService.sync().catch(console.error);
-                    } else {
-                        // iOS 2026 PWA behavior: If the OS drops the handle or denies permission, fallback to manual pick
-                        await syncService.connectCloud();
-                    }
-                } catch (err) {
-                     // If requesting permission fails entirely (e.g., stale handle), trigger manual pick
-                     await syncService.connectCloud();
-                }
-            }
-        } else if (syncStatus === 'connected') {
-            // Force a manual sync when tapped if already connected
-            syncService.sync().catch(console.error);
-        }
+        // Force a manual sync when tapped
+        remoteSyncService.sync().catch(console.error);
     };
 
     const getStatusDetails = () => {

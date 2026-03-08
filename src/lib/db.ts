@@ -168,7 +168,8 @@ export const initDb = async () => {
 };
 
 export const dbHooks = {
-    onLocalChange: () => {}
+    onLocalChange: () => { },
+    isSyncing: false
 };
 
 // Add hooks to automatically update the updatedAt timestamp
@@ -179,11 +180,15 @@ tablesToHook.forEach(tableName => {
         if (!obj.updatedAt) {
             obj.updatedAt = Date.now();
         }
-        dbHooks.onLocalChange();
+        if (!dbHooks.isSyncing) {
+            dbHooks.onLocalChange();
+        }
     });
 
     (db as any)[tableName].hook('updating', function (modifications: any, _primKey: any, _obj: any, _transaction: any) {
-        dbHooks.onLocalChange();
+        if (!dbHooks.isSyncing) {
+            dbHooks.onLocalChange();
+        }
         if (modifications.hasOwnProperty('updatedAt')) {
             return modifications;
         }
@@ -191,7 +196,9 @@ tablesToHook.forEach(tableName => {
     });
 
     (db as any)[tableName].hook('deleting', function (_primKey: any, _obj: any, _transaction: any) {
-        dbHooks.onLocalChange();
+        if (!dbHooks.isSyncing) {
+            dbHooks.onLocalChange();
+        }
     });
 });
 

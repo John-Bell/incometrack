@@ -1,32 +1,6 @@
 import { db } from '@/lib/db';
 
 /**
- * Utility to convert ArrayBuffer to Base64 string
- */
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    let binary = '';
-    const bytes = new Uint8Array(buffer);
-    const len = bytes.byteLength;
-    for (let i = 0; i < len; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return window.btoa(binary);
-}
-
-/**
- * Utility to convert Base64 string to Uint8Array
- */
-function base64ToUint8Array(base64: string): Uint8Array {
-    const binaryString = window.atob(base64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
-}
-
-/**
  * Derives a key from a passphrase using PBKDF2
  */
 async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
@@ -43,7 +17,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
         {
             name: 'PBKDF2',
             salt: salt as BufferSource,
-            iterations: 600000, // At least 600,000 as requested
+            iterations: 600000,
             hash: 'SHA-256',
         },
         passphraseKey,
@@ -54,10 +28,65 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 }
 
 // ==========================================
+// PART 2: Merge Logic
+// ==========================================
+
+export async function mergeData(cloudData: Record<string, any[]>): Promise<boolean> {
+    let hasLocalChanges = false;
+    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
+
+    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets];
+
+    await db.transaction('rw', tableList, async () => {
+        for (const table of tables) {
+            const dexieTable = (db as any)[table];
+            const localRecords = await dexieTable.toArray();
+            const cloudRecords = cloudData[table] || [];
+
+            const localMap = new Map(localRecords.map((r: any) => [r.id, r]));
+
+            for (let i = 0; i < cloudRecords.length; i++) {
+                const cloudRecord = cloudRecords[i] as any;
+                const localRecord = localMap.get(cloudRecord.id);
+
+                if (!localRecord) {
+                    // Record exists in cloud but not local -> Add it
+                    await dexieTable.put(cloudRecord);
+                } else {
+                    // Record exists in both -> Compare updatedAt
+                    const localTime = (localRecord as any).updatedAt || 0;
+                    const cloudTime = (cloudRecord as any).updatedAt || 0;
+
+                    if (cloudTime > localTime) {
+                        // Cloud is newer -> Update local
+                        // Do not overwrite cloudHandle in settings
+                        if (table === 'settings' && (localRecord as any).cloudHandle) {
+                            (cloudRecord as any).cloudHandle = (localRecord as any).cloudHandle;
+                        }
+                        await dexieTable.put(cloudRecord);
+                    } else if (localTime > cloudTime) {
+                        // Local is newer -> Mark for export
+                        hasLocalChanges = true;
+                    }
+                }
+                localMap.delete(cloudRecord.id);
+            }
+
+            // Any remaining in localMap are local-only -> Mark for export
+            if (localMap.size > 0) {
+                hasLocalChanges = true;
+            }
+        }
+    });
+
+    return hasLocalChanges;
+}
+
+// ==========================================
 // PART 1: Web Crypto Utilities
 // ==========================================
 
-export async function encryptData(data: any, passphrase: string) {
+export async function encryptData(data: any, passphrase: string): Promise<Blob> {
     const encoder = new TextEncoder();
     const encodedData = encoder.encode(JSON.stringify(data));
 
@@ -70,38 +99,35 @@ export async function encryptData(data: any, passphrase: string) {
     const encryptedBuffer = await window.crypto.subtle.encrypt(
         {
             name: 'AES-GCM',
-            iv: iv,
+            iv: iv as BufferSource,
         },
         key,
-        encodedData
+        encodedData as BufferSource
     );
 
-    return {
-        ciphertext: arrayBufferToBase64(encryptedBuffer),
-        iv: arrayBufferToBase64(iv.buffer),
-        salt: arrayBufferToBase64(salt.buffer),
-    };
+    // Concatenate salt (16 bytes), iv (12 bytes), and ciphertext
+    return new Blob([salt, iv, encryptedBuffer], { type: 'application/octet-stream' });
 }
 
-export async function decryptData(encryptedBundle: any, passphrase: string) {
-    if (!encryptedBundle || !encryptedBundle.ciphertext || !encryptedBundle.iv || !encryptedBundle.salt) {
-        throw new Error('Invalid encrypted bundle format.');
+export async function decryptData(buffer: ArrayBuffer, passphrase: string): Promise<any> {
+    if (buffer.byteLength < 28) {
+        throw new Error('Invalid encrypted data format.');
     }
 
-    const ciphertextBytes = base64ToUint8Array(encryptedBundle.ciphertext);
-    const ivBytes = base64ToUint8Array(encryptedBundle.iv);
-    const saltBytes = base64ToUint8Array(encryptedBundle.salt);
+    const salt = new Uint8Array(buffer.slice(0, 16));
+    const iv = new Uint8Array(buffer.slice(16, 28));
+    const ciphertext = buffer.slice(28);
 
-    const key = await deriveKey(passphrase, saltBytes);
+    const key = await deriveKey(passphrase, salt);
 
     try {
         const decryptedBuffer = await window.crypto.subtle.decrypt(
             {
                 name: 'AES-GCM',
-                iv: ivBytes as BufferSource,
+                iv: iv as BufferSource,
             },
             key,
-            ciphertextBytes as BufferSource
+            ciphertext as BufferSource
         );
 
         const decoder = new TextDecoder();
@@ -114,103 +140,100 @@ export async function decryptData(encryptedBundle: any, passphrase: string) {
 }
 
 // ==========================================
-// PART 2: Remote Sync Logic
+// PART 3: Smart Sync Workflow
 // ==========================================
 
 export const remoteSyncService = {
-    async pushToServer() {
+    async sync() {
         try {
             const settingsArray = await db.settings.toArray();
             const settings = settingsArray[0];
 
-            // Map settings property appropriately since the db schema might use syncServerUrl instead of syncUrl
-            // Let's check both for compatibility
-            const urlToUse = settings?.syncServerUrl || (settings as any)?.syncUrl;
-
-            if (!settings || !urlToUse || !settings.syncPassphrase) {
-                throw new Error('Sync settings (URL and Passphrase) are not configured.');
+            if (!settings) {
+                console.warn('Sync aborted: settings not initialized.');
+                return false;
             }
 
-            // Extract all data
-            const allData: Record<string, any[]> = {
-                profile: await db.profile.toArray(),
-                accounts: await db.accounts.toArray(),
-                incomes: await db.incomes.toArray(),
-                scenarios: await db.scenarios.toArray(),
-                settings: await db.settings.toArray(),
-                monthlyArchives: await db.monthlyArchives.toArray(),
-                notifications: await db.notifications.toArray(),
-                taxRules: await db.taxRules.toArray(),
-                transactions: await db.transactions.toArray(),
-                budgets: await db.budgets.toArray(),
-            };
+            const syncUrl = settings.syncServerUrl || (settings as any).syncUrl;
+            const syncPassphrase = settings.syncPassphrase;
 
-            // Encrypt data
-            const encryptedPayload = await encryptData(allData, settings.syncPassphrase);
-
-            // Send via POST
-            const response = await fetch(urlToUse, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(encryptedPayload),
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to push to server: ${response.status} ${response.statusText}`);
+            if (!syncUrl || !syncPassphrase) {
+                console.warn('Sync aborted: syncUrl or syncPassphrase is not configured.');
+                return false;
             }
 
-            // Update lastSynced
+            // 1. Check Version
+            let serverLastUpdated = 0;
+            const versionResponse = await fetch(`${syncUrl}/version`);
+            if (versionResponse.ok) {
+                const versionData = await versionResponse.json();
+                serverLastUpdated = versionData.lastUpdated || 0;
+            } else if (versionResponse.status === 404) {
+                serverLastUpdated = 0;
+            } else {
+                throw new Error(`Failed to check version: ${versionResponse.status} ${versionResponse.statusText}`);
+            }
+
+            const localLastSynced = settings.lastSynced || 0;
+
+            let hasLocalChanges = false;
+
+            // 2. Pull & Merge (If Needed)
+            if (serverLastUpdated > localLastSynced) {
+                const pullResponse = await fetch(syncUrl);
+                if (pullResponse.ok) {
+                    const buffer = await pullResponse.arrayBuffer();
+                    if (buffer.byteLength > 0) {
+                        const decryptedData = await decryptData(buffer, syncPassphrase);
+                        // Merge data to Dexie
+                        hasLocalChanges = await mergeData(decryptedData);
+                    }
+                } else if (pullResponse.status !== 404) {
+                    throw new Error(`Failed to pull data: ${pullResponse.status} ${pullResponse.statusText}`);
+                }
+            } else {
+                hasLocalChanges = true;
+            }
+
+            // 3. Extract full database and 4. Encrypt & Push (If Needed)
+            if (hasLocalChanges || serverLastUpdated === 0) {
+                // 3. Extract full database
+                const allData: Record<string, any[]> = {
+                    profile: await db.profile.toArray(),
+                    accounts: await db.accounts.toArray(),
+                    incomes: await db.incomes.toArray(),
+                    scenarios: await db.scenarios.toArray(),
+                    settings: await db.settings.toArray(),
+                    monthlyArchives: await db.monthlyArchives.toArray(),
+                    notifications: await db.notifications.toArray(),
+                    taxRules: await db.taxRules.toArray(),
+                    transactions: await db.transactions.toArray(),
+                    budgets: await db.budgets.toArray(),
+                };
+
+                // 4. Encrypt & Push
+                const encryptedBlob = await encryptData(allData, syncPassphrase);
+
+                const pushResponse = await fetch(syncUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/octet-stream',
+                    },
+                    body: encryptedBlob,
+                });
+
+                if (!pushResponse.ok) {
+                    throw new Error(`Failed to push data: ${pushResponse.status} ${pushResponse.statusText}`);
+                }
+            }
+
+            // 5. Update State
             settings.lastSynced = Date.now();
             await db.settings.put(settings);
 
             return true;
         } catch (error) {
-            console.error('pushToServer error:', error);
-            throw error;
-        }
-    },
-
-    async pullFromServer(syncUrl: string, syncPassphrase: string) {
-        try {
-            if (!syncUrl || !syncPassphrase) {
-                throw new Error('Sync URL and Passphrase must be provided.');
-            }
-
-            // Fetch data
-            const response = await fetch(syncUrl, {
-                method: 'GET',
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to pull from server: ${response.status} ${response.statusText}`);
-            }
-
-            const encryptedBundle = await response.json();
-
-            // Decrypt data
-            const decryptedData = await decryptData(encryptedBundle, syncPassphrase);
-
-            // Overwrite local tables
-            const tables = [
-                'profile', 'accounts', 'incomes', 'scenarios', 'settings',
-                'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'
-            ];
-            const dexieTables = tables.map(t => (db as any)[t]);
-
-            await db.transaction('rw', dexieTables, async () => {
-                for (const table of tables) {
-                    if (decryptedData[table]) {
-                        await (db as any)[table].clear();
-                        await (db as any)[table].bulkAdd(decryptedData[table]);
-                    }
-                }
-            });
-
-            return true;
-        } catch (error) {
-            console.error('pullFromServer error:', error);
+            console.error('Sync failed:', error);
             throw error;
         }
     }

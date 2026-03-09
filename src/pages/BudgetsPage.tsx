@@ -12,6 +12,7 @@ export function BudgetsPage() {
     const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+    const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
     // Group budgets by category
     const groupedBudgets = budgets.reduce((acc, budget) => {
@@ -48,7 +49,7 @@ export function BudgetsPage() {
                             <MainHeaderActions onSave={() => { }} />
                         }
                     />
-                    <div className="px-4 pb-4">
+                    <div className="w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 pb-4">
                         <div className="flex h-11 items-center justify-center rounded-xl bg-slate-200 dark:bg-border-dark p-1">
                             <button
                                 onClick={() => setViewMode('monthly')}
@@ -99,24 +100,89 @@ export function BudgetsPage() {
                                 const monthlyAmount = isAnnual ? budget.amount / 12 : budget.amount;
                                 const annualAmount = isAnnual ? budget.amount : budget.amount * 12;
 
+                                const budgetTransactions = transactions.filter(t => t.budgetId === budget.id && t.type === 'expense');
+
+                                let actualAmount = 0;
+                                if (viewMode === 'monthly') {
+                                    const now = new Date();
+                                    const currentMonth = now.getMonth();
+                                    const currentYear = now.getFullYear();
+                                    actualAmount = budgetTransactions
+                                        .filter(t => {
+                                            const d = new Date(t.date);
+                                            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+                                        })
+                                        .reduce((sum, t) => sum + t.amount, 0);
+                                } else {
+                                    const currentYear = new Date().getFullYear();
+                                    actualAmount = budgetTransactions
+                                        .filter(t => new Date(t.date).getFullYear() === currentYear)
+                                        .reduce((sum, t) => sum + t.amount, 0);
+                                }
+
+                                const targetNum = viewMode === 'annual' ? annualAmount : monthlyAmount;
+                                const ratio = targetNum > 0 ? actualAmount / targetNum : 0;
+                                const percent = Math.min(ratio * 100, 100);
+
+                                let status = 'ON TRACK';
+                                let barColor = 'bg-blue-500';
+                                let chipClass = 'bg-blue-500/10 text-blue-500';
+
+                                if (ratio >= 1) {
+                                    status = 'OVERSPENT';
+                                    barColor = 'bg-red-500';
+                                    chipClass = 'bg-red-500/10 text-red-500';
+                                } else if (ratio >= 0.90) {
+                                    status = 'OVERSPEND RISK';
+                                    barColor = 'bg-orange-500';
+                                    chipClass = 'bg-orange-500/10 text-orange-500';
+                                } else if (ratio <= 0.75) {
+                                    status = 'PLENTY OF CAPACITY';
+                                    barColor = 'bg-emerald-500';
+                                    chipClass = 'bg-emerald-500/10 text-emerald-500';
+                                }
+
                                 return (
-                                    <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark">
+                                    <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark flex flex-col gap-4">
                                         <div className="flex justify-between items-start">
-                                            <div className="space-y-1">
-                                                <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
+                                            <div className="space-y-1 w-full">
+                                                <div className="flex justify-between items-start">
+                                                    <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
+                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${chipClass}`}>
+                                                        {status}
+                                                    </span>
+                                                </div>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400">Location: <span className="text-slate-700 dark:text-slate-300 capitalize">{budget.paymentSource}</span></p>
                                                 <div className="flex gap-4 mt-2">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Monthly</p>
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{isAnnual ? 'As Monthly' : 'Monthly'}</p>
                                                         <p className="text-sm font-bold text-slate-900 dark:text-slate-100">£{monthlyAmount.toFixed(2)}</p>
                                                     </div>
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Annualised</p>
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{isAnnual ? 'Annual' : 'Annualised'}</p>
                                                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£{annualAmount.toFixed(2)}</p>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/budgets/edit/${budget.id}`)} />
+                                            <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors ml-2" onClick={() => navigate(`/budgets/edit/${budget.id}`)} />
+                                        </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-end mb-2">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">{viewMode === 'annual' ? 'Annualised Actual' : 'Monthly Actual'}</span>
+                                                    <span className="text-lg font-bold text-slate-900 dark:text-slate-100">£{actualAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                                </div>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                    Target: £{targetNum.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full ${barColor}`}
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 );

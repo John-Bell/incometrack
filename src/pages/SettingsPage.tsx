@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -7,12 +7,18 @@ import { HistoryLogItem } from '../components/settings/HistoryLogItem';
 import { archiveCurrentMonth } from '@/services/archiveService';
 
 export function SettingsPage() {
+    const navigate = useNavigate();
+
     return (
         <AppLayout
             header={
                 <Header
                     title="Settings"
-                    leftElement={<Icon name="arrow_back" className="text-primary text-2xl" />}
+                    leftElement={
+                        <button type="button" onClick={() => navigate(-1)} className="flex items-center justify-center cursor-pointer">
+                            <Icon name="arrow_back" className="text-primary text-2xl" />
+                        </button>
+                    }
                     rightElement={<div className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">V 2.4.0</div>}
                     className="bg-transparent backdrop-blur-md"
                 />

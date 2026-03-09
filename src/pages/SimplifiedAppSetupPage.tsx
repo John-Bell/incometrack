@@ -6,10 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { db } from '@/lib/db';
 import { getDefaultTaxYear } from '@/constants/taxConstants';
+import { decryptData, mergeData } from '@/services/remoteSyncService';
 
 export function SimplifiedAppSetupPage() {
     const navigate = useNavigate();
-    const { setProfile } = useStore();
+    const { setProfile, initStore } = useStore();
     const [partner1Name, setPartner1Name] = useState('');
     const [partner2Name, setPartner2Name] = useState('');
     const [syncServerUrl, setSyncServerUrl] = useState('');
@@ -20,6 +21,8 @@ export function SimplifiedAppSetupPage() {
     const [restoreSyncServerUrl, setRestoreSyncServerUrl] = useState('');
     const [restoreSyncPassphrase, setRestoreSyncPassphrase] = useState('');
     const [restoreSyncHeaderKey, setRestoreSyncHeaderKey] = useState('');
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [restoreError, setRestoreError] = useState<string | null>(null);
 
     const handleGetStarted = async () => {
         if (!partner1Name.trim()) return; // Require at least one name
@@ -49,8 +52,50 @@ export function SimplifiedAppSetupPage() {
     };
 
     const handleRestore = async () => {
-        // Empty fetch/restore logic for now
-        console.log("Fetching and Restoring backup from:", restoreSyncServerUrl);
+        setIsRestoring(true);
+        setRestoreError(null);
+        try {
+            const customHeaders: Record<string, string> = {};
+            if (restoreSyncHeaderKey.trim()) {
+                customHeaders['x-chaser-token'] = restoreSyncHeaderKey.trim();
+            }
+
+            const response = await fetch(restoreSyncServerUrl.trim(), { headers: customHeaders });
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+            }
+
+            const buffer = await response.arrayBuffer();
+            if (buffer.byteLength === 0) {
+                throw new Error('Remote sync data is empty.');
+            }
+
+            const decryptedData = await decryptData(buffer, restoreSyncPassphrase.trim());
+
+            await mergeData(decryptedData);
+
+            const existingSettings = await db.settings.get('default');
+
+            await db.settings.put({
+                id: 'default',
+                currency: existingSettings?.currency || 'GBP',
+                taxYear: existingSettings?.taxYear || getDefaultTaxYear(),
+                icloudSync: existingSettings?.icloudSync || false,
+                syncServerUrl: restoreSyncServerUrl.trim() || undefined,
+                syncPassphrase: restoreSyncPassphrase.trim() || undefined,
+                syncHeaderKey: restoreSyncHeaderKey.trim() || undefined,
+                lastSynced: Date.now(),
+                updatedAt: Date.now()
+            });
+
+            await initStore();
+            navigate('/');
+        } catch (error) {
+            console.error("Restore failed:", error);
+            setRestoreError(error instanceof Error ? error.message : "An unknown error occurred during restore.");
+        } finally {
+            setIsRestoring(false);
+        }
     };
 
     return (
@@ -201,49 +246,56 @@ export function SimplifiedAppSetupPage() {
                             </p>
                         </div>
 
-                        <div className="bg-slate-100 dark:bg-[#111816] border-2 border-primary/30 rounded-xl p-6 space-y-5 transition-all">
-                            <div className="space-y-3">
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                    Sync Server URL
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. https://sync.yourdomain.xyz/sync"
-                                    value={restoreSyncServerUrl}
-                                    onChange={(e) => setRestoreSyncServerUrl(e.target.value)}
-                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                    Header Key
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. my-secret-token"
-                                    value={restoreSyncHeaderKey}
-                                    onChange={(e) => setRestoreSyncHeaderKey(e.target.value)}
-                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                    Encryption Passphrase
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. four random words"
-                                    value={restoreSyncPassphrase}
-                                    onChange={(e) => setRestoreSyncPassphrase(e.target.value)}
-                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                                />
+                        <div className="bg-primary/5 dark:bg-primary/5 border border-primary/20 rounded-xl p-6 space-y-5 transition-all">
+                            {restoreError && (
+                                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm mb-4">
+                                    {restoreError}
+                                </div>
+                            )}
+                            <div className="space-y-4">
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        Sync Server URL
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. https://sync.yourdomain.xyz/sync"
+                                        value={restoreSyncServerUrl}
+                                        onChange={(e) => setRestoreSyncServerUrl(e.target.value)}
+                                        className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        Encryption Passphrase
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. four random words"
+                                        value={restoreSyncPassphrase}
+                                        onChange={(e) => setRestoreSyncPassphrase(e.target.value)}
+                                        className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        Header Key
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. my-secret-token"
+                                        value={restoreSyncHeaderKey}
+                                        onChange={(e) => setRestoreSyncHeaderKey(e.target.value)}
+                                        className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                    />
+                                </div>
                             </div>
                             <Button
                                 onClick={handleRestore}
-                                disabled={!restoreSyncServerUrl.trim() || !restoreSyncPassphrase.trim()}
+                                disabled={!restoreSyncServerUrl.trim() || !restoreSyncPassphrase.trim() || isRestoring}
                                 className="w-full bg-primary hover:bg-primary/90 text-background-dark font-extrabold py-4 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2 mt-4 text-base h-auto"
                             >
-                                Fetch & Restore Backup
+                                {isRestoring ? 'Restoring...' : 'Remote Load'}
                                 <Icon name="cloud_download" className="font-bold" />
                             </Button>
                         </div>

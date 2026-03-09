@@ -21,15 +21,15 @@ export function IncomePage() {
 
     const totalRental = p1Incomes.rental + p2Incomes.rental;
     const p1RentalPct = totalRental > 0 ? Math.round((p1Incomes.rental / totalRental) * 100) : 50;
-    const p2RentalPct = totalRental > 0 ? Math.round((p2Incomes.rental / totalRental) * 100) : 50;
+    const p2RentalPct = totalRental > 0 ? 100 - p1RentalPct : 50;
 
     const totalInterest = p1Incomes.interest + p2Incomes.interest;
     const p1InterestPct = totalInterest > 0 ? Math.round((p1Incomes.interest / totalInterest) * 100) : 50;
-    const p2InterestPct = totalInterest > 0 ? Math.round((p2Incomes.interest / totalInterest) * 100) : 50;
+    const p2InterestPct = totalInterest > 0 ? 100 - p1InterestPct : 50;
 
     const totalDividends = p1Incomes.dividends + p2Incomes.dividends;
     const p1DividendsPct = totalDividends > 0 ? Math.round((p1Incomes.dividends / totalDividends) * 100) : 50;
-    const p2DividendsPct = totalDividends > 0 ? Math.round((p2Incomes.dividends / totalDividends) * 100) : 50;
+    const p2DividendsPct = totalDividends > 0 ? 100 - p1DividendsPct : 50;
 
     const formatCurr = (v: number) => `£${v.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
     const formatCurrK = (v: number) => `£${(v / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`;

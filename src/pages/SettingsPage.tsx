@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
@@ -7,6 +8,7 @@ import { Icon } from '../components/ui/Icon';
 import { MonthlyCloseOut } from '../components/settings/MonthlyCloseOut';
 import { HistoryLogItem } from '../components/settings/HistoryLogItem';
 import { archiveCurrentMonth } from '@/services/archiveService';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function SettingsPage() {
     const navigate = useNavigate();
@@ -16,10 +18,45 @@ export function SettingsPage() {
 
     const currentSettings = settings?.[0];
 
+    const [isSaving, setIsSaving] = useState(false);
+    const [remoteSync, setRemoteSync] = useState(false);
+
+    useEffect(() => {
+        if (currentSettings) {
+            setRemoteSync(currentSettings.icloudSync || false);
+        }
+    }, [currentSettings]);
+
     const handleTaxYearChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         if (currentSettings) {
             await db.settings.update(currentSettings.id, { taxYear: e.target.value });
         }
+    };
+
+    const handleSave = async () => {
+        if (currentSettings) {
+            setIsSaving(true);
+            try {
+                await db.settings.update(currentSettings.id, {
+                    icloudSync: remoteSync,
+                });
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } finally {
+                setIsSaving(false);
+            }
+        }
+    };
+
+    const formatLastSynced = (timestamp?: number) => {
+        if (!timestamp) return 'Never';
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).format(new Date(timestamp));
     };
 
     return (
@@ -32,14 +69,14 @@ export function SettingsPage() {
                             <Icon name="arrow_back" className="text-primary text-2xl" />
                         </button>
                     }
-                    rightElement={<div className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">V 2.4.0</div>}
+                    rightElement={<MainHeaderActions onSave={handleSave} isSaving={isSaving} />}
                     className="bg-transparent backdrop-blur-md"
                 />
             }
         >
             <div className="flex-1 w-full mx-auto pb-8">
                 <section className="mt-6 px-4">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">iCloud Sync</h2>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Remote Sync</h2>
                     <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl overflow-hidden">
                         <div className="flex items-center justify-between p-4">
                             <div className="flex items-center gap-4">
@@ -47,13 +84,18 @@ export function SettingsPage() {
                                     <Icon name="cloud_sync" />
                                 </div>
                                 <div>
-                                    <p className="font-semibold">Save to iCloud</p>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Last Synced: Oct 24, 2025, 14:02</p>
+                                    <p className="font-semibold">Save to Remote</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Last Synced: {formatLastSynced(currentSettings?.lastSynced)}</p>
                                 </div>
                             </div>
                             <label className="relative flex h-[31px] w-[51px] cursor-pointer items-center rounded-full border-none bg-slate-300 dark:bg-primary/20 p-0.5 has-[:checked]:justify-end has-[:checked]:bg-primary">
                                 <div className="h-full w-[27px] rounded-full bg-white shadow-md"></div>
-                                <input type="checkbox" defaultChecked className="invisible absolute" />
+                                <input
+                                    type="checkbox"
+                                    checked={remoteSync}
+                                    onChange={(e) => setRemoteSync(e.target.checked)}
+                                    className="invisible absolute"
+                                />
                             </label>
                         </div>
                     </div>

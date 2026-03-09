@@ -1,4 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -8,6 +10,17 @@ import { archiveCurrentMonth } from '@/services/archiveService';
 
 export function SettingsPage() {
     const navigate = useNavigate();
+
+    const settings = useLiveQuery(() => db.settings.toArray());
+    const taxRules = useLiveQuery(() => db.taxRules.toArray());
+
+    const currentSettings = settings?.[0];
+
+    const handleTaxYearChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        if (currentSettings) {
+            await db.settings.update(currentSettings.id, { taxYear: e.target.value });
+        }
+    };
 
     return (
         <AppLayout
@@ -120,22 +133,19 @@ export function SettingsPage() {
                                 <p className="font-medium">Tax Year</p>
                             </div>
                             <div className="flex items-center gap-2 text-primary font-semibold">
-                                <span>2024/25</span>
-                                <Icon name="chevron_right" className="text-sm" />
+                                <select
+                                    className="bg-transparent text-right text-primary font-semibold appearance-none outline-none cursor-pointer pr-4"
+                                    value={currentSettings?.taxYear || ''}
+                                    onChange={handleTaxYearChange}
+                                >
+                                    {taxRules?.map((rule) => (
+                                        <option key={rule.id} value={rule.id} className="text-slate-900">
+                                            {rule.id}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
-
-                        <Link to="/income-config" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
-                                    <Icon name="tune" />
-                                </div>
-                                <p className="font-medium">Income Configuration</p>
-                            </div>
-                            <div className="flex items-center gap-2 text-primary">
-                                <Icon name="chevron_right" className="text-sm" />
-                            </div>
-                        </Link>
                     </div>
                 </section>
 

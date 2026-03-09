@@ -1,12 +1,14 @@
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
+import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { Transaction } from '@/lib/db';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export function TransactionsPage() {
+    const navigate = useNavigate();
     const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray()) || [];
 
     // Group transactions by date
@@ -36,19 +38,28 @@ export function TransactionsPage() {
         <AppLayout
             header={
                 <Header
-                    title="Payments"
+                    title="The Chaser"
+                    subtitle="Recent Transactions"
                     leftElement={
-                        <Icon name="search" className="text-2xl text-primary" />
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                            <Icon name="receipt_long" className="text-2xl" />
+                        </div>
                     }
                     rightElement={
-                        <Link to="/transactions/add" className="bg-primary text-background-dark size-10 rounded-full flex items-center justify-center shadow-lg shadow-primary/20 active:scale-95 transition-transform">
-                            <span className="material-symbols-outlined font-bold text-black" style={{ fontVariationSettings: "'FILL' 0, 'wght' 700, 'GRAD' 0, 'opsz' 24" }}>add</span>
-                        </Link>
+                        <MainHeaderActions />
                     }
                 />
             }
         >
-            <div className="px-4 pb-24 space-y-8">
+            <div className="flex flex-col gap-8 px-4 py-6 pb-24">
+                <button
+                    onClick={() => navigate('/transactions/add')}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-black font-semibold py-3 rounded-xl shadow-[0_4px_14px_0_rgba(255,184,80,0.39)] hover:brightness-110 active:scale-[0.98] transition-all"
+                >
+                    <Icon name="add" className="text-xl" />
+                    <span>Add Payment</span>
+                </button>
+
                 {Object.entries(groupedTransactions).map(([dateLabel, dailyTransactions]) => (
                     <section key={dateLabel}>
                         <div className="mb-3">

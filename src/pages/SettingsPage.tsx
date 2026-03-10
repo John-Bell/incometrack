@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
-import { MonthlyCloseOut } from '../components/settings/MonthlyCloseOut';
-import { HistoryLogItem } from '../components/settings/HistoryLogItem';
-import { archiveCurrentMonth } from '@/services/archiveService';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function SettingsPage() {
@@ -102,56 +99,6 @@ export function SettingsPage() {
                 </section>
 
                 <section className="mt-8 px-4">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Data Management</h2>
-                    <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl divide-y divide-slate-100 dark:divide-primary/5">
-                        <Link to="/settings/import/accounts" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
-                                    <Icon name="account_balance" />
-                                </div>
-                                <p className="font-medium">Import Accounts</p>
-                            </div>
-                            <div className="flex items-center gap-2 text-primary">
-                                <Icon name="chevron_right" className="text-sm" />
-                            </div>
-                        </Link>
-
-                        <Link to="/settings/import/budgets" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
-                                    <Icon name="account_balance_wallet" />
-                                </div>
-                                <p className="font-medium">Import Budgets</p>
-                            </div>
-                            <div className="flex items-center gap-2 text-primary">
-                                <Icon name="chevron_right" className="text-sm" />
-                            </div>
-                        </Link>
-
-                        <Link to="/settings/import/transactions" className="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
-                                    <Icon name="receipt_long" />
-                                </div>
-                                <p className="font-medium">Import Transactions</p>
-                            </div>
-                            <div className="flex items-center gap-2 text-primary">
-                                <Icon name="chevron_right" className="text-sm" />
-                            </div>
-                        </Link>
-                    </div>
-                </section>
-
-                <section className="mt-8 px-4">
-                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Monthly Close-Out</h2>
-                    <MonthlyCloseOut
-                        description="Archives current balances and interest rates to history and prepares the ledger for the new month. This action is final."
-                        monthString="October 2025"
-                        onArchive={() => archiveCurrentMonth()}
-                    />
-                </section>
-
-                <section className="mt-8 px-4">
                     <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">General Settings</h2>
                     <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl divide-y divide-slate-100 dark:divide-primary/5">
                         <div className="flex items-center justify-between p-4">
@@ -188,18 +135,6 @@ export function SettingsPage() {
                                 </select>
                             </div>
                         </div>
-                    </div>
-                </section>
-
-                <section className="mt-8 px-4">
-                    <div className="flex items-center justify-between mb-3 px-1">
-                        <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60">History Log</h2>
-                        <button className="text-xs font-bold text-primary hover:underline">View All</button>
-                    </div>
-                    <div className="space-y-3">
-                        <HistoryLogItem month="September 2025" closedDate="Sep 30, 2025" totalInterest="£1,280.42" />
-                        <HistoryLogItem month="August 2025" closedDate="Aug 31, 2025" totalInterest="£1,142.10" />
-                        <HistoryLogItem month="July 2025" closedDate="Jul 31, 2025" totalInterest="£988.50" />
                     </div>
                 </section>
 

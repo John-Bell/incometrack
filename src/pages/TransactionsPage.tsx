@@ -67,7 +67,7 @@ export function TransactionsPage() {
                         </div>
                         <div className="space-y-1">
                             {dailyTransactions.map((tx) => (
-                                <Link to={`/transactions/edit/${tx.id}`} key={tx.id} className="flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
+                                <Link to={`/transactions/edit/${tx.id}`} key={tx.id} className="group flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
                                     <div className="size-12 min-w-[3rem] rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                         <Icon name={tx.icon} />
                                     </div>
@@ -76,12 +76,14 @@ export function TransactionsPage() {
                                             <div className="flex items-center gap-2 overflow-hidden">
                                                 <h3 className="font-bold text-slate-900 dark:text-slate-100 truncate">{tx.payee}</h3>
                                             </div>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-3">
                                                 <span className={`font-bold ${tx.type === 'expense' ? 'text-rose-500 dark:text-rose-400' : 'text-primary'}`}>
                                                     {tx.type === 'expense' ? '-' : '+'}
                                                     {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(tx.amount)}
                                                 </span>
-                                                <Icon name="chevron_right" className="text-slate-400 dark:text-slate-500 text-lg" />
+                                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 transition-colors flex-shrink-0 group-hover:bg-slate-200 dark:group-hover:bg-slate-700">
+                                                    <Icon name="edit" className="text-[18px] text-slate-500 dark:text-slate-400" />
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center mt-0.5">

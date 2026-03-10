@@ -46,7 +46,7 @@ export function TransactionsPage() {
                         </div>
                     }
                     rightElement={
-                        <MainHeaderActions />
+                        <MainHeaderActions showSaveButton />
                     }
                 />
             }

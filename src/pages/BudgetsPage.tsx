@@ -46,7 +46,7 @@ export function BudgetsPage() {
                             </div>
                         }
                         rightElement={
-                            <MainHeaderActions onSave={() => { }} />
+                            <MainHeaderActions showSaveButton />
                         }
                     />
                     <div className="w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 pb-4">

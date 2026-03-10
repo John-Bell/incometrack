@@ -87,7 +87,7 @@ export function AccountsPage() {
                         </div>
                     }
                     rightElement={
-                        <MainHeaderActions onSave={() => { }} />
+                        <MainHeaderActions showSaveButton />
                     }
                 />
             }

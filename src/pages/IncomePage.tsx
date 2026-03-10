@@ -82,7 +82,7 @@ export function IncomePage() {
                             <Icon name="analytics" className="text-2xl" />
                         </div>
                     }
-                    rightElement={<MainHeaderActions onSave={() => { }} />}
+                    rightElement={<MainHeaderActions showSaveButton />}
                 />
             }
         >

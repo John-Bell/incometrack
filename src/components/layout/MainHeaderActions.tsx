@@ -6,13 +6,17 @@ import { remoteSyncService } from '@/services/remoteSyncService';
 interface MainHeaderActionsProps {
     onSave?: () => void;
     isSaving?: boolean;
+    showSaveButton?: boolean;
 }
 
-export function MainHeaderActions({ onSave, isSaving }: MainHeaderActionsProps) {
+export function MainHeaderActions({ onSave, isSaving: externalIsSaving, showSaveButton = false }: MainHeaderActionsProps) {
     const { syncStatus, lastSynced } = useStore();
     const [recentlySaved, setRecentlySaved] = useState(false);
+    const [internalIsSaving, setInternalIsSaving] = useState(false);
 
     const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
+
+    const isSaving = externalIsSaving !== undefined ? externalIsSaving : internalIsSaving;
 
     // When isSaving goes from true -> false, we show the "Saved" text briefly
     useEffect(() => {
@@ -32,7 +36,19 @@ export function MainHeaderActions({ onSave, isSaving }: MainHeaderActionsProps) 
     }, [isSaving, hasAttemptedSave]);
 
     const handleSyncClick = async () => {
-        remoteSyncService.sync().catch(console.error);
+        if (onSave) {
+            onSave();
+            return;
+        }
+
+        setInternalIsSaving(true);
+        try {
+            await remoteSyncService.sync();
+        } catch (error) {
+            console.error('Failed to sync:', error);
+        } finally {
+            setInternalIsSaving(false);
+        }
     };
 
     const getStatusDetails = () => {
@@ -68,7 +84,7 @@ export function MainHeaderActions({ onSave, isSaving }: MainHeaderActionsProps) 
 
     return (
         <div className="flex items-center gap-2">
-            {!onSave && (
+            {!showSaveButton && !onSave && (
                 <button
                     type="button"
                     onClick={handleSyncClick}
@@ -80,13 +96,9 @@ export function MainHeaderActions({ onSave, isSaving }: MainHeaderActionsProps) 
                 </button>
             )}
 
-            {onSave && (
+            {(showSaveButton || onSave) && (
                 <button
-                    onClick={() => {
-                        onSave();
-                        // Optional: we can also trigger sync here if we want,
-                        // but usually saving locally triggers sync automatically.
-                    }}
+                    onClick={handleSyncClick}
                     disabled={isSaving}
                     title={tooltip} // Show sync tooltip on hover for the combined button
                     className="flex items-center gap-2 bg-primary text-[#10221c] px-3 py-1.5 rounded-xl font-bold text-sm transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:pointer-events-none"

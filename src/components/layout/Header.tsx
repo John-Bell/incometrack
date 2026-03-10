@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { Icon } from '../ui/Icon';
+import { SideMenu } from './SideMenu';
 
 interface HeaderProps {
     title?: string;
@@ -16,9 +18,19 @@ export function Header({
     rightElement,
     className,
 }: HeaderProps) {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
     return (
         <header className={cn('w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto flex items-center justify-between px-6 py-4', className)}>
             <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(true)}
+                    className="p-1 -ml-2 rounded-full hover:bg-slate-200 dark:hover:bg-surface-dark transition-colors cursor-pointer flex items-center justify-center"
+                    aria-label="Open menu"
+                >
+                    <Icon name="menu" className="text-2xl text-slate-700 dark:text-slate-300" />
+                </button>
                 {leftElement}
                 <div className="flex flex-col">
                     {subtitle && (
@@ -34,6 +46,8 @@ export function Header({
                 </div>
             </div>
             {rightElement && <div>{rightElement}</div>}
+
+            <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         </header>
     );
 }

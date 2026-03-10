@@ -164,7 +164,9 @@ export function BudgetsPage() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Icon name="more_vert" className="text-slate-300 dark:text-slate-600 cursor-pointer hover:text-primary transition-colors ml-2" onClick={() => navigate(`/budgets/edit/${budget.id}`)} />
+                                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 ml-2 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex-shrink-0" onClick={() => navigate(`/budgets/edit/${budget.id}`)}>
+                                                <Icon name="edit" className="text-[18px] text-slate-500 dark:text-slate-400" />
+                                            </div>
                                         </div>
 
                                         <div>

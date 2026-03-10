@@ -4,6 +4,8 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { AccountsPage } from '@/pages/AccountsPage';
 import { ScenariosPage } from '@/pages/ScenariosPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { DataImportsPage } from '@/pages/DataImportsPage';
+import { HistoricAccountsPage } from '@/pages/HistoricAccountsPage';
 import { SimplifiedAppSetupPage } from '@/pages/SimplifiedAppSetupPage';
 import { StreamlinedIncomeConfigurationPage } from '@/pages/StreamlinedIncomeConfigurationPage';
 import { IncomeConfigPage } from '@/pages/IncomeConfigPage';
@@ -54,6 +56,8 @@ function AppRoutes() {
       <Route path="/accounts/edit/:id" element={<EditAccountPage />} />
       <Route path="/scenarios" element={<ScenariosPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/data-imports" element={<DataImportsPage />} />
+      <Route path="/historic-accounts" element={<HistoricAccountsPage />} />
       <Route path="/settings/import/:table" element={<ImportProcessor />} />
       <Route path="/income" element={<IncomePage />} />
       <Route path="/income-config" element={<IncomeConfigPage />} />

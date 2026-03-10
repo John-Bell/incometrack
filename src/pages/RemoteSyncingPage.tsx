@@ -8,6 +8,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { encryptData, decryptData, mergeData } from '@/services/remoteSyncService';
 import { useStore } from '@/store/useStore';
+import { cn } from '@/lib/utils';
 
 export function RemoteSyncingPage() {
     const navigate = useNavigate();
@@ -22,6 +23,11 @@ export function RemoteSyncingPage() {
     const [isUpdating, setIsUpdating] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    const hasChanges =
+        syncServerUrl.trim() !== (currentSettings?.syncServerUrl || '') ||
+        syncPassphrase.trim() !== (currentSettings?.syncPassphrase || '') ||
+        syncHeaderKey.trim() !== (currentSettings?.syncHeaderKey || '');
 
     useEffect(() => {
         if (currentSettings) {
@@ -221,8 +227,13 @@ export function RemoteSyncingPage() {
                     <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-4">
                         <Button
                             onClick={handleUpdate}
-                            disabled={isUpdating || isProcessing}
-                            className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white font-semibold py-3 rounded-lg transition-colors"
+                            disabled={!hasChanges || isUpdating || isProcessing}
+                            className={cn(
+                                "w-full font-semibold py-3 rounded-lg transition-all",
+                                hasChanges
+                                    ? "bg-primary text-white hover:bg-primary/90 shadow-md scale-[1.02]"
+                                    : "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed"
+                            )}
                         >
                             {isUpdating ? 'Updating...' : 'Update'}
                         </Button>
@@ -230,8 +241,8 @@ export function RemoteSyncingPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <Button
                                 onClick={handleLoadFromRemote}
-                                disabled={isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim()}
-                                className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                disabled={hasChanges || isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim()}
+                                className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Icon name="cloud_download" className="text-xl" />
                                 Load From Remote
@@ -239,8 +250,8 @@ export function RemoteSyncingPage() {
 
                             <Button
                                 onClick={handleSaveToRemote}
-                                disabled={isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim()}
-                                className="w-full bg-primary text-white hover:bg-primary/90 font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                disabled={hasChanges || isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim()}
+                                className="w-full bg-primary text-white hover:bg-primary/90 font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Icon name="cloud_upload" className="text-xl" />
                                 Save To Remote

@@ -18,7 +18,7 @@ export function ScenariosPage() {
                 <Header
                     title="Rebalance Simulator"
                     rightElement={
-                        <MainHeaderActions onSave={() => { }} />
+                        <MainHeaderActions showSaveButton />
                     }
                 />
             }

@@ -60,7 +60,7 @@ export function DashboardPage() {
                     subtitle="Good morning,"
                     title={combinedName}
                     rightElement={
-                        <MainHeaderActions onSave={() => { }} />
+                        <MainHeaderActions showSaveButton />
                     }
                 />
             }

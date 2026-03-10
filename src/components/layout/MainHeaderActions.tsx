@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { Icon } from '../ui/Icon';
 import { SyncStatusIcon } from './SyncStatusIcon';
 
@@ -8,18 +7,9 @@ interface MainHeaderActionsProps {
 }
 
 export function MainHeaderActions({ onSave, isSaving }: MainHeaderActionsProps) {
-    const navigate = useNavigate();
-
     return (
         <div className="flex items-center gap-4">
             <SyncStatusIcon />
-            <button
-                onClick={() => navigate('/settings')}
-                className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-primary/10 transition-colors flex items-center justify-center -mr-2"
-                aria-label="Settings"
-            >
-                <Icon name="settings" className="text-slate-700 dark:text-slate-300" />
-            </button>
             {onSave && (
                 <button
                     onClick={onSave}

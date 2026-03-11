@@ -16,6 +16,9 @@ export function EditBudgetPage() {
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [paymentSource, setPaymentSource] = useState('monthly');
+
+    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
+
     useEffect(() => {
         if (budget) {
             setCategory(budget.category);
@@ -84,12 +87,9 @@ export function EditBudgetPage() {
                                 onChange={(e) => setCategory(e.target.value)}
                                 className="custom-select w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                             >
-                                <option value="transport">Transport</option>
-                                <option value="utilities">Utilities</option>
-                                <option value="housing">Housing</option>
-                                <option value="groceries">Groceries</option>
-                                <option value="socializing">Socializing</option>
-                                <option value="leisure">Leisure & Lifestyle</option>
+                                {budgetCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
                             </select>
                         </div>
                         <div className="flex flex-col gap-2">

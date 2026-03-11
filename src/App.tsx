@@ -13,6 +13,7 @@ import { IncomeConfigPage } from '@/pages/IncomeConfigPage';
 import { IncomePage } from '@/pages/IncomePage'; // Keep your local additions
 import { AddAccountPage } from '@/pages/AddAccountPage';
 import { EditAccountPage } from '@/pages/EditAccountPage';
+import { BudgetCategoriesPage } from '@/pages/BudgetCategoriesPage';
 import { BudgetsPage } from '@/pages/BudgetsPage';
 import { EditBudgetPage } from '@/pages/EditBudgetPage';
 import { AddBudgetPage } from '@/pages/AddBudgetPage';
@@ -63,6 +64,7 @@ function AppRoutes() {
       <Route path="/settings/import/:table" element={<ImportProcessor />} />
       <Route path="/income" element={<IncomePage />} />
       <Route path="/income-config" element={<IncomeConfigPage />} />
+      <Route path="/budget-categories" element={<BudgetCategoriesPage />} />
       <Route path="/budgets" element={<BudgetsPage />} />
       <Route path="/budgets/add" element={<AddBudgetPage />} />
       <Route path="/budgets/edit/:id" element={<EditBudgetPage />} />

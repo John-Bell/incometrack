@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Icon } from '../components/ui/Icon';
 
@@ -11,6 +12,8 @@ export function AddBudgetPage() {
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [paymentSource, setPaymentSource] = useState('');
+
+    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
 
     const handleSave = async () => {
         if (!category || !name || !amount || !paymentSource) return;
@@ -52,11 +55,9 @@ export function AddBudgetPage() {
                         <div className="relative">
                             <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
                                 <option disabled value="">Select a category</option>
-                                <option value="housing">Housing</option>
-                                <option value="utilities">Utilities</option>
-                                <option value="transport">Transport</option>
-                                <option value="groceries">Groceries</option>
-                                <option value="leisure">Leisure &amp; Lifestyle</option>
+                                {budgetCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
                             </select>
                             <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                         </div>

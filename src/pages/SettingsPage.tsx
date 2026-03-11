@@ -44,6 +44,14 @@ export function SettingsPage() {
         }
     };
 
+    const handleResetAppData = async () => {
+        if (window.confirm('Are you sure you want to permanently delete all app data? This action cannot be undone.')) {
+            await Promise.all(db.tables.map(table => table.clear()));
+            localStorage.clear();
+            window.location.replace('/');
+        }
+    };
+
     const formatLastSynced = (timestamp?: number) => {
         if (!timestamp) return 'Never';
         return new Intl.DateTimeFormat('en-US', {
@@ -140,7 +148,11 @@ export function SettingsPage() {
 
                 <section className="mt-12 px-4 mb-8">
                     <div className="border-t border-slate-200 dark:border-red-900/30 pt-6">
-                        <button className="w-full text-red-500 dark:text-red-400 font-semibold py-3 border border-red-500/20 rounded-lg bg-red-500/5 hover:bg-red-500/10 transition-colors">
+                        <button
+                            type="button"
+                            onClick={handleResetAppData}
+                            className="w-full text-red-500 dark:text-red-400 font-semibold py-3 border border-red-500/20 rounded-lg bg-red-500/5 hover:bg-red-500/10 transition-colors cursor-pointer"
+                        >
                             Reset App Data
                         </button>
                     </div>

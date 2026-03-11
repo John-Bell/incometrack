@@ -48,7 +48,8 @@ export function SettingsPage() {
         if (window.confirm('Are you sure you want to permanently delete all app data? This action cannot be undone.')) {
             await Promise.all(db.tables.map(table => table.clear()));
             localStorage.clear();
-            window.location.replace('/');
+            const basePath = import.meta.env.BASE_URL;
+            window.location.replace(`${basePath}setup`);
         }
     };
 

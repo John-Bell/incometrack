@@ -3,11 +3,6 @@ import type { Account, Income, Transaction, Budget, MonthlyArchive, BudgetCatego
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export const seedBudgetCategories = async () => {
-    // Check if we've already seeded to prevent re-seeding if the user intentionally deletes all categories
-    if (localStorage.getItem('budgetCategoriesSeeded')) {
-        return;
-    }
-
     const defaultCategories: BudgetCategory[] = [
         { id: 'housing', name: 'Housing' },
         { id: 'utilities', name: 'Utilities' },
@@ -23,7 +18,6 @@ export const seedBudgetCategories = async () => {
 
     try {
         await db.budgetCategories.bulkPut(defaultCategories);
-        localStorage.setItem('budgetCategoriesSeeded', 'true');
         console.log('Successfully seeded default budget categories into Dexie.');
     } catch (error) {
         console.error('Failed to seed default budget categories:', error);

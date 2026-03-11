@@ -10,6 +10,7 @@ import { Icon } from '../components/ui/Icon';
 export function BudgetsPage() {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
+    const [cardLayout, setCardLayout] = useState<'detailed' | 'compressed'>('detailed');
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
@@ -83,6 +84,16 @@ export function BudgetsPage() {
                                 Annual View
                             </button>
                         </div>
+                        <div className="mt-4 flex justify-end">
+                            <select
+                                value={cardLayout}
+                                onChange={(e) => setCardLayout(e.target.value as 'detailed' | 'compressed')}
+                                className="bg-slate-100 dark:bg-surface-dark text-sm font-medium text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border border-slate-200 dark:border-border-dark focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                            >
+                                <option value="detailed">Detailed View</option>
+                                <option value="compressed">Compressed View</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             }
@@ -153,6 +164,50 @@ export function BudgetsPage() {
                                     status = 'PLENTY OF CAPACITY';
                                     barColor = 'bg-emerald-500';
                                     chipClass = 'bg-emerald-500/10 text-emerald-500';
+                                }
+
+                                if (cardLayout === 'compressed') {
+                                    return (
+                                        <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-200 dark:border-border-dark flex flex-col gap-3 relative overflow-hidden">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-[#E8F8EE] dark:bg-[#1A2E22] flex items-center justify-center flex-shrink-0">
+                                                    <Icon name={getIconForCategory(category)} className="text-[#1DAF61] text-xl" />
+                                                </div>
+                                                <div className="flex-1 flex flex-col min-w-0">
+                                                    <div className="flex justify-between items-center w-full">
+                                                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">{budget.name}</h3>
+                                                        <span className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full uppercase tracking-wider whitespace-nowrap ml-2">
+                                                            {budget.paymentSource}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 gap-1.5 mt-0.5">
+                                                        <span>Monthly: £{monthlyAmount.toFixed(2)}</span>
+                                                        <span className="text-slate-300 dark:text-slate-600">•</span>
+                                                        <span>Annual: £{annualAmount.toFixed(2)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-between items-end mt-1">
+                                                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                                                    £{actualAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </div>
+                                                <button
+                                                    onClick={() => navigate(`/budgets/edit/${budget.id}`)}
+                                                    className="w-8 h-8 rounded-full bg-[#1DAF61] flex items-center justify-center cursor-pointer hover:bg-[#189653] transition-colors"
+                                                >
+                                                    <Icon name="edit" className="text-white text-sm" />
+                                                </button>
+                                            </div>
+
+                                            <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-1">
+                                                <div
+                                                    className={`h-full rounded-full ${barColor}`}
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
                                 }
 
                                 return (

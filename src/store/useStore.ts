@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db, initDb, type Profile } from '@/lib/db';
-import { syncTaxRules, seedDummyAccounts, seedDummyIncomes, seedDummyTransactions, seedDummyMonthlyArchives, seedDummyBudgets, seedBudgetCategories } from '@/lib/seed';
+import { syncTaxRules, seedBudgetCategories } from '@/lib/seed';
 import { TaxCalculationService } from '@/services/TaxCalculationService';
 import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
 
@@ -65,36 +65,6 @@ export const useStore = create<AppState>()((set) => ({
             const categoryCount = await db.budgetCategories.count();
             if (categoryCount === 0) {
                 await seedBudgetCategories();
-            }
-
-            // Only seed dummy accounts if there are absolutely no accounts
-            const accountCount = await db.accounts.count();
-            if (accountCount === 0) {
-                await seedDummyAccounts();
-            }
-
-            // Only seed dummy budgets if there are absolutely no budgets
-            const budgetCount = await db.budgets.count();
-            if (budgetCount === 0) {
-                await seedDummyBudgets();
-            }
-
-            // Seed dummy incomes if there are absolutely no incomes
-            const incomeCount = await db.incomes.count();
-            if (incomeCount === 0) {
-                await seedDummyIncomes();
-            }
-
-            // Seed dummy monthly archives if there are absolutely no monthly archives
-            const archiveCount = await db.monthlyArchives.count();
-            if (archiveCount === 0) {
-                await seedDummyMonthlyArchives();
-            }
-
-            // Seed dummy transactions if there are absolutely no transactions
-            const transactionCount = await db.transactions.count();
-            if (transactionCount === 0) {
-                await seedDummyTransactions();
             }
 
             set({

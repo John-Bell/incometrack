@@ -35,6 +35,17 @@ export function BudgetsPage() {
         default: 'label'
     };
 
+    const getIconForCategory = (categoryId: string) => {
+        const catName = categoryNameMap[categoryId]?.toLowerCase() || '';
+        // Find if any key in categoryIcons is contained in the name (e.g. 'leisure & lifestyle' -> 'leisure')
+        for (const [key, icon] of Object.entries(categoryIcons)) {
+            if (key !== 'default' && catName.includes(key)) {
+                return icon;
+            }
+        }
+        return categoryIcons.default;
+    };
+
     return (
         <AppLayout
             header={
@@ -89,7 +100,7 @@ export function BudgetsPage() {
                     <section key={category} className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-bold text-primary flex items-center gap-2 capitalize">
-                                <Icon name={categoryIcons[category] || categoryIcons.default} className="text-xl" />
+                                <Icon name={getIconForCategory(category)} className="text-xl" />
                                 {categoryNameMap[category] || category}
                             </h2>
                             <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">

@@ -144,7 +144,7 @@ describe('DataImportService', () => {
                 rawDate: 'date',
                 rawAmount: 'amount',
                 desc: 'payee',
-                cat: 'category'
+                cat: 'importCategory'
             };
 
             const result = await DataImportService.importData('transactions', data, 'import-file-1', mapping);
@@ -157,7 +157,7 @@ describe('DataImportService', () => {
             expect(t.date).toBe(new Date('2023-01-01T12:00:00Z').getTime());
             expect(t.amount).toBe(-100.50);
             expect(t.payee).toBe('Supermarket');
-            expect(t.category).toBe('Food');
+            expect((t as any).importCategory).toBeUndefined(); // importCategory should be deleted
             expect(t.type).toBe('expense'); // derived from amount < 0
             expect(t.budgetId).toBe(budgetId); // linked via category matching budget category
             expect(t.importId).toBe('import-file-1');

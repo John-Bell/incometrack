@@ -10,6 +10,11 @@ import { Link, useNavigate } from 'react-router-dom';
 export function TransactionsPage() {
     const navigate = useNavigate();
     const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray()) || [];
+    const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
+
+    const budgetsMap = Object.fromEntries(budgets.map(b => [b.id, b]));
+    const categoriesMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
 
     // Group transactions by date
     const groupedTransactions = transactions.reduce((groups: Record<string, Transaction[]>, transaction) => {
@@ -87,8 +92,8 @@ export function TransactionsPage() {
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center mt-0.5">
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{tx.category}</p>
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 uppercase">{tx.subCategory}</span>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{tx.budgetId ? (categoriesMap[budgetsMap[tx.budgetId]?.category] || budgetsMap[tx.budgetId]?.category || 'Uncategorized') : 'Uncategorized'}</p>
+                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 uppercase">{tx.budgetId ? (budgetsMap[tx.budgetId]?.name || 'Unknown') : 'Unknown'}</span>
                                         </div>
                                     </div>
                                 </Link>

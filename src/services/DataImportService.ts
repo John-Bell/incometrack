@@ -42,7 +42,7 @@ export class DataImportService {
     static generateDeterministicId(row: any, targetTable: string): string {
         let sourceString = '';
         if (targetTable === 'transactions') {
-            sourceString = `${row.date || ''}-${row.amount || ''}-${row.payee || ''}-${row.rawDesc || ''}-${row.category || ''}`;
+            sourceString = `${row.date || ''}-${row.amount || ''}-${row.payee || ''}-${row.rawDesc || ''}-${row.importCategory || ''}`;
         } else if (targetTable === 'budgets') {
             sourceString = `${row.category || ''}-${row.name || ''}-${row.amount || ''}`;
         } else if (targetTable === 'accounts') {
@@ -114,8 +114,8 @@ export class DataImportService {
                 if (!mappedRow.type) mappedRow.type = mappedRow.amount >= 0 ? 'income' : 'expense';
 
                 // Transaction Linking logic
-                if (mappedRow.category && !mappedRow.budgetId) {
-                    const categoryLower = mappedRow.category.toLowerCase();
+                if (mappedRow.importCategory && !mappedRow.budgetId) {
+                    const categoryLower = mappedRow.importCategory.toLowerCase();
                     const matchedBudget = budgets.find(b =>
                         (b.importMappingName && b.importMappingName.toLowerCase() === categoryLower) ||
                         (b.name && b.name.toLowerCase() === categoryLower) ||
@@ -126,6 +126,9 @@ export class DataImportService {
                         mappedRow.budgetId = matchedBudget.id;
                     }
                 }
+
+                // Cleanup temporary mapping field
+                delete mappedRow.importCategory;
             } else if (targetTable === 'budgets') {
                 if (!mappedRow.frequency) mappedRow.frequency = 'monthly';
                 if (!mappedRow.paymentSource) mappedRow.paymentSource = 'Monthly Bills';

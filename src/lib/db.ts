@@ -95,8 +95,6 @@ export interface Transaction {
     date: number; // timestamp
     payee: string;
     amount: number;
-    category: string;
-    subCategory: string;
     type: 'income' | 'expense';
     icon: string;
     budgetId?: string; // Links transaction to a specific budget
@@ -164,6 +162,35 @@ db.version(1).stores({
 // Schema version 2 - Adds budgetCategories
 db.version(2).stores({
     budgetCategories: '&id, name, updatedAt'
+});
+
+// Schema version 3 - Removes category/subCategory from transactions
+db.version(3).stores({
+    transactions: '&id, date, type, budgetId, importId, updatedAt'
+}).upgrade(async tx => {
+    // We need to fetch budgets using raw Dexie transaction table since types might not fully match during upgrade
+    const budgets = await tx.table('budgets').toArray();
+
+    return tx.table('transactions').toCollection().modify(transaction => {
+        // Only migrate if we have the old fields
+        if (transaction.category) {
+            // If it doesn't already have a budgetId, try to find one
+            if (!transaction.budgetId) {
+                const subCategory = transaction.subCategory || '';
+                const matchingBudget = budgets.find(
+                    b => b.category.toLowerCase() === transaction.category.toLowerCase() && b.name.toLowerCase() === subCategory.toLowerCase()
+                );
+
+                if (matchingBudget) {
+                    transaction.budgetId = matchingBudget.id;
+                }
+            }
+
+            // Remove old fields
+            delete transaction.category;
+            delete transaction.subCategory;
+        }
+    });
 });
 
 export const initDb = async () => {

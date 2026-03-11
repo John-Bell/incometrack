@@ -30,7 +30,6 @@ export function TopExpenses({ expenses }: TopExpensesProps) {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{expense.payee}</p>
-                                    <p className="text-xs text-slate-500 capitalize">{expense.category}</p>
                                 </div>
                             </div>
                             <div className="text-right flex-shrink-0 pl-2">

@@ -17,7 +17,7 @@ export function EditPaymentPage() {
     const [payee, setPayee] = useState('');
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState('');
-    const [subCategory, setSubCategory] = useState('');
+    const [budgetId, setBudgetId] = useState('');
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
 
@@ -25,33 +25,32 @@ export function EditPaymentPage() {
         if (transaction) {
             setPayee(transaction.payee);
             setAmount(transaction.amount.toString());
-            setCategory(transaction.category);
-            setSubCategory(transaction.subCategory);
+
+            if (transaction.budgetId && budgets) {
+                const budget = budgets.find(b => b.id === transaction.budgetId);
+                if (budget) {
+                    setCategory(budget.category);
+                }
+            }
+
+            setBudgetId(transaction.budgetId || '');
             setType(transaction.type);
             const txDate = new Date(transaction.date);
             setDate(txDate.toISOString().split('T')[0]);
         }
-    }, [transaction]);
+    }, [transaction, budgets]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id) return;
 
-        // Find matching budget
-        const budgets = await db.budgets.toArray();
-        const matchingBudget = budgets.find(
-            b => b.category.toLowerCase() === category.toLowerCase() && b.name.toLowerCase() === subCategory.toLowerCase()
-        );
-
         await db.transactions.update(id, {
             date: new Date(date).getTime(),
             payee,
             amount: parseFloat(amount) || 0,
-            category,
-            subCategory,
             type,
             icon: type === 'expense' ? 'shopping_cart' : 'payments',
-            budgetId: matchingBudget?.id
+            budgetId: budgetId || undefined
         });
 
         navigate('/transactions');
@@ -155,7 +154,7 @@ export function EditPaymentPage() {
                                 value={category}
                                 onChange={(e) => {
                                     setCategory(e.target.value);
-                                    setSubCategory('');
+                                    setBudgetId('');
                                 }}
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
                             >
@@ -177,8 +176,8 @@ export function EditPaymentPage() {
                         <div className="relative">
                             <select
                                 required
-                                value={subCategory}
-                                onChange={(e) => setSubCategory(e.target.value)}
+                                value={budgetId}
+                                onChange={(e) => setBudgetId(e.target.value)}
                                 disabled={!category}
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-900"
                             >
@@ -187,7 +186,7 @@ export function EditPaymentPage() {
                                     .filter(b => b.category === category)
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map(budget => (
-                                        <option key={budget.id} value={budget.name}>{budget.name}</option>
+                                        <option key={budget.id} value={budget.id}>{budget.name}</option>
                                     ))
                                 }
                             </select>

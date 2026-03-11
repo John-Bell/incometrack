@@ -19,6 +19,7 @@ export function AddPaymentPage() {
     const [budgetId, setBudgetId] = useState('');
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [suggestedBudgetIds, setSuggestedBudgetIds] = useState<string[]>([]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,6 +35,40 @@ export function AddPaymentPage() {
         });
 
         navigate('/transactions');
+    };
+
+    const handlePayeeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setPayee(val);
+
+        if (val) {
+            const mappings = await db.paymentMappings.toArray();
+            const matchedMapping = mappings.find(m => val.toLowerCase().includes(m.paymentName.toLowerCase()));
+
+            if (matchedMapping && matchedMapping.budgetIds && matchedMapping.budgetIds.length > 0) {
+                setSuggestedBudgetIds(matchedMapping.budgetIds);
+                // Optionally auto-select the first one if the user hasn't chosen one
+                if (!budgetId) {
+                    const firstBudget = await db.budgets.get(matchedMapping.budgetIds[0]);
+                    if (firstBudget) {
+                        setCategory(firstBudget.budgetCategoryId);
+                        setBudgetId(firstBudget.id);
+                    }
+                }
+            } else {
+                setSuggestedBudgetIds([]);
+            }
+        } else {
+            setSuggestedBudgetIds([]);
+        }
+    };
+
+    const applySuggestion = async (suggestedId: string) => {
+        const budget = await db.budgets.get(suggestedId);
+        if (budget) {
+            setCategory(budget.budgetCategoryId);
+            setBudgetId(budget.id);
+        }
     };
 
     return (
@@ -77,10 +112,33 @@ export function AddPaymentPage() {
                             type="text"
                             required
                             value={payee}
-                            onChange={(e) => setPayee(e.target.value)}
+                            onChange={handlePayeeChange}
                             className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
                             placeholder="E.g. Tesco, Salary, etc."
                         />
+                        {suggestedBudgetIds.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                {suggestedBudgetIds.map(sId => {
+                                    const budget = budgets.find(b => b.id === sId);
+                                    if (!budget) return null;
+                                    const isSelected = budgetId === sId;
+                                    return (
+                                        <button
+                                            key={sId}
+                                            type="button"
+                                            onClick={() => applySuggestion(sId)}
+                                            className={`text-[11px] font-bold px-3 py-1.5 rounded-full border transition-all ${
+                                                isSelected
+                                                ? 'bg-primary border-primary text-black shadow-sm'
+                                                : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300'
+                                            }`}
+                                        >
+                                            {budget.name}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     <div>

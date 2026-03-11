@@ -20,6 +20,7 @@ import { AddBudgetPage } from '@/pages/AddBudgetPage';
 import { TransactionsPage } from '@/pages/TransactionsPage';
 import { AddPaymentPage } from '@/pages/AddPaymentPage';
 import { EditPaymentPage } from '@/pages/EditPaymentPage';
+import { PaymentMappingsPage } from '@/pages/PaymentMappingsPage';
 import { ImportProcessor } from '@/pages/ImportProcessor';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
@@ -71,6 +72,7 @@ function AppRoutes() {
       <Route path="/transactions" element={<TransactionsPage />} />
       <Route path="/transactions/add" element={<AddPaymentPage />} />
       <Route path="/transactions/edit/:id" element={<EditPaymentPage />} />
+      <Route path="/payment-mappings" element={<PaymentMappingsPage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
       <Route path="/income-setup" element={<StreamlinedIncomeConfigurationPage />} />

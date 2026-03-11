@@ -131,6 +131,13 @@ export interface Budget {
     importMappingName?: string;
 }
 
+export interface PaymentMapping {
+    id: string;
+    paymentName: string;
+    budgetIds: string[];
+    updatedAt?: number;
+}
+
 export const db = new Dexie('IncomeTrackDB') as Dexie & {
     profile: EntityTable<Profile, 'id'>;
     accounts: EntityTable<Account, 'id'>;
@@ -143,6 +150,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     transactions: EntityTable<Transaction, 'id'>;
     budgets: EntityTable<Budget, 'id'>;
     budgetCategories: EntityTable<BudgetCategory, 'id'>;
+    paymentMappings: EntityTable<PaymentMapping, 'id'>;
 };
 
 // Schema version 1
@@ -158,6 +166,36 @@ db.version(1).stores({
     budgets: '&id, budgetCategoryId, name, importId, updatedAt',
     transactions: '&id, date, type, budgetId, importId, updatedAt',
     budgetCategories: '&id, name, updatedAt'
+});
+
+db.version(2).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, budgetCategoryId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, importId, updatedAt',
+    budgetCategories: '&id, name, updatedAt',
+    paymentMappings: '&id, paymentName, budgetId, updatedAt'
+});
+
+db.version(3).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, budgetCategoryId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, importId, updatedAt',
+    budgetCategories: '&id, name, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
 });
 
 export const initDb = async () => {
@@ -180,7 +218,7 @@ export const dbHooks = {
 };
 
 // Add hooks to automatically update the updatedAt timestamp
-const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'budgetCategories'];
+const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'budgetCategories', 'paymentMappings'];
 
 tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {

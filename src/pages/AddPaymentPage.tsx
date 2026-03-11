@@ -10,6 +10,8 @@ export function AddPaymentPage() {
     const navigate = useNavigate();
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
+    const categoryNameMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
 
     const [payee, setPayee] = useState('');
     const [amount, setAmount] = useState('');
@@ -130,9 +132,11 @@ export function AddPaymentPage() {
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
                             >
                                 <option value="" disabled>Select a category</option>
-                                {Array.from(new Set(budgets.map(b => b.category))).sort().map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
+                                {Array.from(new Set(budgets.map(b => b.category)))
+                                    .sort((a, b) => (categoryNameMap[a] || a).localeCompare(categoryNameMap[b] || b))
+                                    .map(catId => (
+                                        <option key={catId} value={catId}>{categoryNameMap[catId] || catId}</option>
+                                    ))}
                             </select>
                             <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
                                 <span className="material-symbols-outlined">expand_more</span>

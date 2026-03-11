@@ -77,18 +77,45 @@ export function IncomeConfigPage() {
     }, [dbIncomes]);
 
     const handleSave = async () => {
-        if (!dbIncomes) return;
         setIsSaving(true);
         try {
-            const updates = dbIncomes.map(inc => {
-                const partnerKey = inc.ownerId === 'person1' ? 'partner1' : 'partner2';
-                const fieldData = incomeData[partnerKey][inc.type as keyof typeof incomeData['partner1']];
-                return {
-                    ...inc,
-                    amount: fieldData.amount ? parseFloat(fieldData.amount) || 0 : 0,
-                    frequency: fieldData.frequency
-                };
+            const currentIncomes = dbIncomes || [];
+            const updates: any[] = [];
+
+            const incomeTypes = [
+                { type: 'employment', name: 'Employment / Other', taxCategory: 'Earned' },
+                { type: 'pension', name: 'State / Private Pension', taxCategory: 'Pension' },
+                { type: 'rental', name: 'Rental Income', taxCategory: 'Earned' },
+                { type: 'dividends', name: 'Dividends', taxCategory: 'Dividend' }
+            ] as const;
+
+            ['person1', 'person2'].forEach(ownerId => {
+                const partnerKey = ownerId === 'person1' ? 'partner1' : 'partner2';
+
+                incomeTypes.forEach(({ type, name, taxCategory }) => {
+                    const existing = currentIncomes.find(inc => inc.ownerId === ownerId && inc.type === type);
+                    const fieldData = incomeData[partnerKey][type as keyof typeof incomeData.partner1];
+
+                    if (existing) {
+                        updates.push({
+                            ...existing,
+                            amount: fieldData.amount ? parseFloat(fieldData.amount) || 0 : 0,
+                            frequency: fieldData.frequency
+                        });
+                    } else {
+                        updates.push({
+                            id: crypto.randomUUID(),
+                            ownerId,
+                            name,
+                            amount: fieldData.amount ? parseFloat(fieldData.amount) || 0 : 0,
+                            frequency: fieldData.frequency,
+                            type,
+                            taxCategory
+                        });
+                    }
+                });
             });
+
             await db.incomes.bulkPut(updates);
             navigate('/income');
         } catch (error) {

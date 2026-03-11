@@ -10,7 +10,7 @@ import { Icon } from '../components/ui/Icon';
 export function BudgetsPage() {
     const navigate = useNavigate();
     const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
-    const [cardLayout, setCardLayout] = useState<'detailed' | 'compressed'>('detailed');
+    const [cardLayout, setCardLayout] = useState<'detailed' | 'compact'>('detailed');
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
@@ -85,14 +85,30 @@ export function BudgetsPage() {
                             </button>
                         </div>
                         <div className="mt-4 flex justify-end">
-                            <select
-                                value={cardLayout}
-                                onChange={(e) => setCardLayout(e.target.value as 'detailed' | 'compressed')}
-                                className="bg-slate-100 dark:bg-surface-dark text-sm font-medium text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 border border-slate-200 dark:border-border-dark focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-                            >
-                                <option value="detailed">Detailed View</option>
-                                <option value="compressed">Compressed View</option>
-                            </select>
+                            <div className="flex bg-[#E8F8EE] dark:bg-[#1A2E22] rounded-xl p-1 shadow-sm border border-slate-200 dark:border-border-dark">
+                                <button
+                                    onClick={() => setCardLayout('detailed')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                        cardLayout === 'detailed'
+                                            ? 'bg-white dark:bg-surface-dark text-[#1DAF61] shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                                >
+                                    <Icon name="view_list" className="text-lg" />
+                                    Detailed
+                                </button>
+                                <button
+                                    onClick={() => setCardLayout('compact')}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                        cardLayout === 'compact'
+                                            ? 'bg-white dark:bg-surface-dark text-[#1DAF61] shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                    }`}
+                                >
+                                    <Icon name="view_headline" className="text-lg" />
+                                    Compact
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -166,7 +182,7 @@ export function BudgetsPage() {
                                     chipClass = 'bg-emerald-500/10 text-emerald-500';
                                 }
 
-                                if (cardLayout === 'compressed') {
+                                if (cardLayout === 'compact') {
                                     return (
                                         <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-200 dark:border-border-dark flex flex-col gap-3 relative overflow-hidden">
                                             <div className="flex items-start gap-3">

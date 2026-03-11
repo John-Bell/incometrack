@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Icon } from '../ui/Icon';
 import { useStore } from '@/store/useStore';
+import { db } from '@/lib/db';
 import { remoteSyncService } from '@/services/remoteSyncService';
 
 interface MainHeaderActionsProps {
@@ -13,6 +15,10 @@ export function MainHeaderActions({ onSave, isSaving: externalIsSaving, showSave
     const { syncStatus, lastSynced } = useStore();
     const [recentlySaved, setRecentlySaved] = useState(false);
     const [internalIsSaving, setInternalIsSaving] = useState(false);
+
+    const settingsArray = useLiveQuery(() => db.settings.toArray());
+    const settings = settingsArray?.[0];
+    const isSyncConfigured = !!(settings?.syncServerUrl?.trim() && settings?.syncPassphrase?.trim() && settings?.syncHeaderKey?.trim());
 
     const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
 
@@ -99,7 +105,7 @@ export function MainHeaderActions({ onSave, isSaving: externalIsSaving, showSave
             {(showSaveButton || onSave) && (
                 <button
                     onClick={handleSyncClick}
-                    disabled={isSaving}
+                    disabled={isSaving || (!onSave && !isSyncConfigured)}
                     title={tooltip} // Show sync tooltip on hover for the combined button
                     className="flex items-center gap-2 bg-primary text-[#10221c] px-3 py-1.5 rounded-xl font-bold text-sm transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
                 >

@@ -21,7 +21,7 @@ export function EditBudgetPage() {
 
     useEffect(() => {
         if (budget) {
-            setCategory(budget.category);
+            setCategory(budget.budgetCategoryId);
             setName(budget.name);
             setAmount(budget.amount.toString());
             setFrequency(budget.frequency);
@@ -33,7 +33,7 @@ export function EditBudgetPage() {
         if (!id || !budget) return;
 
         await db.budgets.update(id, {
-            category,
+            budgetCategoryId: category,
             name,
             amount: parseFloat(amount) || 0,
             frequency,

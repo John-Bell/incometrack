@@ -18,10 +18,10 @@ export function BudgetsPage() {
 
     // Group budgets by category
     const groupedBudgets = budgets.reduce((acc, budget) => {
-        if (!acc[budget.category]) {
-            acc[budget.category] = [];
+        if (!acc[budget.budgetCategoryId]) {
+            acc[budget.budgetCategoryId] = [];
         }
-        acc[budget.category].push(budget);
+        acc[budget.budgetCategoryId].push(budget);
         return acc;
     }, {} as Record<string, typeof budgets>);
 

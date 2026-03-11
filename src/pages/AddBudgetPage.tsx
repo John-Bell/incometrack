@@ -20,7 +20,7 @@ export function AddBudgetPage() {
 
         await db.budgets.add({
             id: crypto.randomUUID(),
-            category,
+            budgetCategoryId: category,
             name,
             amount: parseFloat(amount) || 0,
             frequency,

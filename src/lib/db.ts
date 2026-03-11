@@ -95,8 +95,6 @@ export interface Transaction {
     date: number; // timestamp
     payee: string;
     amount: number;
-    category: string;
-    subCategory: string;
     type: 'income' | 'expense';
     icon: string;
     budgetId?: string; // Links transaction to a specific budget
@@ -121,7 +119,7 @@ export interface BudgetCategory {
 
 export interface Budget {
     id: string;
-    category: string;
+    budgetCategoryId: string;
     name: string; // sub-category
     amount: number;
     frequency: string; // e.g. monthly, annual
@@ -164,6 +162,55 @@ db.version(1).stores({
 // Schema version 2 - Adds budgetCategories
 db.version(2).stores({
     budgetCategories: '&id, name, updatedAt'
+});
+
+// Schema version 3 - Removes category/subCategory from transactions and renames category to budgetCategoryId on budgets
+db.version(3).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, budgetCategoryId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, importId, updatedAt',
+    budgetCategories: '&id, name, updatedAt'
+}).upgrade(async tx => {
+    // We need to fetch budgets using raw Dexie transaction table since types might not fully match during upgrade
+    const budgets = await tx.table('budgets').toArray();
+
+    // Migrate Transactions
+    await tx.table('transactions').toCollection().modify(transaction => {
+        // Only migrate if we have the old fields
+        if (transaction.category) {
+            // If it doesn't already have a budgetId, try to find one
+            if (!transaction.budgetId) {
+                const subCategory = transaction.subCategory || '';
+                const matchingBudget = budgets.find(
+                    b => b.category.toLowerCase() === transaction.category.toLowerCase() && b.name.toLowerCase() === subCategory.toLowerCase()
+                );
+
+                if (matchingBudget) {
+                    transaction.budgetId = matchingBudget.id;
+                }
+            }
+
+            // Remove old fields
+            delete transaction.category;
+            delete transaction.subCategory;
+        }
+    });
+
+    // Migrate Budgets
+    await tx.table('budgets').toCollection().modify(budget => {
+        // Only migrate if we have the old field
+        if (budget.category) {
+            budget.budgetCategoryId = budget.category;
+            delete budget.category;
+        }
+    });
 });
 
 export const initDb = async () => {

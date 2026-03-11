@@ -44,7 +44,7 @@ export class DataImportService {
         if (targetTable === 'transactions') {
             sourceString = `${row.date || ''}-${row.amount || ''}-${row.payee || ''}-${row.rawDesc || ''}-${row.importCategory || ''}`;
         } else if (targetTable === 'budgets') {
-            sourceString = `${row.category || ''}-${row.name || ''}-${row.amount || ''}`;
+            sourceString = `${row.importCategory || ''}-${row.name || ''}-${row.amount || ''}`;
         } else if (targetTable === 'accounts') {
             sourceString = `${row.name || ''}-${row.category || ''}-${row.ownerId || ''}`;
         } else {
@@ -76,6 +76,12 @@ export class DataImportService {
         let budgets: Budget[] = [];
         if (targetTable === 'transactions') {
             budgets = await db.budgets.toArray();
+        }
+
+        // Pre-fetch budgetCategories if we are importing budgets
+        let budgetCategories: {id: string, name: string}[] = [];
+        if (targetTable === 'budgets') {
+            budgetCategories = await db.budgetCategories.toArray();
         }
 
         for (const row of data) {
@@ -119,7 +125,7 @@ export class DataImportService {
                     const matchedBudget = budgets.find(b =>
                         (b.importMappingName && b.importMappingName.toLowerCase() === categoryLower) ||
                         (b.name && b.name.toLowerCase() === categoryLower) ||
-                        (b.category && b.category.toLowerCase() === categoryLower)
+                        (b.budgetCategoryId && b.budgetCategoryId.toLowerCase() === categoryLower)
                     );
 
                     if (matchedBudget) {
@@ -132,6 +138,36 @@ export class DataImportService {
             } else if (targetTable === 'budgets') {
                 if (!mappedRow.frequency) mappedRow.frequency = 'monthly';
                 if (!mappedRow.paymentSource) mappedRow.paymentSource = 'Monthly Bills';
+
+                // Map the incoming category string to a budgetCategoryId
+                if (mappedRow.importCategory && !mappedRow.budgetCategoryId) {
+                    const categoryLower = mappedRow.importCategory.toLowerCase();
+                    const matchedCategory = budgetCategories.find(c => c.name.toLowerCase() === categoryLower);
+
+                    if (matchedCategory) {
+                        mappedRow.budgetCategoryId = matchedCategory.id;
+                    } else {
+                        // Create a new budget category if it doesn't exist
+                        const newCategoryId = mappedRow.importCategory.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+                        // We check if it exists in the array again to avoid duplicates in the same batch
+                        const existingInBatch = budgetCategories.find(c => c.id === newCategoryId);
+                        if (!existingInBatch) {
+                            budgetCategories.push({ id: newCategoryId, name: mappedRow.importCategory });
+                            // Wait for it to be created in DB
+                            await db.budgetCategories.put({
+                                id: newCategoryId,
+                                name: mappedRow.importCategory,
+                                updatedAt: now
+                            });
+                        }
+
+                        mappedRow.budgetCategoryId = newCategoryId;
+                    }
+                }
+
+                // Cleanup temporary mapping field
+                delete mappedRow.importCategory;
             } else if (targetTable === 'accounts') {
                 if (!mappedRow.ownerId) mappedRow.ownerId = 'default';
                 if (mappedRow.balance === undefined) mappedRow.balance = 0;

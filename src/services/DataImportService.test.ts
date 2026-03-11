@@ -19,9 +19,9 @@ describe('DataImportService', () => {
         });
 
         it('should generate deterministic ID for budgets', () => {
-            const row1 = { category: 'Food', name: 'Groceries', amount: '500' };
-            const row2 = { category: 'Food', name: 'Groceries', amount: '500' };
-            const row3 = { category: 'Food', name: 'Dining Out', amount: '500' };
+            const row1 = { importCategory: 'Food', name: 'Groceries', amount: '500' };
+            const row2 = { importCategory: 'Food', name: 'Groceries', amount: '500' };
+            const row3 = { importCategory: 'Food', name: 'Dining Out', amount: '500' };
 
             const id1 = DataImportService.generateDeterministicId(row1, 'budgets');
             const id2 = DataImportService.generateDeterministicId(row2, 'budgets');
@@ -125,7 +125,7 @@ describe('DataImportService', () => {
             await db.budgets.add({
                 id: budgetId,
                 name: 'Groceries',
-                category: 'Food',
+                budgetCategoryId: 'Food',
                 amount: 500,
                 frequency: 'monthly',
                 paymentSource: 'Monthly Bills',
@@ -169,7 +169,7 @@ describe('DataImportService', () => {
             const data = [
                 { category: 'Utilities', name: 'Water', amount: '50' }
             ];
-            const mapping = { category: 'category', name: 'name', amount: 'amount' };
+            const mapping = { category: 'importCategory', name: 'name', amount: 'amount' };
 
             const result = await DataImportService.importData('budgets', data, 'import-file-2', mapping);
             expect(result).toBe(1);
@@ -181,7 +181,13 @@ describe('DataImportService', () => {
             expect(b.amount).toBe(50); // parsed correctly
             expect(b.frequency).toBe('monthly');
             expect(b.paymentSource).toBe('Monthly Bills');
+            expect(b.budgetCategoryId).toBe('utilities'); // derived category ID
+            expect((b as any).importCategory).toBeUndefined();
             expect(b.importId).toBe('import-file-2');
+
+            // Should have created a budget category
+            const categories = await db.budgetCategories.toArray();
+            expect(categories).toContainEqual(expect.objectContaining({ id: 'utilities', name: 'Utilities' }));
         });
 
         it('should assign default values when importing accounts', async () => {

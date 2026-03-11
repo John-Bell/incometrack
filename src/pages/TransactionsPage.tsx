@@ -92,7 +92,7 @@ export function TransactionsPage() {
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center mt-0.5">
-                                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{tx.budgetId ? (categoriesMap[budgetsMap[tx.budgetId]?.category] || budgetsMap[tx.budgetId]?.category || 'Uncategorized') : 'Uncategorized'}</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{tx.budgetId ? (categoriesMap[budgetsMap[tx.budgetId]?.budgetCategoryId] || budgetsMap[tx.budgetId]?.budgetCategoryId || 'Uncategorized') : 'Uncategorized'}</p>
                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 uppercase">{tx.budgetId ? (budgetsMap[tx.budgetId]?.name || 'Unknown') : 'Unknown'}</span>
                                         </div>
                                     </div>

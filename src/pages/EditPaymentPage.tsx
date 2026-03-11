@@ -29,7 +29,7 @@ export function EditPaymentPage() {
             if (transaction.budgetId && budgets) {
                 const budget = budgets.find(b => b.id === transaction.budgetId);
                 if (budget) {
-                    setCategory(budget.category);
+                    setCategory(budget.budgetCategoryId);
                 }
             }
 
@@ -159,7 +159,7 @@ export function EditPaymentPage() {
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
                             >
                                 <option value="" disabled>Select a category</option>
-                                {Array.from(new Set(budgets.map(b => b.category)))
+                                {Array.from(new Set(budgets.map(b => b.budgetCategoryId)))
                                     .sort((a, b) => (categoryNameMap[a] || a).localeCompare(categoryNameMap[b] || b))
                                     .map(catId => (
                                         <option key={catId} value={catId}>{categoryNameMap[catId] || catId}</option>
@@ -183,7 +183,7 @@ export function EditPaymentPage() {
                             >
                                 <option value="" disabled>Select a sub-category</option>
                                 {budgets
-                                    .filter(b => b.category === category)
+                                    .filter(b => b.budgetCategoryId === category)
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map(budget => (
                                         <option key={budget.id} value={budget.id}>{budget.name}</option>

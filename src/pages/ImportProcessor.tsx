@@ -7,7 +7,7 @@ import { DataImportService } from '../services/DataImportService';
 
 const TABLE_SCHEMAS: Record<string, string[]> = {
     accounts: ['id', 'name', 'balance', 'interestRate', 'category', 'ownerId', 'notes'],
-    budgets: ['id', 'category', 'name', 'amount', 'frequency', 'paymentSource', 'ownership', 'importMappingName'],
+    budgets: ['id', 'importCategory', 'name', 'amount', 'frequency', 'paymentSource', 'ownership', 'importMappingName'],
     transactions: ['id', 'date', 'payee', 'amount', 'importCategory', 'type', 'icon', 'rawDesc']
 };
 

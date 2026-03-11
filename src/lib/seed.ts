@@ -1,6 +1,34 @@
 import { db } from '@/lib/db'; // Adjust this import path to where your Dexie instance lives
-import type { Account, Income, Transaction, Budget, MonthlyArchive } from '@/lib/db';
+import type { Account, Income, Transaction, Budget, MonthlyArchive, BudgetCategory } from '@/lib/db';
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
+
+export const seedBudgetCategories = async () => {
+    // Check if we've already seeded to prevent re-seeding if the user intentionally deletes all categories
+    if (localStorage.getItem('budgetCategoriesSeeded')) {
+        return;
+    }
+
+    const defaultCategories: BudgetCategory[] = [
+        { id: 'housing', name: 'Housing' },
+        { id: 'utilities', name: 'Utilities' },
+        { id: 'transport', name: 'Transport' },
+        { id: 'groceries', name: 'Groceries' },
+        { id: 'socializing', name: 'Socializing' },
+        { id: 'leisure', name: 'Leisure & Lifestyle' }
+    ].map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        updatedAt: Date.now()
+    }));
+
+    try {
+        await db.budgetCategories.bulkPut(defaultCategories);
+        localStorage.setItem('budgetCategoriesSeeded', 'true');
+        console.log('Successfully seeded default budget categories into Dexie.');
+    } catch (error) {
+        console.error('Failed to seed default budget categories:', error);
+    }
+};
 
 export const syncTaxRules = async () => {
     try {

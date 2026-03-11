@@ -13,6 +13,8 @@ export function BudgetsPage() {
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
+    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
+    const categoryNameMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
 
     // Group budgets by category
     const groupedBudgets = budgets.reduce((acc, budget) => {
@@ -88,7 +90,7 @@ export function BudgetsPage() {
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-bold text-primary flex items-center gap-2 capitalize">
                                 <Icon name={categoryIcons[category] || categoryIcons.default} className="text-xl" />
-                                {category}
+                                {categoryNameMap[category] || category}
                             </h2>
                             <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">
                                 {categoryBudgets.length} {categoryBudgets.length === 1 ? 'Item' : 'Items'}

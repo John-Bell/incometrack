@@ -113,6 +113,12 @@ export interface TaxYearRule extends TaxYearConstants {
     updatedAt?: number;
 }
 
+export interface BudgetCategory {
+    id: string;
+    name: string;
+    updatedAt?: number;
+}
+
 export interface Budget {
     id: string;
     category: string;
@@ -138,6 +144,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     taxRules: EntityTable<TaxYearRule, 'id'>; // Added to DB instance
     transactions: EntityTable<Transaction, 'id'>;
     budgets: EntityTable<Budget, 'id'>;
+    budgetCategories: EntityTable<BudgetCategory, 'id'>;
 };
 
 // Schema version 1
@@ -152,6 +159,11 @@ db.version(1).stores({
     taxRules: '&id, updatedAt',
     budgets: '&id, category, name, importId, updatedAt',
     transactions: '&id, date, category, type, budgetId, importId, updatedAt'
+});
+
+// Schema version 2 - Adds budgetCategories
+db.version(2).stores({
+    budgetCategories: '&id, name, updatedAt'
 });
 
 export const initDb = async () => {
@@ -174,7 +186,7 @@ export const dbHooks = {
 };
 
 // Add hooks to automatically update the updatedAt timestamp
-const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
+const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'budgetCategories'];
 
 tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {

@@ -184,8 +184,8 @@ export const remoteSyncService = {
             const syncPassphrase = settings.syncPassphrase;
             const syncHeaderKey = settings.syncHeaderKey;
 
-            if (!syncUrl || !syncPassphrase) {
-                console.warn('Sync aborted: syncUrl or syncPassphrase is not configured.');
+            if (!syncUrl || !syncPassphrase || !syncHeaderKey) {
+                console.warn('Sync aborted: syncUrl, syncPassphrase, or syncHeaderKey is not configured.');
                 useStore.getState().setSyncStatus('disconnected');
                 return false;
             }

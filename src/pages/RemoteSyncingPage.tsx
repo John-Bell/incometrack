@@ -64,8 +64,8 @@ export function RemoteSyncingPage() {
     };
 
     const handleLoadFromRemote = async () => {
-        if (!syncServerUrl.trim() || !syncPassphrase.trim()) {
-            setStatusMessage({ type: 'error', text: 'Server URL and Encryption Passphrase are required.' });
+        if (!syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()) {
+            setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
             return;
         }
 
@@ -103,8 +103,8 @@ export function RemoteSyncingPage() {
     };
 
     const handleSaveToRemote = async () => {
-        if (!syncServerUrl.trim() || !syncPassphrase.trim()) {
-            setStatusMessage({ type: 'error', text: 'Server URL and Encryption Passphrase are required.' });
+        if (!syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()) {
+            setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
             return;
         }
 
@@ -241,7 +241,7 @@ export function RemoteSyncingPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <Button
                                 onClick={handleLoadFromRemote}
-                                disabled={hasChanges || isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim()}
+                                disabled={hasChanges || isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()}
                                 className="w-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Icon name="cloud_download" className="text-xl" />
@@ -250,7 +250,7 @@ export function RemoteSyncingPage() {
 
                             <Button
                                 onClick={handleSaveToRemote}
-                                disabled={hasChanges || isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim()}
+                                disabled={hasChanges || isProcessing || isUpdating || !syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()}
                                 className="w-full bg-primary text-white hover:bg-primary/90 font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Icon name="cloud_upload" className="text-xl" />

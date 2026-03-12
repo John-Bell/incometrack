@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { db, getSanitizedDbData } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
@@ -111,19 +111,8 @@ export function RemoteSyncingPage() {
         setIsProcessing(true);
         setStatusMessage(null);
         try {
-            // Extract full database
-            const allData: Record<string, any[]> = {
-                profile: await db.profile.toArray(),
-                accounts: await db.accounts.toArray(),
-                incomes: await db.incomes.toArray(),
-                scenarios: await db.scenarios.toArray(),
-                settings: await db.settings.toArray(),
-                monthlyArchives: await db.monthlyArchives.toArray(),
-                notifications: await db.notifications.toArray(),
-                taxRules: await db.taxRules.toArray(),
-                transactions: await db.transactions.toArray(),
-                budgets: await db.budgets.toArray(),
-            };
+            // Extract full database, ensuring numeric sanitization
+            const allData = await getSanitizedDbData();
 
             // Encrypt
             const encryptedBlob = await encryptData(allData, syncPassphrase.trim());

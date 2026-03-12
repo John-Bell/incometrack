@@ -34,9 +34,9 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 
 export async function mergeData(cloudData: Record<string, any[]>): Promise<boolean> {
     let hasLocalChanges = false;
-    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'];
+    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'budgetCategories', 'paymentMappings'];
 
-    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets];
+    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.budgetCategories, db.paymentMappings];
 
     dbHooks.isSyncing = true;
     await db.transaction('rw', tableList, async () => {
@@ -230,19 +230,9 @@ export const remoteSyncService = {
 
             // 3. Extract full database and 4. Encrypt & Push (If Needed)
             if (hasLocalChanges || serverLastUpdated === 0) {
-                // 3. Extract full database
-                const allData: Record<string, any[]> = {
-                    profile: await db.profile.toArray(),
-                    accounts: await db.accounts.toArray(),
-                    incomes: await db.incomes.toArray(),
-                    scenarios: await db.scenarios.toArray(),
-                    settings: await db.settings.toArray(),
-                    monthlyArchives: await db.monthlyArchives.toArray(),
-                    notifications: await db.notifications.toArray(),
-                    taxRules: await db.taxRules.toArray(),
-                    transactions: await db.transactions.toArray(),
-                    budgets: await db.budgets.toArray(),
-                };
+                // 3. Extract full database, including numeric sanitization for strict clients
+                const { getSanitizedDbData } = await import('@/lib/db');
+                const allData = await getSanitizedDbData();
 
                 // 4. Encrypt & Push
                 const encryptedBlob = await encryptData(allData, syncPassphrase);

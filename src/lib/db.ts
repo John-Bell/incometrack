@@ -198,6 +198,57 @@ db.version(3).stores({
     paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
 });
 
+export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
+    const rawData = {
+        profile: await db.profile.toArray(),
+        accounts: await db.accounts.toArray(),
+        incomes: await db.incomes.toArray(),
+        scenarios: await db.scenarios.toArray(),
+        settings: await db.settings.toArray(),
+        monthlyArchives: await db.monthlyArchives.toArray(),
+        notifications: await db.notifications.toArray(),
+        taxRules: await db.taxRules.toArray(),
+        transactions: await db.transactions.toArray(),
+        budgets: await db.budgets.toArray(),
+        budgetCategories: await db.budgetCategories.toArray(),
+        paymentMappings: await db.paymentMappings.toArray(),
+    };
+
+    // Sanitize common numeric fields that might have accidentally been saved as strings,
+    // which breaks strictly-typed Swift Decodable models in the iOS app.
+    if (rawData.transactions) {
+        rawData.transactions = rawData.transactions.map(t => ({
+            ...t,
+            amount: Number(t.amount) || 0,
+            date: Number(t.date) || 0,
+        }));
+    }
+
+    if (rawData.budgets) {
+        rawData.budgets = rawData.budgets.map(b => ({
+            ...b,
+            amount: Number(b.amount) || 0,
+        }));
+    }
+
+    if (rawData.accounts) {
+        rawData.accounts = rawData.accounts.map(a => ({
+            ...a,
+            balance: Number(a.balance) || 0,
+            interestRate: Number(a.interestRate) || 0,
+        }));
+    }
+
+    if (rawData.incomes) {
+        rawData.incomes = rawData.incomes.map(i => ({
+            ...i,
+            amount: Number(i.amount) || 0,
+        }));
+    }
+
+    return rawData;
+};
+
 export const initDb = async () => {
     try {
         await db.open();

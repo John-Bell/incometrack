@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { db, getSanitizedDbData } from '@/lib/db';
 
 export interface BackupData {
     version: number;
@@ -9,18 +9,7 @@ export const exportDatabase = async () => {
     try {
         const backup: BackupData = {
             version: 1,
-            data: {
-                profile: await db.profile.toArray(),
-                accounts: await db.accounts.toArray(),
-                incomes: await db.incomes.toArray(),
-                scenarios: await db.scenarios.toArray(),
-                settings: await db.settings.toArray(),
-                monthlyArchives: await db.monthlyArchives.toArray(),
-                notifications: await db.notifications.toArray(),
-                taxRules: await db.taxRules.toArray(),
-                transactions: await db.transactions.toArray(),
-                budgets: await db.budgets.toArray(),
-            }
+            data: await getSanitizedDbData()
         };
 
         // Remove cloudHandle from settings before stringifying to avoid serialization issues
@@ -100,7 +89,8 @@ export const importDatabase = async () => {
 
         const tables = [
             'profile', 'accounts', 'incomes', 'scenarios', 'settings',
-            'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets'
+            'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets',
+            'budgetCategories', 'paymentMappings'
         ];
         const dexieTables = tables.map(t => (db as any)[t]);
 

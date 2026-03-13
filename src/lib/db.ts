@@ -25,6 +25,7 @@ export interface Account {
     category: string; // e.g., 'Cash', 'Investments', 'Pensions'
     nickname?: string;
     last4Digits?: string;
+    budgetOrder?: number;
     // --- Bonus Rate Fields ---
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
@@ -245,6 +246,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             ...a,
             balance: Number(a.balance) || 0,
             interestRate: Number(a.interestRate) || 0,
+            budgetOrder: a.budgetOrder !== undefined ? Number(a.budgetOrder) : undefined,
         }));
     }
 

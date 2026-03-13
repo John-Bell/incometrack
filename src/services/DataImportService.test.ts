@@ -124,8 +124,8 @@ describe('DataImportService', () => {
             const budgetId = 'test-budget-id';
             await db.budgets.add({
                 id: budgetId,
+                accountId: 'test-account',
                 name: 'Groceries',
-                budgetCategoryId: 'Food',
                 amount: 500,
                 frequency: 'monthly',
                 paymentSource: 'Monthly Bills',
@@ -137,7 +137,7 @@ describe('DataImportService', () => {
                     rawDate: '2023-01-01T12:00:00Z',
                     rawAmount: '-$100.50',
                     desc: 'Supermarket',
-                    cat: 'Food'
+                    cat: 'Groceries'
                 }
             ];
             const mapping = {
@@ -181,13 +181,8 @@ describe('DataImportService', () => {
             expect(b.amount).toBe(50); // parsed correctly
             expect(b.frequency).toBe('monthly');
             expect(b.paymentSource).toBe('Monthly Bills');
-            expect(b.budgetCategoryId).toBe('utilities'); // derived category ID
             expect((b as any).importCategory).toBeUndefined();
             expect(b.importId).toBe('import-file-2');
-
-            // Should have created a budget category
-            const categories = await db.budgetCategories.toArray();
-            expect(categories).toContainEqual(expect.objectContaining({ id: 'utilities', name: 'Utilities' }));
         });
 
         it('should assign default values when importing accounts', async () => {

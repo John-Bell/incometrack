@@ -23,6 +23,8 @@ export interface Account {
     alertText?: string;
     alertType?: 'warning' | 'error' | 'info';
     category: string; // e.g., 'Cash', 'Investments', 'Pensions'
+    nickname?: string;
+    last4Digits?: string;
     // --- Bonus Rate Fields ---
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
@@ -98,6 +100,7 @@ export interface Transaction {
     type: 'income' | 'expense';
     icon: string;
     budgetId?: string; // Links transaction to a specific budget
+    accountId: string;
     updatedAt?: number;
     // --- Import Fields ---
     importId?: string;
@@ -111,15 +114,9 @@ export interface TaxYearRule extends TaxYearConstants {
     updatedAt?: number;
 }
 
-export interface BudgetCategory {
-    id: string;
-    name: string;
-    updatedAt?: number;
-}
-
 export interface Budget {
     id: string;
-    budgetCategoryId: string;
+    accountId: string;
     name: string; // sub-category
     amount: number;
     frequency: string; // e.g. monthly, annual
@@ -149,7 +146,6 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     taxRules: EntityTable<TaxYearRule, 'id'>; // Added to DB instance
     transactions: EntityTable<Transaction, 'id'>;
     budgets: EntityTable<Budget, 'id'>;
-    budgetCategories: EntityTable<BudgetCategory, 'id'>;
     paymentMappings: EntityTable<PaymentMapping, 'id'>;
 };
 
@@ -198,6 +194,20 @@ db.version(3).stores({
     paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
 });
 
+db.version(4).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt', // removed budgetCategoryId
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -210,7 +220,6 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         taxRules: await db.taxRules.toArray(),
         transactions: await db.transactions.toArray(),
         budgets: await db.budgets.toArray(),
-        budgetCategories: await db.budgetCategories.toArray(),
         paymentMappings: await db.paymentMappings.toArray(),
     };
 
@@ -269,7 +278,7 @@ export const dbHooks = {
 };
 
 // Add hooks to automatically update the updatedAt timestamp
-const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'budgetCategories', 'paymentMappings'];
+const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings'];
 
 tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {

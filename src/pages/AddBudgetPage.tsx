@@ -7,24 +7,24 @@ import { Icon } from '../components/ui/Icon';
 
 export function AddBudgetPage() {
     const navigate = useNavigate();
-    const [category, setCategory] = useState('');
+    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [paymentSource, setPaymentSource] = useState('');
-
-    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
+    const [accountId, setAccountId] = useState('');
 
     const handleSave = async () => {
-        if (!category || !name || !amount || !paymentSource) return;
+        if (!name || !amount || !paymentSource || !accountId) return;
 
         await db.budgets.add({
             id: crypto.randomUUID(),
-            budgetCategoryId: category,
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            paymentSource
+            paymentSource,
+            accountId
         });
         navigate('/budgets');
     };
@@ -49,23 +49,9 @@ export function AddBudgetPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                    {/* Category Selection */}
+                    {/* Sub-category (Now just Name) */}
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Category</label>
-                        <div className="relative">
-                            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
-                                <option disabled value="">Select a category</option>
-                                {budgetCategories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                            <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
-                        </div>
-                    </div>
-
-                    {/* Sub-category */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Sub-category name</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Budget name</label>
                         <input
                             className="w-full rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-slate-400"
                             placeholder="e.g. Weekly Food Shop"
@@ -124,11 +110,27 @@ export function AddBudgetPage() {
                             <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                         </div>
                     </div>
+
+                    {/* Account */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Account</label>
+                        <div className="relative">
+                            <select name="accountId" required value={accountId} onChange={(e) => setAccountId(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
+                                <option value="" disabled>Select an account</option>
+                                {accounts
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map((acc) => (
+                                        <option key={acc.id} value={acc.id}>{acc.nickname || acc.name}{acc.last4Digits ? ` (x${acc.last4Digits})` : ''}</option>
+                                    ))}
+                            </select>
+                            <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Sticky Footer */}
                 <div className="p-4 bg-white dark:bg-background-dark border-t border-slate-200 dark:border-primary/10 sticky bottom-0">
-                    <button onClick={handleSave} className="w-full py-4 bg-primary text-background-dark font-bold rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+                    <button disabled={!accountId} onClick={handleSave} className="w-full py-4 bg-primary text-background-dark font-bold rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                         <Icon name="add_circle" className="text-xl" />
                         Add Budget Item
                     </button>

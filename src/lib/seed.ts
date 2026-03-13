@@ -1,28 +1,5 @@
 import { db } from '@/lib/db'; // Adjust this import path to where your Dexie instance lives
-import type { BudgetCategory } from '@/lib/db';
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
-
-export const seedBudgetCategories = async () => {
-    const defaultCategories: BudgetCategory[] = [
-        'Housing',
-        'Utilities',
-        'Transport',
-        'Groceries',
-        'Socializing',
-        'Leisure & Lifestyle'
-    ].map(name => ({
-        id: crypto.randomUUID(),
-        name: name,
-        updatedAt: Date.now()
-    }));
-
-    try {
-        await db.budgetCategories.bulkPut(defaultCategories);
-        console.log('Successfully seeded default budget categories into Dexie.');
-    } catch (error) {
-        console.error('Failed to seed default budget categories:', error);
-    }
-};
 
 export const syncTaxRules = async () => {
     try {

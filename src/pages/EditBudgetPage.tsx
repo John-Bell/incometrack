@@ -10,34 +10,33 @@ export function EditBudgetPage() {
     const { id } = useParams<{ id: string }>();
 
     const budget = useLiveQuery(() => db.budgets.get(id as string), [id]);
+    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
 
-    const [category, setCategory] = useState('');
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [paymentSource, setPaymentSource] = useState('monthly');
-
-    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
+    const [accountId, setAccountId] = useState('');
 
     useEffect(() => {
         if (budget) {
-            setCategory(budget.budgetCategoryId);
             setName(budget.name);
             setAmount(budget.amount.toString());
             setFrequency(budget.frequency);
             setPaymentSource(budget.paymentSource);
+            setAccountId(budget.accountId || '');
             }
     }, [budget]);
 
     const handleSave = async () => {
-        if (!id || !budget) return;
+        if (!id || !budget || !accountId) return;
 
         await db.budgets.update(id, {
-            budgetCategoryId: category,
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            paymentSource
+            paymentSource,
+            accountId
         } );
         navigate('/budgets');
     };
@@ -78,22 +77,10 @@ export function EditBudgetPage() {
                 </div>
 
                 <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto w-full">
-                    {/* Category & Sub-category */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Sub-category (Now just Name) */}
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Category</label>
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="custom-select w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                            >
-                                {budgetCategories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Sub-category</label>
+                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Budget name</label>
                             <input
                                 className="w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                                 type="text"
@@ -156,6 +143,23 @@ export function EditBudgetPage() {
                                 <option value="Annual Bills">Annual Bills</option>
                             </select>
                         </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Account</label>
+                            <select
+                                required
+                                value={accountId}
+                                onChange={(e) => setAccountId(e.target.value)}
+                                className="custom-select w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                            >
+                                <option value="" disabled>Select an account</option>
+                                {accounts
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map((acc) => (
+                                        <option key={acc.id} value={acc.id}>{acc.nickname || acc.name}{acc.last4Digits ? ` (x${acc.last4Digits})` : ''}</option>
+                                    ))}
+                            </select>
+                        </div>
                     </div>
 
                     {/* Additional Details / Info Card */}
@@ -173,7 +177,8 @@ export function EditBudgetPage() {
                     <div className="mt-8 flex flex-col gap-3">
                         <button
                             onClick={handleSave}
-                            className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] hover:brightness-110 active:scale-[0.98] transition-all"
+                            disabled={!accountId}
+                            className="w-full bg-primary text-background-dark font-bold py-4 rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Save Changes
                         </button>

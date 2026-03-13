@@ -17,6 +17,7 @@ export function AddAccountPage() {
     const [category, setCategory] = useState<AccountCategory | ''>('');
     const [balance, setBalance] = useState('');
     const [interestRate, setInterestRate] = useState('');
+    const [budgetOrder, setBudgetOrder] = useState('');
     const [bonusRateActive, setBonusRateActive] = useState(false);
     const [bonusEndDate, setBonusEndDate] = useState('');
     const [ownerId, setOwnerId] = useState('joint'); // 'person1', 'person2', 'joint'
@@ -39,6 +40,7 @@ export function AddAccountPage() {
             balance: parseFloat(balance),
             interestRate: finalInterestRate,
             category,
+            budgetOrder: budgetOrder !== '' ? parseInt(budgetOrder, 10) : undefined,
             bonusRateActive: showBonus ? bonusRateActive : false,
             // Convert 'YYYY-MM-DD' back to timestamp if active, else undefined
             bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
@@ -121,6 +123,18 @@ export function AddAccountPage() {
                         </select>
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-slate-400">expand_more</span>
                     </div>
+                </div>
+
+                {/* Budget Order Field */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
+                    <input
+                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                        type="number"
+                        placeholder="e.g. 1"
+                        value={budgetOrder}
+                        onChange={(e) => setBudgetOrder(e.target.value)}
+                    />
                 </div>
 
                 {/* Balance Field */}

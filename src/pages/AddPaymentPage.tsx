@@ -107,6 +107,30 @@ export function AddPaymentPage() {
                     </div>
 
                     <div>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Account</label>
+                        <div className="relative">
+                            <select
+                                required
+                                value={accountId}
+                                onChange={(e) => setAccountId(e.target.value)}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
+                            >
+                                <option value="" disabled>Select an account</option>
+                                {accounts
+                                    .filter(account => account.category === 'Current Account')
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map(account => (
+                                        <option key={account.id} value={account.id}>{account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}</option>
+                                    ))
+                                }
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                <span className="material-symbols-outlined">expand_more</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
                         <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Payee</label>
                         <input
                             type="text"
@@ -182,30 +206,6 @@ export function AddPaymentPage() {
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map(budget => (
                                         <option key={budget.id} value={budget.id}>{budget.name}</option>
-                                    ))
-                                }
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                                <span className="material-symbols-outlined">expand_more</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Account</label>
-                        <div className="relative">
-                            <select
-                                required
-                                value={accountId}
-                                onChange={(e) => setAccountId(e.target.value)}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
-                            >
-                                <option value="" disabled>Select an account</option>
-                                {accounts
-                                    .filter(account => account.category === 'Current Account')
-                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map(account => (
-                                        <option key={account.id} value={account.id}>{account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}</option>
                                     ))
                                 }
                             </select>

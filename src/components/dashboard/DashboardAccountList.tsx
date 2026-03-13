@@ -76,10 +76,10 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                         >
                             <div>
                                 <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                                    {account.name}
+                                    {account.nickname || account.name}
                                 </h2>
                                 {account.last4Digits && (
-                                    <p className="text-sm text-slate-400 font-normal">
+                                    <p className="text-base text-slate-400 font-normal">
                                         ..{account.last4Digits}
                                     </p>
                                 )}

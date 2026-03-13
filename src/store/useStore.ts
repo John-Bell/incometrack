@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db, initDb, type Profile } from '@/lib/db';
-import { syncTaxRules, seedBudgetCategories } from '@/lib/seed';
+import { syncTaxRules } from '@/lib/seed';
 import { TaxCalculationService } from '@/services/TaxCalculationService';
 import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
 
@@ -60,12 +60,6 @@ export const useStore = create<AppState>()((set) => ({
 
             // Instantiate the tax service
             const taxService = new TaxCalculationService(taxRulesMap, currentTaxYear);
-
-            // Seed budget categories if there are absolutely no categories
-            const categoryCount = await db.budgetCategories.count();
-            if (categoryCount === 0) {
-                await seedBudgetCategories();
-            }
 
             set({
                 isHydrated: true,

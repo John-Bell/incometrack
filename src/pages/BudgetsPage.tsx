@@ -14,38 +14,10 @@ export function BudgetsPage() {
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
-    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
-    const categoryNameMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
 
-    // Group budgets by category
-    const groupedBudgets = budgets.reduce((acc, budget) => {
-        if (!acc[budget.budgetCategoryId]) {
-            acc[budget.budgetCategoryId] = [];
-        }
-        acc[budget.budgetCategoryId].push(budget);
-        return acc;
-    }, {} as Record<string, typeof budgets>);
-
-    const categoryIcons: Record<string, string> = {
-        transport: 'directions_car',
-        utilities: 'payments',
-        socializing: 'celebration',
-        housing: 'home',
-        groceries: 'shopping_cart',
-        leisure: 'attractions',
-        default: 'label'
-    };
-
-    const getIconForCategory = (categoryId: string) => {
-        const catName = categoryNameMap[categoryId]?.toLowerCase() || '';
-        // Find if any key in categoryIcons is contained in the name (e.g. 'leisure & lifestyle' -> 'leisure')
-        for (const [key, icon] of Object.entries(categoryIcons)) {
-            if (key !== 'default' && catName.includes(key)) {
-                return icon;
-            }
-        }
-        return categoryIcons.default;
-    };
+    // Removed budget category grouping, all budgets displayed in one list
+    // You could sort them alphabetically if you want, but for now just use the array.
+    const sortedBudgets = [...budgets].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
         <AppLayout
@@ -123,19 +95,19 @@ export function BudgetsPage() {
                     <span>Add Budget</span>
                 </button>
 
-                {Object.entries(groupedBudgets).map(([category, categoryBudgets]) => (
-                    <section key={category} className="space-y-4">
+                {sortedBudgets.length > 0 && (
+                    <section className="space-y-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-bold text-primary flex items-center gap-2 capitalize">
-                                <Icon name={getIconForCategory(category)} className="text-xl" />
-                                {categoryNameMap[category] || category}
+                                <Icon name="label" className="text-xl" />
+                                All Budgets
                             </h2>
                             <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">
-                                {categoryBudgets.length} {categoryBudgets.length === 1 ? 'Item' : 'Items'}
+                                {sortedBudgets.length} {sortedBudgets.length === 1 ? 'Item' : 'Items'}
                             </span>
                         </div>
                         <div className="space-y-3">
-                            {categoryBudgets.map(budget => {
+                            {sortedBudgets.map(budget => {
                                 const isAnnual = budget.frequency === 'annual';
                                 const monthlyAmount = isAnnual ? budget.amount / 12 : budget.amount;
                                 const annualAmount = isAnnual ? budget.amount : budget.amount * 12;
@@ -187,7 +159,7 @@ export function BudgetsPage() {
                                         <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-200 dark:border-border-dark flex flex-col gap-3 relative overflow-hidden">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-[#E8F8EE] dark:bg-[#1A2E22] flex items-center justify-center flex-shrink-0">
-                                                    <Icon name={getIconForCategory(category)} className="text-[#1DAF61] text-xl" />
+                                                    <Icon name="label" className="text-[#1DAF61] text-xl" />
                                                 </div>
                                                 <div className="flex-1 flex flex-col min-w-0">
                                                     <div className="flex justify-between items-center w-full">
@@ -275,7 +247,7 @@ export function BudgetsPage() {
                             })}
                         </div>
                     </section>
-                ))}
+                )}
 
                 {budgets.length === 0 && (
                     <div className="text-center py-12">

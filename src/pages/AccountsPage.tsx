@@ -52,6 +52,8 @@ export function AccountsPage() {
             accountIcon,
             iconColor,
             accountName: acc.name,
+            nickname: acc.nickname,
+            last4Digits: acc.last4Digits,
             category: acc.category,
             ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
             ownerTagColor,

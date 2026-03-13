@@ -10,9 +10,7 @@ interface TopExpensesProps {
 
 export function TopExpenses({ expenses }: TopExpensesProps) {
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
-    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
     const budgetsMap = Object.fromEntries(budgets.map(b => [b.id, b]));
-    const categoriesMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
 
     if (!expenses || expenses.length === 0) {
         return null; 
@@ -37,7 +35,7 @@ export function TopExpenses({ expenses }: TopExpensesProps) {
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">{expense.payee}</p>
-                                    <p className="text-xs text-slate-500 capitalize">{expense.budgetId ? (categoriesMap[budgetsMap[expense.budgetId]?.budgetCategoryId] || budgetsMap[expense.budgetId]?.budgetCategoryId || 'Uncategorized') : 'Uncategorized'}</p>
+                                    <p className="text-xs text-slate-500 capitalize">{expense.budgetId ? (budgetsMap[expense.budgetId]?.name || 'Uncategorized') : 'Uncategorized'}</p>
                                 </div>
                             </div>
                             <div className="text-right flex-shrink-0 pl-2">

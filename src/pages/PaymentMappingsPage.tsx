@@ -9,9 +9,6 @@ import { Icon } from '../components/ui/Icon';
 export function PaymentMappingsPage() {
     const mappings = useLiveQuery(() => db.paymentMappings.toArray()) || [];
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
-    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
-
-    const categoryNameMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
 
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editPaymentName, setEditPaymentName] = useState('');
@@ -81,12 +78,13 @@ export function PaymentMappingsPage() {
         }
     };
 
-    // Group budgets by category for the select dropdown
-    const groupedBudgets = Array.from(new Set(budgets.map(b => b.budgetCategoryId))).map(catId => ({
-        categoryId: catId,
-        categoryName: categoryNameMap[catId] || catId,
-        budgets: budgets.filter(b => b.budgetCategoryId === catId).sort((a, b) => a.name.localeCompare(b.name))
-    })).sort((a, b) => a.categoryName.localeCompare(b.categoryName));
+    // Group budgets by category for the select dropdown (Removed category grouping)
+    // We will just provide a flat list, but grouped by "All Budgets" for a consistent structure if we still use select
+    const groupedBudgets = [{
+        categoryId: 'all',
+        categoryName: 'All Budgets',
+        budgets: [...budgets].sort((a, b) => a.name.localeCompare(b.name))
+    }];
 
     return (
         <AppLayout

@@ -12,6 +12,8 @@ export function AddAccountPage() {
     const p2Name = profile?.partner2Name || 'Partner 2';
 
     const [accountName, setAccountName] = useState('');
+    const [nickname, setNickname] = useState('');
+    const [last4Digits, setLast4Digits] = useState('');
     const [category, setCategory] = useState<AccountCategory | ''>('');
     const [balance, setBalance] = useState('');
     const [interestRate, setInterestRate] = useState('');
@@ -32,6 +34,8 @@ export function AddAccountPage() {
             id: crypto.randomUUID(),
             ownerId,
             name: accountName,
+            nickname: nickname || undefined,
+            last4Digits: last4Digits || undefined,
             balance: parseFloat(balance),
             interestRate: finalInterestRate,
             category,
@@ -72,6 +76,32 @@ export function AddAccountPage() {
                         placeholder="e.g. Santander eSaver"
                         value={accountName}
                         onChange={(e) => setAccountName(e.target.value)}
+                    />
+                </div>
+
+
+                {/* Nickname Field */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Nickname (Optional)</label>
+                    <input
+                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                        type="text"
+                        placeholder="e.g. Holiday Fund"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                    />
+                </div>
+
+                {/* Last 4 Digits Field */}
+                <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Last 4 Digits (Optional)</label>
+                    <input
+                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                        type="text"
+                        maxLength={4}
+                        placeholder="e.g. 1234"
+                        value={last4Digits}
+                        onChange={(e) => setLast4Digits(e.target.value.replace(/\D/g, ''))}
                     />
                 </div>
 

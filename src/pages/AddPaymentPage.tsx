@@ -10,19 +10,20 @@ export function AddPaymentPage() {
     const navigate = useNavigate();
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
-    const budgetCategories = useLiveQuery(() => db.budgetCategories.toArray()) || [];
-    const categoryNameMap = Object.fromEntries(budgetCategories.map(c => [c.id, c.name]));
+    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
 
     const [payee, setPayee] = useState('');
     const [amount, setAmount] = useState('');
-    const [category, setCategory] = useState('');
     const [budgetId, setBudgetId] = useState('');
+    const [accountId, setAccountId] = useState('');
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [suggestedBudgetIds, setSuggestedBudgetIds] = useState<string[]>([]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!accountId) return;
 
         await db.transactions.add({
             id: uuidv4(),
@@ -31,7 +32,8 @@ export function AddPaymentPage() {
             amount: parseFloat(amount) || 0,
             type,
             icon: type === 'expense' ? 'shopping_cart' : 'payments',
-            budgetId: budgetId || undefined
+            budgetId: budgetId || undefined,
+            accountId
         });
 
         navigate('/transactions');
@@ -51,7 +53,6 @@ export function AddPaymentPage() {
                 if (!budgetId) {
                     const firstBudget = await db.budgets.get(matchedMapping.budgetIds[0]);
                     if (firstBudget) {
-                        setCategory(firstBudget.budgetCategoryId);
                         setBudgetId(firstBudget.id);
                     }
                 }
@@ -66,7 +67,6 @@ export function AddPaymentPage() {
     const applySuggestion = async (suggestedId: string) => {
         const budget = await db.budgets.get(suggestedId);
         if (budget) {
-            setCategory(budget.budgetCategoryId);
             setBudgetId(budget.id);
         }
     };
@@ -170,23 +170,20 @@ export function AddPaymentPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Category</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Budget</label>
                         <div className="relative">
                             <select
-                                required
-                                value={category}
-                                onChange={(e) => {
-                                    setCategory(e.target.value);
-                                    setBudgetId('');
-                                }}
+                                value={budgetId}
+                                onChange={(e) => setBudgetId(e.target.value)}
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
                             >
-                                <option value="" disabled>Select a category</option>
-                                {Array.from(new Set(budgets.map(b => b.budgetCategoryId)))
-                                    .sort((a, b) => (categoryNameMap[a] || a).localeCompare(categoryNameMap[b] || b))
-                                    .map(catId => (
-                                        <option key={catId} value={catId}>{categoryNameMap[catId] || catId}</option>
-                                    ))}
+                                <option value="" disabled>Select a budget (optional)</option>
+                                {budgets
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map(budget => (
+                                        <option key={budget.id} value={budget.id}>{budget.name}</option>
+                                    ))
+                                }
                             </select>
                             <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
                                 <span className="material-symbols-outlined">expand_more</span>
@@ -195,21 +192,19 @@ export function AddPaymentPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Sub-category</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Account</label>
                         <div className="relative">
                             <select
                                 required
-                                value={budgetId}
-                                onChange={(e) => setBudgetId(e.target.value)}
-                                disabled={!category}
-                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none disabled:opacity-50 disabled:bg-slate-50 dark:disabled:bg-slate-900"
+                                value={accountId}
+                                onChange={(e) => setAccountId(e.target.value)}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
                             >
-                                <option value="" disabled>Select a sub-category</option>
-                                {budgets
-                                    .filter(b => b.budgetCategoryId === category)
+                                <option value="" disabled>Select an account</option>
+                                {accounts
                                     .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map(budget => (
-                                        <option key={budget.id} value={budget.id}>{budget.name}</option>
+                                    .map(account => (
+                                        <option key={account.id} value={account.id}>{account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}</option>
                                     ))
                                 }
                             </select>
@@ -223,7 +218,8 @@ export function AddPaymentPage() {
                 <div className="pt-6 pb-24">
                     <button
                         type="submit"
-                        className="w-full bg-primary text-background-dark font-bold text-lg py-4 rounded-xl shadow-lg shadow-primary/25 active:scale-[0.98] transition-all"
+                        disabled={!accountId}
+                        className="w-full bg-primary text-background-dark font-bold text-lg py-4 rounded-xl shadow-lg shadow-primary/25 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Save Payment
                     </button>

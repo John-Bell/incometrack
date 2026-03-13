@@ -69,6 +69,10 @@ export function RemoteSyncingPage() {
             return;
         }
 
+        if (!window.confirm("Are you sure you want to load data from the remote server? This will merge remote data into your local database.")) {
+            return;
+        }
+
         setIsProcessing(true);
         setStatusMessage(null);
         try {
@@ -105,6 +109,10 @@ export function RemoteSyncingPage() {
     const handleSaveToRemote = async () => {
         if (!syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()) {
             setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
+            return;
+        }
+
+        if (!window.confirm("Are you sure you want to save your local data to the remote server? This will overwrite the remote database.")) {
             return;
         }
 

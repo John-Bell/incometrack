@@ -4,6 +4,7 @@ import { db } from '../lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Icon } from '../components/ui/Icon';
+import { IconPicker } from '../components/ui/IconPicker';
 
 export function AddBudgetPage() {
     const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function AddBudgetPage() {
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [accountId, setAccountId] = useState('');
+    const [icon, setIcon] = useState('category');
 
     const handleSave = async () => {
         if (!name || !amount || !accountId) return;
@@ -22,7 +24,8 @@ export function AddBudgetPage() {
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            accountId
+            accountId,
+            icon: icon !== 'category' ? icon : undefined
         });
         navigate('/budgets');
     };
@@ -111,6 +114,9 @@ export function AddBudgetPage() {
                             <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                         </div>
                     </div>
+
+                    {/* Icon Picker */}
+                    <IconPicker value={icon} onChange={setIcon} />
                 </div>
 
                 {/* Sticky Footer */}

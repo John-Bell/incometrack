@@ -121,6 +121,7 @@ export interface Budget {
     name: string; // sub-category
     amount: number;
     frequency: string; // e.g. monthly, annual
+    icon?: string;
     updatedAt?: number;
     // --- Import Fields ---
     importId?: string;
@@ -204,6 +205,20 @@ db.version(4).stores({
     notifications: '&id, date, read, updatedAt',
     taxRules: '&id, updatedAt',
     budgets: '&id, accountId, name, importId, updatedAt', // removed budgetCategoryId
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
+});
+
+db.version(5).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt', // added icon, no need to index
     transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
     paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
 });

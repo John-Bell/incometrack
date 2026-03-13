@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Icon } from '../components/ui/Icon';
+import { IconPicker } from '../components/ui/IconPicker';
 import { useState, useEffect } from 'react';
 
 export function EditBudgetPage() {
@@ -16,6 +17,7 @@ export function EditBudgetPage() {
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
     const [accountId, setAccountId] = useState('');
+    const [icon, setIcon] = useState('category');
 
     useEffect(() => {
         if (budget) {
@@ -23,7 +25,10 @@ export function EditBudgetPage() {
             setAmount(budget.amount.toString());
             setFrequency(budget.frequency);
             setAccountId(budget.accountId || '');
+            if (budget.icon) {
+                setIcon(budget.icon);
             }
+        }
     }, [budget]);
 
     const handleSave = async () => {
@@ -33,7 +38,8 @@ export function EditBudgetPage() {
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            accountId
+            accountId,
+            icon: icon !== 'category' ? icon : undefined
         } );
         navigate('/budgets');
     };
@@ -156,6 +162,11 @@ export function EditBudgetPage() {
                                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">This item will be automatically spread across 12 months in your reports.</p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Icon Picker */}
+                    <div className="mt-4">
+                        <IconPicker value={icon} onChange={setIcon} />
                     </div>
 
                     {/* Actions */}

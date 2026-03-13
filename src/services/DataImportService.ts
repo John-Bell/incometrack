@@ -130,7 +130,6 @@ export class DataImportService {
                 delete mappedRow.importCategory;
             } else if (targetTable === 'budgets') {
                 if (!mappedRow.frequency) mappedRow.frequency = 'monthly';
-                if (!mappedRow.paymentSource) mappedRow.paymentSource = 'Monthly Bills';
 
                 // Cleanup temporary mapping field
                 delete mappedRow.importCategory;

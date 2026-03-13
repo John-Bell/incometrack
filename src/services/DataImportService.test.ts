@@ -128,7 +128,6 @@ describe('DataImportService', () => {
                 name: 'Groceries',
                 amount: 500,
                 frequency: 'monthly',
-                paymentSource: 'Monthly Bills',
                 updatedAt: Date.now()
             });
 
@@ -180,7 +179,6 @@ describe('DataImportService', () => {
             const b = budgets[0];
             expect(b.amount).toBe(50); // parsed correctly
             expect(b.frequency).toBe('monthly');
-            expect(b.paymentSource).toBe('Monthly Bills');
             expect((b as any).importCategory).toBeUndefined();
             expect(b.importId).toBe('import-file-2');
         });

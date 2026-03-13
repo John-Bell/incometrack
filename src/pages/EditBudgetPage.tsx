@@ -15,7 +15,6 @@ export function EditBudgetPage() {
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
-    const [paymentSource, setPaymentSource] = useState('monthly');
     const [accountId, setAccountId] = useState('');
 
     useEffect(() => {
@@ -23,19 +22,17 @@ export function EditBudgetPage() {
             setName(budget.name);
             setAmount(budget.amount.toString());
             setFrequency(budget.frequency);
-            setPaymentSource(budget.paymentSource);
             setAccountId(budget.accountId || '');
             }
     }, [budget]);
 
     const handleSave = async () => {
-        if (!id || !budget || !accountId) return;
+        if (!id || !name || !amount || !accountId) return;
 
         await db.budgets.update(id, {
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            paymentSource,
             accountId
         } );
         navigate('/budgets');
@@ -129,21 +126,8 @@ export function EditBudgetPage() {
                         </div>
                     </div>
 
-                    {/* Payment Source & Ownership */}
+                    {/* Account */}
                     <div className="grid grid-cols-1 gap-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Location</label>
-                            <select
-                                value={paymentSource}
-                                onChange={(e) => setPaymentSource(e.target.value)}
-                                className="custom-select w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                            >
-                                <option value="Groceries / Incidentals">Groceries / Incidentals</option>
-                                <option value="Monthly Bills">Monthly Bills</option>
-                                <option value="Annual Bills">Annual Bills</option>
-                            </select>
-                        </div>
-
                         <div className="flex flex-col gap-2">
                             <label className="text-slate-700 dark:text-slate-300 text-sm font-medium">Account</label>
                             <select

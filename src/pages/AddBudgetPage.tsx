@@ -12,18 +12,16 @@ export function AddBudgetPage() {
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
     const [frequency, setFrequency] = useState('monthly');
-    const [paymentSource, setPaymentSource] = useState('');
     const [accountId, setAccountId] = useState('');
 
     const handleSave = async () => {
-        if (!name || !amount || !paymentSource || !accountId) return;
+        if (!name || !amount || !accountId) return;
 
         await db.budgets.add({
             id: crypto.randomUUID(),
             name,
             amount: parseFloat(amount) || 0,
             frequency,
-            paymentSource,
             accountId
         });
         navigate('/budgets');
@@ -94,20 +92,6 @@ export function AddBudgetPage() {
                         </div>
                         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                             <Icon name="analytics" className="text-2xl" />
-                        </div>
-                    </div>
-
-                    {/* Location */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Location</label>
-                        <div className="relative">
-                            <select name="paymentSource" value={paymentSource} onChange={(e) => setPaymentSource(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
-                                <option disabled value="">Select a location</option>
-                                <option value="Groceries / Incidentals">Groceries / Incidentals</option>
-                                <option value="Monthly Bills">Monthly Bills</option>
-                                <option value="Annual Bills">Annual Bills</option>
-                            </select>
-                            <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400" />
                         </div>
                     </div>
 

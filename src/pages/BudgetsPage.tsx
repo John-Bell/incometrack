@@ -164,9 +164,6 @@ export function BudgetsPage() {
                                                 <div className="flex-1 flex flex-col min-w-0">
                                                     <div className="flex justify-between items-center w-full">
                                                         <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">{budget.name}</h3>
-                                                        <span className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-full uppercase tracking-wider whitespace-nowrap ml-2">
-                                                            {budget.paymentSource}
-                                                        </span>
                                                     </div>
                                                     <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 gap-1.5 mt-0.5">
                                                         <span>Monthly: £{monthlyAmount.toFixed(2)}</span>
@@ -208,7 +205,6 @@ export function BudgetsPage() {
                                                         {status}
                                                     </span>
                                                 </div>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400">Location: <span className="text-slate-700 dark:text-slate-300 capitalize">{budget.paymentSource}</span></p>
                                                 <div className="flex gap-4 mt-2">
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{isAnnual ? 'As Monthly' : 'Monthly'}</p>

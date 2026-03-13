@@ -121,7 +121,6 @@ export interface Budget {
     name: string; // sub-category
     amount: number;
     frequency: string; // e.g. monthly, annual
-    paymentSource: string; // e.g. monthly, annual
     updatedAt?: number;
     // --- Import Fields ---
     importId?: string;

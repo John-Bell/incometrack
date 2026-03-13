@@ -127,12 +127,14 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
                                             {/* Budget Summary Row */}
                                             <div className="flex items-center justify-between px-1">
-                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                                                    BUDGETED: {formatCurrency(budgetTarget)}
-                                                </span>
-                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                                                    SPENT: {formatCurrency(budgetTotalSpent)}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Budgeted</span>
+                                                    <span className="text-sm font-bold text-slate-700">{formatCurrency(budgetTarget)}</span>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Remaining</span>
+                                                    <span className="text-sm font-bold text-slate-700">{formatCurrency(budgetTarget - budgetTotalSpent)}</span>
+                                                </div>
                                             </div>
 
                                             {/* Transactions List */}

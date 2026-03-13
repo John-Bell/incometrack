@@ -161,16 +161,18 @@ export function EditAccountPage() {
                 </div>
 
                 {/* Budget Order Field */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
-                    <input
-                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
-                        type="number"
-                        placeholder="e.g. 1"
-                        value={budgetOrder}
-                        onChange={(e) => setBudgetOrder(e.target.value)}
-                    />
-                </div>
+                {category === 'Current Account' && (
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
+                        <input
+                            className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                            type="number"
+                            placeholder="e.g. 1"
+                            value={budgetOrder}
+                            onChange={(e) => setBudgetOrder(e.target.value)}
+                        />
+                    </div>
+                )}
 
                 {/* Balance Field */}
                 <div className="space-y-2">

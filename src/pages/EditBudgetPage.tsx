@@ -154,6 +154,7 @@ export function EditBudgetPage() {
                             >
                                 <option value="" disabled>Select an account</option>
                                 {accounts
+                                    .filter(acc => acc.budgetOrder !== undefined && acc.budgetOrder !== null)
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map((acc) => (
                                         <option key={acc.id} value={acc.id}>{acc.nickname || acc.name}{acc.last4Digits ? ` (x${acc.last4Digits})` : ''}</option>

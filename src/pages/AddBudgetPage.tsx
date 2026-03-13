@@ -118,6 +118,7 @@ export function AddBudgetPage() {
                             <select name="accountId" required value={accountId} onChange={(e) => setAccountId(e.target.value)} className="w-full appearance-none rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 pr-10 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all">
                                 <option value="" disabled>Select an account</option>
                                 {accounts
+                                    .filter(acc => acc.budgetOrder !== undefined && acc.budgetOrder !== null)
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map((acc) => (
                                         <option key={acc.id} value={acc.id}>{acc.nickname || acc.name}{acc.last4Digits ? ` (x${acc.last4Digits})` : ''}</option>

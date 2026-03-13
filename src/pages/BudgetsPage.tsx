@@ -159,7 +159,7 @@ export function BudgetsPage() {
                                         <div key={budget.id} className="bg-white dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-slate-200 dark:border-border-dark flex flex-col gap-3 relative overflow-hidden">
                                             <div className="flex items-start gap-3">
                                                 <div className="w-10 h-10 rounded-xl bg-[#E8F8EE] dark:bg-[#1A2E22] flex items-center justify-center flex-shrink-0">
-                                                    <Icon name="label" className="text-[#1DAF61] text-xl" />
+                                                    <Icon name={budget.icon || "label"} className="text-[#1DAF61] text-xl" />
                                                 </div>
                                                 <div className="flex-1 flex flex-col min-w-0">
                                                     <div className="flex justify-between items-center w-full">
@@ -200,7 +200,10 @@ export function BudgetsPage() {
                                         <div className="flex justify-between items-start">
                                             <div className="space-y-1 w-full">
                                                 <div className="flex justify-between items-start">
-                                                    <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon name={budget.icon || "label"} className="text-[#1DAF61] text-lg" />
+                                                        <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
+                                                    </div>
                                                     <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${chipClass}`}>
                                                         {status}
                                                     </span>

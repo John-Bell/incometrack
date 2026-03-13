@@ -105,7 +105,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                             <div className="flex items-center justify-between border-b border-green-100 pb-3">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] flex items-center justify-center text-[#1DAF61]">
-                                                        <Icon name={getBudgetIcon(budget.name)} className="w-6 h-6" />
+                                                        <Icon name={budget.icon || getBudgetIcon(budget.name)} className="w-6 h-6" />
                                                     </div>
                                                     <h3 className="text-[17px] font-bold text-slate-900">{budget.name}</h3>
                                                 </div>

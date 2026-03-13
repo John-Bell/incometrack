@@ -1,6 +1,5 @@
 import type { Account, Budget, Transaction } from '@/lib/db';
 import { Icon } from '../ui/Icon';
-import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardAccountListProps {
@@ -37,7 +36,21 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
     };
 
     const formatCurrency = (amount: number) => {
-        return `£${amount.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        return `£${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const getBudgetIcon = (name: string) => {
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes('hous') || lowerName.includes('mortgage') || lowerName.includes('rent')) return 'home';
+        if (lowerName.includes('food') || lowerName.includes('din') || lowerName.includes('groc')) return 'restaurant';
+        if (lowerName.includes('util') || lowerName.includes('water') || lowerName.includes('gas') || lowerName.includes('electric')) return 'water_drop';
+        if (lowerName.includes('trans') || lowerName.includes('car') || lowerName.includes('auto') || lowerName.includes('fuel')) return 'directions_car';
+        if (lowerName.includes('shop') || lowerName.includes('cloth')) return 'shopping_bag';
+        if (lowerName.includes('health') || lowerName.includes('med')) return 'medical_services';
+        if (lowerName.includes('entert') || lowerName.includes('fun') || lowerName.includes('hobby')) return 'confirmation_number';
+        if (lowerName.includes('save') || lowerName.includes('invest')) return 'savings';
+        if (lowerName.includes('holiday') || lowerName.includes('travel') || lowerName.includes('vacation')) return 'flight_takeoff';
+        return 'category';
     };
 
     return (
@@ -61,10 +74,17 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                             className="flex items-center justify-between cursor-pointer"
                             onClick={() => navigate(`/accounts/edit/${account.id}`)}
                         >
-                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-                                {account.name}
-                            </h2>
-                            <span className="text-xl font-bold text-slate-900">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                                    {account.name}
+                                </h2>
+                                {account.last4Digits && (
+                                    <p className="text-sm text-slate-400 font-normal">
+                                        ..{account.last4Digits}
+                                    </p>
+                                )}
+                            </div>
+                            <span className="text-xl font-bold text-[#1DAF61]">
                                 {formatCurrency(accountTotalBalance)}
                             </span>
                         </div>
@@ -78,59 +98,62 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
                                     // Assuming monthly budget for display
                                     const budgetTarget = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
-                                    const remaining = budgetTarget - budgetTotalSpent;
-                                    const isOverBudget = remaining < 0;
 
                                     return (
-                                        <div key={budget.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col gap-3">
+                                        <div key={budget.id} className="flex flex-col gap-3 py-2">
                                             {/* Budget Header */}
-                                            <div
-                                                className="flex items-center justify-between cursor-pointer"
-                                                onClick={() => navigate(`/budgets/edit/${budget.id}`)}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
-                                                        <Icon name="category" className="w-5 h-5 text-slate-600" />
+                                            <div className="flex items-center justify-between border-b border-green-100 pb-3">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] flex items-center justify-center text-[#1DAF61]">
+                                                        <Icon name={getBudgetIcon(budget.name)} className="w-6 h-6" />
                                                     </div>
-                                                    <div>
-                                                        <h3 className="font-semibold text-slate-900">{budget.name}</h3>
-                                                        <p className="text-xs text-slate-500">
-                                                            Target: {formatCurrency(budgetTarget)}
-                                                        </p>
+                                                    <h3 className="text-[17px] font-bold text-slate-900">{budget.name}</h3>
+                                                </div>
+                                                <div className="flex items-center gap-4 text-slate-500">
+                                                    <div
+                                                        className="cursor-pointer"
+                                                        onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}`)}
+                                                    >
+                                                        <Icon name="receipt_long" className="w-6 h-6 hover:text-slate-800 transition-colors" />
+                                                    </div>
+                                                    <div
+                                                        className="cursor-pointer"
+                                                        onClick={() => navigate(`/budgets/edit/${budget.id}`)}
+                                                    >
+                                                        <Icon name="edit" className="w-6 h-6 hover:text-slate-800 transition-colors" />
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <p className={clsx(
-                                                        "font-bold text-lg",
-                                                        isOverBudget ? "text-red-500" : "text-emerald-500"
-                                                    )}>
-                                                        {formatCurrency(remaining)}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                                                        Remaining
-                                                    </p>
-                                                </div>
+                                            </div>
+
+                                            {/* Budget Summary Row */}
+                                            <div className="flex items-center justify-between px-1">
+                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                                                    BUDGETED: {formatCurrency(budgetTarget)}
+                                                </span>
+                                                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                                                    SPENT: {formatCurrency(budgetTotalSpent)}
+                                                </span>
                                             </div>
 
                                             {/* Transactions List */}
                                             {budgetTransactions.length > 0 && (
-                                                <div className="flex flex-col gap-2 mt-2 pt-3 border-t border-slate-50">
+                                                <div className="flex flex-col gap-4 mt-2 px-1">
                                                     {budgetTransactions.map(transaction => (
                                                         <div
                                                             key={transaction.id}
-                                                            className="flex items-center justify-between py-1 cursor-pointer hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors"
+                                                            className="flex items-center justify-between cursor-pointer group"
                                                             onClick={() => navigate(`/transactions/edit/${transaction.id}`)}
                                                         >
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                                                                    <Icon name="receipt_long" className="w-4 h-4 text-slate-500" />
-                                                                </div>
-                                                                <span className="text-sm font-medium text-slate-700">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-base font-medium text-slate-900 group-hover:text-primary transition-colors">
                                                                     {transaction.payee}
                                                                 </span>
+                                                                <span className="text-sm text-slate-500">
+                                                                    {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-sm font-bold text-slate-900">
-                                                                {formatCurrency(transaction.amount)}
+                                                            <span className="text-base font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                                                -{formatCurrency(transaction.amount)}
                                                             </span>
                                                         </div>
                                                     ))}

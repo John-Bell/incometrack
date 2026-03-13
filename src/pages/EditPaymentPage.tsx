@@ -174,6 +174,7 @@ export function EditPaymentPage() {
                             >
                                 <option value="" disabled>Select an account</option>
                                 {accounts
+                                    .filter(account => account.category === 'Current Account')
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map(account => (
                                         <option key={account.id} value={account.id}>{account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}</option>

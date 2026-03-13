@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
@@ -15,6 +15,13 @@ export function AddAccountPage() {
     const [nickname, setNickname] = useState('');
     const [last4Digits, setLast4Digits] = useState('');
     const [category, setCategory] = useState<AccountCategory | ''>('');
+
+    // Effect to clear budget order when category is not 'Current Account'
+    useEffect(() => {
+        if (category !== 'Current Account') {
+            setBudgetOrder('');
+        }
+    }, [category]);
     const [balance, setBalance] = useState('');
     const [interestRate, setInterestRate] = useState('');
     const [budgetOrder, setBudgetOrder] = useState('');
@@ -126,16 +133,18 @@ export function AddAccountPage() {
                 </div>
 
                 {/* Budget Order Field */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
-                    <input
-                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
-                        type="number"
-                        placeholder="e.g. 1"
-                        value={budgetOrder}
-                        onChange={(e) => setBudgetOrder(e.target.value)}
-                    />
-                </div>
+                {category === 'Current Account' && (
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
+                        <input
+                            className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                            type="number"
+                            placeholder="e.g. 1"
+                            value={budgetOrder}
+                            onChange={(e) => setBudgetOrder(e.target.value)}
+                        />
+                    </div>
+                )}
 
                 {/* Balance Field */}
                 <div className="space-y-2">

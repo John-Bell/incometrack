@@ -11,12 +11,14 @@ interface DashboardAccountListProps {
 export function DashboardAccountList({ accounts, budgets, transactions }: DashboardAccountListProps) {
     const navigate = useNavigate();
 
-    // Sort accounts by budgetOrder
-    const sortedAccounts = [...accounts].sort((a, b) => {
-        const orderA = a.budgetOrder ?? 9999;
-        const orderB = b.budgetOrder ?? 9999;
-        return orderA - orderB;
-    });
+    // Filter out accounts with no budgets, then sort by budgetOrder
+    const sortedAccounts = [...accounts]
+        .filter(account => budgets.some(b => b.accountId === account.id))
+        .sort((a, b) => {
+            const orderA = a.budgetOrder ?? 9999;
+            const orderB = b.budgetOrder ?? 9999;
+            return orderA - orderB;
+        });
 
     const now = new Date();
     const currentMonth = now.getMonth();

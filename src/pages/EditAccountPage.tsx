@@ -114,8 +114,8 @@ export function EditAccountPage() {
                 <h1 className="ml-4 text-xl font-bold tracking-tight">Edit Account</h1>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 xl:p-6 flex flex-col xl:flex-row gap-8">
-                <main className="flex-1 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col lg:flex-row gap-8">
+                <main className={`space-y-6 ${interestTrackingMethod === 'manual' ? 'lg:w-[calc(40%-1rem)]' : 'flex-1'}`}>
                     <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
                     {/* Account Name Field */}
                 <div className="space-y-2">
@@ -320,7 +320,7 @@ export function EditAccountPage() {
                 </main>
 
                 {interestTrackingMethod === 'manual' && (
-                    <aside className="w-full xl:w-[500px]">
+                    <aside className="w-full lg:w-[calc(60%-1rem)]">
                         <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(balance) || 0} />
                     </aside>
                 )}

@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { seedDatabase } from './utils/seedDb';
+import { seedtestdb } from './utils/seedtestdb';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/');
-  await seedDatabase(page);
+  await seedtestdb(page);
 });
 
 test('example test with seeded database', async ({ page }) => {

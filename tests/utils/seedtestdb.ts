@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 
-export async function seedDatabase(page: Page) {
+export async function seedtestdb(page: Page) {
     // page.evaluate runs THIS code inside the browser context, where IndexedDB exists
     await page.evaluate(async () => {
         const db = (window as any).__DEXIE_DB__;
@@ -21,8 +21,8 @@ export async function seedDatabase(page: Page) {
 
         // 2. Inject sample Budgets linked via accountId
         await db.budgets.bulkAdd([
-            { id: 'budg_1', accountId: 'acc_1', budgetCategoryId: 'cat_1', name: 'Council Tax', amount: 200, frequency: 'monthly', updatedAt: now },
-            { id: 'budg_2', accountId: 'acc_3', budgetCategoryId: 'cat_2', name: 'Food Shopping', amount: 500, frequency: 'monthly', updatedAt: now }
+            { id: 'budg_1', accountId: 'acc_1', name: 'Council Tax', amount: 200, frequency: 'monthly', updatedAt: now },
+            { id: 'budg_2', accountId: 'acc_3', name: 'Food Shopping', amount: 500, frequency: 'monthly', updatedAt: now }
         ]);
     });
 }

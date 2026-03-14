@@ -323,3 +323,6 @@ tablesToHook.forEach(tableName => {
     });
 });
 
+if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
+    (window as any).__DEXIE_DB__ = db;
+}

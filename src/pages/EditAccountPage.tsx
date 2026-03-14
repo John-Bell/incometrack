@@ -102,7 +102,7 @@ export function EditAccountPage() {
     if (!account) return <div className="p-4 text-center">Loading...</div>;
 
     return (
-        <div className="w-full max-w-5xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
+        <div className="w-full max-w-7xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
             {/* TopAppBar */}
             <header className="flex items-center p-4 border-b border-primary/10">
                 <button
@@ -114,7 +114,7 @@ export function EditAccountPage() {
                 <h1 className="ml-4 text-xl font-bold tracking-tight">Edit Account</h1>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col md:flex-row gap-8">
+            <div className="flex-1 overflow-y-auto p-4 xl:p-6 flex flex-col xl:flex-row gap-8">
                 <main className="flex-1 space-y-6">
                     <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
                     {/* Account Name Field */}
@@ -320,7 +320,7 @@ export function EditAccountPage() {
                 </main>
 
                 {interestTrackingMethod === 'manual' && (
-                    <aside className="w-full md:w-[450px]">
+                    <aside className="w-full xl:w-[500px]">
                         <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(balance) || 0} />
                     </aside>
                 )}

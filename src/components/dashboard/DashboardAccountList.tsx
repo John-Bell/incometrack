@@ -129,7 +129,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 <div className="text-right text-slate-700 font-medium">
                                                     {budgetTarget.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                                <div className="text-right font-bold text-[#1DAF61]">
+                                                <div className={`text-right font-bold ${budgetTotalSpent > budgetTarget ? 'text-red-500' : 'text-[#1DAF61]'}`}>
                                                     {budgetTotalSpent.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
                                                 <div className="flex items-center justify-end gap-2 text-slate-400">
@@ -262,7 +262,9 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                     </div>
                                                     <div className="flex flex-col items-end">
                                                         <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Remaining</span>
-                                                        <span className="text-sm font-bold text-slate-700">{formatCurrency(budgetTarget - budgetTotalSpent)}</span>
+                                                        <span className={`text-sm font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                                            {formatCurrency(budgetTarget - budgetTotalSpent)}
+                                                        </span>
                                                     </div>
                                                 </div>
 

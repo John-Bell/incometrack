@@ -54,6 +54,9 @@ export function AddPaymentPage() {
                     const firstBudget = await db.budgets.get(matchedMapping.budgetIds[0]);
                     if (firstBudget) {
                         setBudgetId(firstBudget.id);
+                        if (firstBudget.accountId) {
+                            setAccountId(firstBudget.accountId);
+                        }
                     }
                 }
             } else {
@@ -68,6 +71,9 @@ export function AddPaymentPage() {
         const budget = await db.budgets.get(suggestedId);
         if (budget) {
             setBudgetId(budget.id);
+            if (budget.accountId) {
+                setAccountId(budget.accountId);
+            }
         }
     };
 
@@ -112,7 +118,16 @@ export function AddPaymentPage() {
                             <select
                                 required
                                 value={accountId}
-                                onChange={(e) => setAccountId(e.target.value)}
+                                onChange={(e) => {
+                                    const newAccountId = e.target.value;
+                                    setAccountId(newAccountId);
+                                    if (budgetId) {
+                                        const budget = budgets.find(b => b.id === budgetId);
+                                        if (budget && budget.accountId !== newAccountId) {
+                                            setBudgetId('');
+                                        }
+                                    }
+                                }}
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none"
                             >
                                 <option value="" disabled>Select an account</option>
@@ -203,6 +218,7 @@ export function AddPaymentPage() {
                             >
                                 <option value="" disabled>Select a budget (optional)</option>
                                 {budgets
+                                    .filter(budget => budget.accountId === accountId)
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map(budget => (
                                         <option key={budget.id} value={budget.id}>{budget.name}</option>

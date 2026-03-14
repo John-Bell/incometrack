@@ -319,9 +319,11 @@ export function EditAccountPage() {
                 </div>
                 </main>
 
-                <aside className="w-full md:w-[450px]">
-                    <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(balance) || 0} />
-                </aside>
+                {interestTrackingMethod === 'manual' && (
+                    <aside className="w-full md:w-[450px]">
+                        <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(balance) || 0} />
+                    </aside>
+                )}
             </div>
 
             {/* Action Buttons */}

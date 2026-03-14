@@ -41,6 +41,10 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
         if (dbAccounts) {
             dbAccounts.forEach(acc => {
+                const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
+                if (acc.category && taxFreeCategories.includes(acc.category as string)) {
+                    return;
+                }
                 const amount = (acc.balance || 0) * ((acc.interestRate || 0) / 100);
                 if (acc.ownerId === 'person1') p1Incomes.interest += amount;
                 else if (acc.ownerId === 'person2') p2Incomes.interest += amount;

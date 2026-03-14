@@ -15,7 +15,7 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     ownerTag: string;
     ownerTagColor: 'purple' | 'blue' | 'pink';
     balance: string;
-    rate: string;
+    rate?: string;
     isStale?: boolean;
     isWarned?: boolean;
     updatedAt: string;
@@ -112,10 +112,12 @@ export function AccountCard({
                     <span className="text-xs text-slate-500 dark:text-[#9db9b0] mb-0.5">Current Balance</span>
                     <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{balance}</span>
                 </div>
-                <div className="flex flex-col items-end">
-                    <span className="text-xs text-slate-500 dark:text-[#9db9b0] mb-0.5">AER</span>
-                    <span className={cn('text-2xl font-bold', isWarned ? 'text-slate-400 dark:text-slate-500' : 'text-primary')}>{rate}</span>
-                </div>
+                {rate && (
+                    <div className="flex flex-col items-end">
+                        <span className="text-xs text-slate-500 dark:text-[#9db9b0] mb-0.5">AER</span>
+                        <span className={cn('text-2xl font-bold', isWarned ? 'text-slate-400 dark:text-slate-500' : 'text-primary')}>{rate}</span>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-[#283933]">

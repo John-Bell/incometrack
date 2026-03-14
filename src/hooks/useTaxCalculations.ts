@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
+import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
 
 export interface UseTaxCalculationsResult {
     p1Incomes: { employment: number; pension: number; rental: number; dividends: number; interest: number };
@@ -22,8 +23,10 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
     const dbAccounts = useLiveQuery(() => db.accounts.toArray());
     const dbIncomes = useLiveQuery(() => db.incomes.toArray());
+    const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.toArray());
 
     return useMemo(() => {
+        const allAccruals = dbInterestAccruals || [];
         const p1Incomes = { employment: 0, pension: 0, rental: 0, dividends: 0, interest: 0 };
         const p2Incomes = { employment: 0, pension: 0, rental: 0, dividends: 0, interest: 0 };
 
@@ -45,7 +48,10 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
                 if (acc.category && taxFreeCategories.includes(acc.category as string)) {
                     return;
                 }
-                const amount = (acc.balance || 0) * ((acc.interestRate || 0) / 100);
+
+                const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
+                const amount = calculateProjectedAnnualInterest(acc, accountAccruals);
+
                 if (acc.ownerId === 'person1') p1Incomes.interest += amount;
                 else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
                 else if (acc.ownerId === 'joint') {
@@ -108,5 +114,5 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             isReady: !!dbAccounts && !!dbIncomes && !!taxService
         };
 
-    }, [dbAccounts, dbIncomes, taxService, taxYear]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, taxService, taxYear]);
 }

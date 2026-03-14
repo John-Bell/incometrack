@@ -26,6 +26,7 @@ export interface Account {
     nickname?: string;
     last4Digits?: string;
     budgetOrder?: number;
+    interestTrackingMethod?: 'aer' | 'manual';
     // --- Bonus Rate Fields ---
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
@@ -115,6 +116,15 @@ export interface TaxYearRule extends TaxYearConstants {
     updatedAt?: number;
 }
 
+export interface InterestAccrual {
+    id: string; // UUID
+    accountId: string; // FK to Account.id
+    date: number; // timestamp
+    balance: number; // Recorded balance at the time of accrual
+    interestAccrued: number;
+    updatedAt?: number;
+}
+
 export interface Budget {
     id: string;
     accountId: string;
@@ -148,6 +158,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     transactions: EntityTable<Transaction, 'id'>;
     budgets: EntityTable<Budget, 'id'>;
     paymentMappings: EntityTable<PaymentMapping, 'id'>;
+    interestAccruals: EntityTable<InterestAccrual, 'id'>;
 };
 
 // Schema version 1
@@ -223,6 +234,21 @@ db.version(5).stores({
     paymentMappings: '&id, paymentName, *budgetIds, updatedAt'
 });
 
+db.version(6).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt', // added icon, no need to index
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt'
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -236,6 +262,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         transactions: await db.transactions.toArray(),
         budgets: await db.budgets.toArray(),
         paymentMappings: await db.paymentMappings.toArray(),
+        interestAccruals: await db.interestAccruals.toArray(),
     };
 
     // Sanitize common numeric fields that might have accidentally been saved as strings,
@@ -271,6 +298,15 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         }));
     }
 
+    if (rawData.interestAccruals) {
+        rawData.interestAccruals = rawData.interestAccruals.map(a => ({
+            ...a,
+            balance: Number(a.balance) || 0,
+            interestAccrued: Number(a.interestAccrued) || 0,
+            date: Number(a.date) || 0,
+        }));
+    }
+
     return rawData;
 };
 
@@ -294,7 +330,7 @@ export const dbHooks = {
 };
 
 // Add hooks to automatically update the updatedAt timestamp
-const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings'];
+const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals'];
 
 tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {

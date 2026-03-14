@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { Icon } from '@/components/ui/Icon';
 import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
+import { InterestLedger } from '@/components/accounts/InterestLedger';
 
 export function EditAccountPage() {
     const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export function EditAccountPage() {
     const [balance, setBalance] = useState('');
     const [interestRate, setInterestRate] = useState('');
     const [budgetOrder, setBudgetOrder] = useState('');
+    const [interestTrackingMethod, setInterestTrackingMethod] = useState<'aer' | 'manual'>('aer');
     const [bonusRateActive, setBonusRateActive] = useState(false);
     const [bonusEndDate, setBonusEndDate] = useState('');
     const [ownerId, setOwnerId] = useState('joint');
@@ -37,6 +39,7 @@ export function EditAccountPage() {
             setBalance(account.balance.toString());
             setInterestRate(account.interestRate.toString());
             setBudgetOrder(account.budgetOrder !== undefined ? account.budgetOrder.toString() : '');
+            setInterestTrackingMethod(account.interestTrackingMethod || 'aer');
             setBonusRateActive(account.bonusRateActive || false);
             if (account.bonusEndDate) {
                 // Convert timestamp to YYYY-MM-DD
@@ -53,11 +56,17 @@ export function EditAccountPage() {
     const showAER = category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
     const showBonus = category === '' || ['Easy Access Savings', 'Cash ISA', 'Current Account'].includes(category as string);
 
+    useEffect(() => {
+        if (!showAER && interestTrackingMethod !== 'manual') {
+            setInterestTrackingMethod('manual');
+        }
+    }, [showAER, interestTrackingMethod]);
+
     const handleSave = async () => {
         if (!id || !accountName || !balance || !category) return;
-        if (showAER && !interestRate) return;
+        if (showAER && interestTrackingMethod === 'aer' && !interestRate) return;
 
-        const finalInterestRate = showAER ? parseFloat(interestRate) : 0;
+        const finalInterestRate = showAER && interestTrackingMethod === 'aer' ? parseFloat(interestRate) : 0;
 
         try {
             await db.accounts.update(id, {
@@ -67,6 +76,7 @@ export function EditAccountPage() {
                 category,
                 balance: parseFloat(balance),
                 interestRate: finalInterestRate,
+                interestTrackingMethod: showAER ? interestTrackingMethod : 'manual',
                 budgetOrder: budgetOrder !== '' ? parseInt(budgetOrder, 10) : undefined,
                 bonusRateActive: showBonus ? bonusRateActive : false,
                 bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
@@ -92,7 +102,7 @@ export function EditAccountPage() {
     if (!account) return <div className="p-4 text-center">Loading...</div>;
 
     return (
-        <div className="w-full max-w-3xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
+        <div className="w-full max-w-5xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
             {/* TopAppBar */}
             <header className="flex items-center p-4 border-b border-primary/10">
                 <button
@@ -104,8 +114,10 @@ export function EditAccountPage() {
                 <h1 className="ml-4 text-xl font-bold tracking-tight">Edit Account</h1>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-4 space-y-6">
-                {/* Account Name Field */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col md:flex-row gap-8">
+                <main className="flex-1 space-y-6">
+                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
+                    {/* Account Name Field */}
                 <div className="space-y-2">
                     <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Account Name</label>
                     <input
@@ -174,36 +186,68 @@ export function EditAccountPage() {
                     </div>
                 )}
 
-                {/* Balance Field */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Balance</label>
-                    <div className="relative flex items-center">
-                        <input
-                            className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
-                            type="number"
-                            value={balance}
-                            onChange={(e) => setBalance(e.target.value)}
-                        />
-                        <span className="absolute right-4 text-primary material-symbols-outlined">attach_money</span>
-                    </div>
-                </div>
+                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-8 mb-4">FINANCIAL SETTINGS</h2>
 
-                {/* Interest Rate Field */}
+                {/* Calculation Method Field */}
                 {showAER && (
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
+                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Calculation Method</label>
+                        <div className="flex bg-slate-100 dark:bg-primary/10 rounded-lg p-1">
+                            <button
+                                onClick={() => setInterestTrackingMethod('aer')}
+                                className={`flex-1 py-3 text-sm font-semibold rounded-md transition-all ${
+                                    interestTrackingMethod === 'aer'
+                                        ? 'bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                }`}
+                            >
+                                AER (%)
+                            </button>
+                            <button
+                                onClick={() => setInterestTrackingMethod('manual')}
+                                className={`flex-1 py-3 text-sm font-semibold rounded-md transition-all ${
+                                    interestTrackingMethod === 'manual'
+                                        ? 'bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                                }`}
+                            >
+                                Manual Ledger
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Balance and Interest Rate Fields */}
+                <div className={interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4" : "space-y-2"}>
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
                         <div className="relative flex items-center">
                             <input
                                 className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                 type="number"
-                                step="0.01"
-                                value={interestRate}
-                                onChange={(e) => setInterestRate(e.target.value)}
+                                value={balance}
+                                onChange={(e) => setBalance(e.target.value)}
                             />
-                            <span className="absolute right-4 text-slate-400 font-bold">%</span>
+                            <span className="absolute right-4 text-primary material-symbols-outlined">attach_money</span>
                         </div>
                     </div>
-                )}
+
+                    {showAER && interestTrackingMethod === 'aer' && (
+                        <div className="space-y-2">
+                            <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
+                            <div className="relative flex items-center">
+                                <input
+                                    className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                                    type="number"
+                                    step="0.01"
+                                    value={interestRate}
+                                    onChange={(e) => setInterestRate(e.target.value)}
+                                />
+                                <span className="absolute right-4 text-slate-400 font-bold">%</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Bonus Rate Section */}
                 {showBonus && (
@@ -273,13 +317,18 @@ export function EditAccountPage() {
                         </button>
                     </div>
                 </div>
-            </main>
+                </main>
+
+                <aside className="w-full md:w-[450px]">
+                    <InterestLedger accountId={id!} currentBalance={parseFloat(balance) || 0} />
+                </aside>
+            </div>
 
             {/* Action Buttons */}
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!accountName || !balance || (showAER && !interestRate) || !category}
+                    disabled={!accountName || !balance || (showAER && interestTrackingMethod === 'aer' && !interestRate) || !category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Save Changes

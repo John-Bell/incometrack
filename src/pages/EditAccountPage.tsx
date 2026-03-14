@@ -53,20 +53,20 @@ export function EditAccountPage() {
         }
     }, [account]);
 
-    const showAER = category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
+    const isEligibleForAER = category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
     const showBonus = category === '' || ['Easy Access Savings', 'Cash ISA', 'Current Account'].includes(category as string);
 
     useEffect(() => {
-        if (!showAER && interestTrackingMethod !== 'manual') {
+        if (!isEligibleForAER && interestTrackingMethod !== 'manual') {
             setInterestTrackingMethod('manual');
         }
-    }, [showAER, interestTrackingMethod]);
+    }, [isEligibleForAER, interestTrackingMethod]);
 
     const handleSave = async () => {
         if (!id || !accountName || !balance || !category) return;
-        if (showAER && interestTrackingMethod === 'aer' && !interestRate) return;
+        if (isEligibleForAER && interestTrackingMethod === 'aer' && !interestRate) return;
 
-        const finalInterestRate = showAER && interestTrackingMethod === 'aer' ? parseFloat(interestRate) : 0;
+        const finalInterestRate = isEligibleForAER && interestTrackingMethod === 'aer' ? parseFloat(interestRate) : 0;
 
         try {
             await db.accounts.update(id, {
@@ -76,7 +76,7 @@ export function EditAccountPage() {
                 category,
                 balance: parseFloat(balance),
                 interestRate: finalInterestRate,
-                interestTrackingMethod: showAER ? interestTrackingMethod : 'manual',
+                interestTrackingMethod: isEligibleForAER ? interestTrackingMethod : 'manual',
                 budgetOrder: budgetOrder !== '' ? parseInt(budgetOrder, 10) : undefined,
                 bonusRateActive: showBonus ? bonusRateActive : false,
                 bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
@@ -189,7 +189,7 @@ export function EditAccountPage() {
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-8 mb-4">FINANCIAL SETTINGS</h2>
 
                 {/* Calculation Method Field */}
-                {showAER && (
+                {isEligibleForAER && (
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Calculation Method</label>
                         <div className="flex bg-slate-100 dark:bg-primary/10 rounded-lg p-1">
@@ -218,7 +218,7 @@ export function EditAccountPage() {
                 )}
 
                 {/* Balance and Interest Rate Fields */}
-                <div className={interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4" : "space-y-2"}>
+                <div className={isEligibleForAER && interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
                         <div className="relative flex items-center">
@@ -232,7 +232,7 @@ export function EditAccountPage() {
                         </div>
                     </div>
 
-                    {showAER && interestTrackingMethod === 'aer' && (
+                    {isEligibleForAER && interestTrackingMethod === 'aer' && (
                         <div className="space-y-2">
                             <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
                             <div className="relative flex items-center">
@@ -320,7 +320,7 @@ export function EditAccountPage() {
                 </main>
 
                 <aside className="w-full md:w-[450px]">
-                    <InterestLedger accountId={id!} currentBalance={parseFloat(balance) || 0} />
+                    <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(balance) || 0} />
                 </aside>
             </div>
 
@@ -328,7 +328,7 @@ export function EditAccountPage() {
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!accountName || !balance || (showAER && interestTrackingMethod === 'aer' && !interestRate) || !category}
+                    disabled={!accountName || !balance || (isEligibleForAER && interestTrackingMethod === 'aer' && !interestRate) || !category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Save Changes

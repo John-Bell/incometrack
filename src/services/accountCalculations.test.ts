@@ -46,10 +46,9 @@ describe('accountCalculations', () => {
             expect(calculateBlendedRate([])).toBe(0);
         });
 
-        it('should return 0 if no accounts have an interest rate > 0', () => {
+        it('should return 0 if all accounts return 0 projected interest and 0 balance', () => {
             const accounts = [
-                createMockAccount(1000, 0),
-                createMockAccount(2000, -1)
+                createMockAccount(0, 0)
             ];
             expect(calculateBlendedRate(accounts)).toBe(0);
         });
@@ -68,14 +67,14 @@ describe('accountCalculations', () => {
             expect(calculateBlendedRate(accounts)).toBe(2.75);
         });
 
-        it('should exclude accounts with 0 interest rate from blended rate calculation', () => {
+        it('should include accounts with 0 interest rate in blended rate calculation to drag down rate', () => {
             const accounts = [
                 createMockAccount(1000, 5),
                 createMockAccount(3000, 2),
-                createMockAccount(5000, 0)
+                createMockAccount(4000, 0)
             ];
-            // Only the first two should be included: (50 + 60) / 4000 = 2.75%
-            expect(calculateBlendedRate(accounts)).toBe(2.75);
+            // (50 + 60 + 0) / 8000 = 110 / 8000 = 1.375%
+            expect(calculateBlendedRate(accounts)).toBe(1.375);
         });
 
         it('should handle accounts with 0 balance correctly', () => {
@@ -85,6 +84,25 @@ describe('accountCalculations', () => {
             ];
             // (50 + 0) / (1000 + 0) = 5%
             expect(calculateBlendedRate(accounts)).toBe(5);
+        });
+
+        it('should factor in manual tracking accounts correctly', () => {
+            const manualAccount: Account = {
+                ...createMockAccount(2000, 0),
+                id: 'acc1',
+                interestTrackingMethod: 'manual'
+            };
+            const aerAccount = createMockAccount(1000, 5); // 1000 * 0.05 = 50
+
+            const accruals = [
+                { id: '1', accountId: 'acc1', date: 1000, balance: 2000, interestAccrued: 10 },
+                { id: '2', accountId: 'acc1', date: 2000, balance: 2000, interestAccrued: 15 } // latest
+            ];
+            // manualAccount projected interest: 15 * 12 = 180
+            // total interest: 180 + 50 = 230
+            // total balance: 2000 + 1000 = 3000
+            // rate: 230 / 3000 = 0.07666... = 7.666...%
+            expect(calculateBlendedRate([manualAccount, aerAccount], accruals)).toBeCloseTo(7.6667, 4);
         });
     });
 });

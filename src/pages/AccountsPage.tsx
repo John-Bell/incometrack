@@ -22,6 +22,7 @@ export function AccountsPage() {
     const [sortBy, setSortBy] = useState<'rate' | 'name'>('rate');
 
     const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
+    const allAccruals = useLiveQuery(() => db.interestAccruals.toArray()) || [];
 
     const sortedRawAccounts = [...rawAccounts].sort((a, b) => {
         if (sortBy === 'rate') {
@@ -73,7 +74,7 @@ export function AccountsPage() {
         maximumFractionDigits: 2
     }).format(totalSavingsValue);
 
-    const blendedRateValue = calculateBlendedRate(rawAccounts);
+    const blendedRateValue = calculateBlendedRate(rawAccounts, allAccruals);
     const formattedBlendedRate = `${blendedRateValue.toFixed(2)}%`;
 
     const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === activeAccountsTab);

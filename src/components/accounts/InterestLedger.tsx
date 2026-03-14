@@ -56,7 +56,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
 
             {/* Add New Entry Form */}
             <div className="p-5 border-b border-slate-100 dark:border-primary/10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month & Year</label>
                         <input

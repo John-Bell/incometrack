@@ -57,8 +57,8 @@ export function AccountsPage() {
             category: acc.category,
             ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
             ownerTagColor,
-            balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(acc.balance),
-            rate: acc.interestRate.toFixed(2) + '%',
+            balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
+            rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
             updatedAt: formatRelativeTime(acc.updatedAt),
             alertText: acc.alertText,
             alertType: acc.alertType as any,
@@ -69,7 +69,8 @@ export function AccountsPage() {
     const formattedTotalSavings = new Intl.NumberFormat('en-GB', {
         style: 'currency',
         currency: 'GBP',
-        maximumFractionDigits: 0
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
     }).format(totalSavingsValue);
 
     const blendedRateValue = calculateBlendedRate(rawAccounts);

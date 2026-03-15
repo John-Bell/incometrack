@@ -56,8 +56,8 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
 
             {/* Add New Entry Form */}
             <div className="p-5 border-b border-slate-100 dark:border-primary/10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                    <div>
+                <div className="flex flex-wrap gap-4 mb-4">
+                    <div className="flex-1 min-w-[200px]">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month & Year</label>
                         <input
                             type="month"
@@ -66,7 +66,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                             onChange={(e) => setMonthYear(e.target.value)}
                         />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-[200px]">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month-End Balance</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">£</span>
@@ -80,7 +80,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                             />
                         </div>
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-[200px]">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Interest Amount</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">£</span>

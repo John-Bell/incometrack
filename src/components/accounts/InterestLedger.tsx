@@ -56,17 +56,17 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
 
             {/* Add New Entry Form */}
             <div className="p-5 border-b border-slate-100 dark:border-primary/10">
-                <div className="flex flex-wrap gap-4 mb-4">
-                    <div className="flex-[1.5] min-w-[200px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month & Year</label>
                         <input
                             type="month"
-                            className="w-full h-11 px-3 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                            className="w-full h-11 px-3 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:[color-scheme:dark]"
                             value={monthYear}
                             onChange={(e) => setMonthYear(e.target.value)}
                         />
                     </div>
-                    <div className="flex-1 min-w-[130px]">
+                    <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month-End Balance</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">£</span>
@@ -80,7 +80,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                             />
                         </div>
                     </div>
-                    <div className="flex-1 min-w-[130px]">
+                    <div>
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Interest Amount</label>
                         <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">£</span>

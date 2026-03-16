@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTotalSavings, calculateBlendedRate } from './accountCalculations';
+import { calculateTotalSavings, calculateBlendedRate, calculateTaxableSavings } from './accountCalculations';
 import { type Account } from '@/lib/db';
 
 describe('accountCalculations', () => {
@@ -104,5 +104,53 @@ describe('accountCalculations', () => {
             // rate: 230 / 3000 = 0.07666... = 7.666...%
             expect(calculateBlendedRate([manualAccount, aerAccount], accruals)).toBeCloseTo(7.6667, 4);
         });
+    });
+});
+describe('calculateTaxableSavings', () => {
+    it('returns 0 when accounts is empty', () => {
+        expect(calculateTaxableSavings([])).toBe(0);
+    });
+
+    it('sums all balances when no accounts are in excluded categories', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
+            { id: '2', name: 'Acc 2', balance: 200, ownerId: 'p2', updatedAt: 0, category: 'Easy Access Savings', interestRate: 0 },
+        ];
+        expect(calculateTaxableSavings(accounts)).toBe(300);
+    });
+
+    it('excludes DC Pension accounts', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
+            { id: '2', name: 'Acc 2', balance: 500, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 0 },
+        ];
+        expect(calculateTaxableSavings(accounts)).toBe(100);
+    });
+
+    it('excludes Premium Bonds accounts', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
+            { id: '2', name: 'Acc 2', balance: 500, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 0 },
+        ];
+        expect(calculateTaxableSavings(accounts)).toBe(100);
+    });
+
+    it('excludes Cash ISA accounts', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
+            { id: '2', name: 'Acc 2', balance: 500, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 0 },
+        ];
+        expect(calculateTaxableSavings(accounts)).toBe(100);
+    });
+
+    it('excludes a mix of excluded categories', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
+            { id: '2', name: 'Acc 2', balance: 500, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 0 },
+            { id: '3', name: 'Acc 3', balance: 1000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 0 },
+            { id: '4', name: 'Acc 4', balance: 2000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 0 },
+            { id: '5', name: 'Acc 5', balance: 300, ownerId: 'p1', updatedAt: 0, category: 'Fixed Term Savings', interestRate: 0 },
+        ];
+        expect(calculateTaxableSavings(accounts)).toBe(400);
     });
 });

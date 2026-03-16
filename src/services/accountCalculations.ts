@@ -9,6 +9,16 @@ export function calculateNonPensionSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => acc.category !== 'DC Pension' ? sum + (acc.balance || 0) : sum, 0);
 }
 
+export function calculateTaxableSavings(accounts: Account[]): number {
+    const excludedCategories = ['DC Pension', 'Premium Bonds', 'Cash ISA'];
+    return accounts.reduce((sum, acc) => {
+        if (acc.category && excludedCategories.includes(acc.category)) {
+            return sum;
+        }
+        return sum + (acc.balance || 0);
+    }, 0);
+}
+
 export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = []): number {
     const totalSavingsValueForRate = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
     const totalInterestValue = accounts.reduce((sum, acc) => {

@@ -5,6 +5,10 @@ export function calculateTotalSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 }
 
+export function calculateNonPensionSavings(accounts: Account[]): number {
+    return accounts.reduce((sum, acc) => acc.category !== 'DC Pension' ? sum + (acc.balance || 0) : sum, 0);
+}
+
 export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = []): number {
     const totalSavingsValueForRate = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
     const totalInterestValue = accounts.reduce((sum, acc) => {

@@ -1,73 +1,63 @@
-# React + TypeScript + Vite
+# IncomeTrack
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+IncomeTrack is a fast, local-first personal finance and budgeting web application. It is designed to help you track your income, manage your accounts and budgets, and plan exactly where your money goes without needing to rely on a traditional server for your sensitive financial data.
 
-Currently, two official plugins are available:
+## Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Local-First Architecture:** All of your financial data is stored locally in your browser using IndexedDB (via Dexie.js), ensuring complete privacy and offline functionality.
+- **Account & Budget Management:** Keep track of your balances and organize your recurring bills and spending through flexible budgeting.
+- **Transactions & Income Tracking:** Record income and expenses effortlessly.
+- **Scenario Planning:** Test out different financial situations to forecast your future balances.
+- **Responsive & Modern UI:** Built with React and styled with Tailwind CSS for a seamless experience on both desktop and mobile devices.
+- **PWA Support:** Installable as a Progressive Web App for a native-like experience.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This project is built with a modern frontend stack:
 
-## Expanding the ESLint configuration
+- **Framework:** [React 19](https://react.dev/) via [Vite](https://vitejs.dev/)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **State Management:** [Zustand](https://zustand-demo.pmnd.rs/) for global state overrides.
+- **Database:** [Dexie.js](https://dexie.org/) (IndexedDB wrapper)
+- **Routing:** [React Router v7](https://reactrouter.com/)
+- **Testing:** [Playwright](https://playwright.dev/) for E2E tests, [Vitest](https://vitest.dev/) for unit testing.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Node.js (v18 or higher recommended)
+- npm
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Installation
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. Clone the repository:
+   ```bash
+   git clone <your-repo-url>
+   cd incometrack
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open your browser and navigate to `http://localhost:5173`.
+
+### Scripts
+
+- `npm run dev` - Starts the Vite development server.
+- `npm run build` - Compiles TypeScript and builds the app for production.
+- `npm run preview` - Boots up a local server to preview the production build.
+- `npm run lint` - Runs ESLint.
+- `npm test` - Runs unit tests via Vitest.
+- `npx playwright test` - Runs E2E tests via Playwright (ensure dependencies are installed with `npx playwright install --with-deps` first).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

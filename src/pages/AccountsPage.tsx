@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings } from '@/services/accountCalculations';
+import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings } from '@/services/accountCalculations';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -81,6 +81,14 @@ export function AccountsPage() {
         maximumFractionDigits: 2
     }).format(nonPensionSavingsValue);
 
+    const taxableSavingsValue = calculateTaxableSavings(rawAccounts);
+    const formattedTaxableSavings = new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(taxableSavingsValue);
+
     const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === activeAccountsTab);
 
     return (
@@ -101,7 +109,7 @@ export function AccountsPage() {
             }
         >
             <div className="px-4 pb-4">
-                <PortfolioOverview totalSavings={formattedTotalSavings} nonPensionSavings={formattedNonPensionSavings} />
+                <PortfolioOverview totalSavings={formattedTotalSavings} nonPensionSavings={formattedNonPensionSavings} taxableSavings={formattedTaxableSavings} />
 
                 <button
                     onClick={() => navigate('/accounts/add')}

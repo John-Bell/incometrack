@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateBlendedRate } from '@/services/accountCalculations';
+import { calculateTotalSavings, calculateNonPensionSavings } from '@/services/accountCalculations';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -22,7 +22,6 @@ export function AccountsPage() {
     const [sortBy, setSortBy] = useState<'rate' | 'name'>('rate');
 
     const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
-    const allAccruals = useLiveQuery(() => db.interestAccruals.toArray()) || [];
 
     const sortedRawAccounts = [...rawAccounts].sort((a, b) => {
         if (sortBy === 'rate') {
@@ -74,8 +73,13 @@ export function AccountsPage() {
         maximumFractionDigits: 2
     }).format(totalSavingsValue);
 
-    const blendedRateValue = calculateBlendedRate(rawAccounts, allAccruals);
-    const formattedBlendedRate = `${blendedRateValue.toFixed(2)}%`;
+    const nonPensionSavingsValue = calculateNonPensionSavings(rawAccounts);
+    const formattedNonPensionSavings = new Intl.NumberFormat('en-GB', {
+        style: 'currency',
+        currency: 'GBP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(nonPensionSavingsValue);
 
     const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === activeAccountsTab);
 
@@ -97,7 +101,7 @@ export function AccountsPage() {
             }
         >
             <div className="px-4 pb-4">
-                <PortfolioOverview totalSavings={formattedTotalSavings} blendedRate={formattedBlendedRate} trend="up" />
+                <PortfolioOverview totalSavings={formattedTotalSavings} nonPensionSavings={formattedNonPensionSavings} />
 
                 <button
                     onClick={() => navigate('/accounts/add')}

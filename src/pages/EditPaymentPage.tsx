@@ -10,6 +10,7 @@ export function EditPaymentPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const urlAccountId = searchParams.get('accountId') || '';
+    const from = searchParams.get('from') || '';
 
     const transaction = useLiveQuery(() => db.transactions.get(id as string));
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
@@ -50,7 +51,9 @@ export function EditPaymentPage() {
             accountId
         });
 
-        if (urlAccountId) {
+        if (from === 'dashboard') {
+            navigate('/');
+        } else if (urlAccountId) {
             navigate(`/transactions?accountId=${urlAccountId}`);
         } else {
             navigate('/transactions');
@@ -61,7 +64,9 @@ export function EditPaymentPage() {
         if (!id) return;
         if (confirm('Are you sure you want to delete this payment?')) {
             await db.transactions.delete(id);
-            if (urlAccountId) {
+            if (from === 'dashboard') {
+                navigate('/');
+            } else if (urlAccountId) {
                 navigate(`/transactions?accountId=${urlAccountId}`);
             } else {
                 navigate('/transactions');

@@ -153,7 +153,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 <div
                                                     key={transaction.id}
                                                     className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-3 items-center hover:bg-slate-50 transition-colors cursor-pointer group"
-                                                    onClick={() => navigate(`/transactions/edit/${transaction.id}`)}
+                                                    onClick={() => navigate(`/transactions/edit/${transaction.id}?from=dashboard`)}
                                                 >
                                                     <div className="flex items-center gap-2 pl-8 text-slate-500 text-sm font-medium group-hover:text-primary transition-colors">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
@@ -275,7 +275,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                             <div
                                                                 key={transaction.id}
                                                                 className="flex items-center justify-between cursor-pointer group"
-                                                                onClick={() => navigate(`/transactions/edit/${transaction.id}`)}
+                                                                onClick={() => navigate(`/transactions/edit/${transaction.id}?from=dashboard`)}
                                                             >
                                                                 <div className="flex flex-col gap-0.5">
                                                                     <span className="text-base font-medium text-slate-900 group-hover:text-primary transition-colors">

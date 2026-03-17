@@ -5,12 +5,24 @@ import { Icon } from '../components/ui/Icon';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import type { Transaction } from '@/lib/db';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 export function TransactionsPage() {
     const navigate = useNavigate();
-    const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray()) || [];
+    const [searchParams, setSearchParams] = useSearchParams();
+    const selectedAccountId = searchParams.get('accountId') || '';
+
+    const allTransactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray()) || [];
+    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+
+    const currentAccounts = accounts
+        .filter(account => account.category === 'Current Account')
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    const transactions = selectedAccountId
+        ? allTransactions.filter(tx => tx.accountId === selectedAccountId)
+        : allTransactions;
 
     const budgetsMap = Object.fromEntries(budgets.map(b => [b.id, b]));
 
@@ -55,13 +67,40 @@ export function TransactionsPage() {
             }
         >
             <div className="flex flex-col gap-8 px-4 py-6 pb-24">
-                <button
-                    onClick={() => navigate('/transactions/add')}
-                    className="w-full flex items-center justify-center gap-2 bg-primary text-black font-semibold py-3 rounded-xl shadow-[0_4px_14px_0_rgba(255,184,80,0.39)] hover:brightness-110 active:scale-[0.98] transition-all"
-                >
-                    <Icon name="add" className="text-xl" />
-                    <span>Add Payment</span>
-                </button>
+                <div className="flex flex-col gap-4">
+                    <div className="relative">
+                        <select
+                            value={selectedAccountId}
+                            onChange={(e) => {
+                                const newAccountId = e.target.value;
+                                if (newAccountId) {
+                                    setSearchParams({ accountId: newAccountId });
+                                } else {
+                                    setSearchParams({});
+                                }
+                            }}
+                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm"
+                        >
+                            <option value="">All Accounts</option>
+                            {currentAccounts.map(account => (
+                                <option key={account.id} value={account.id}>
+                                    {account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                            <Icon name="expand_more" className="text-xl" />
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={() => navigate(selectedAccountId ? `/transactions/add?accountId=${selectedAccountId}` : '/transactions/add')}
+                        className="w-full flex items-center justify-center gap-2 bg-primary text-black font-semibold py-3 rounded-xl shadow-[0_4px_14px_0_rgba(255,184,80,0.39)] hover:brightness-110 active:scale-[0.98] transition-all"
+                    >
+                        <Icon name="add" className="text-xl" />
+                        <span>Add Payment</span>
+                    </button>
+                </div>
 
                 {Object.entries(groupedTransactions).map(([dateLabel, dailyTransactions]) => (
                     <section key={dateLabel}>
@@ -70,7 +109,7 @@ export function TransactionsPage() {
                         </div>
                         <div className="space-y-1">
                             {dailyTransactions.map((tx) => (
-                                <Link to={`/transactions/edit/${tx.id}`} key={tx.id} className="group flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
+                                <Link to={selectedAccountId ? `/transactions/edit/${tx.id}?accountId=${selectedAccountId}` : `/transactions/edit/${tx.id}`} key={tx.id} className="group flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
                                     <div className="size-12 min-w-[3rem] rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                         <Icon name={tx.icon} />
                                     </div>

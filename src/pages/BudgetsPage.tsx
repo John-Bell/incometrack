@@ -136,14 +136,21 @@ export function BudgetsPage() {
                                 const ratio = targetNum > 0 ? actualAmount / targetNum : 0;
                                 const percent = Math.min(ratio * 100, 100);
 
+                                const actualRound = Math.round(actualAmount * 100);
+                                const targetRound = Math.round(targetNum * 100);
+
                                 let status = 'ON TRACK';
                                 let barColor = 'bg-blue-500';
                                 let chipClass = 'bg-blue-500/10 text-blue-500';
 
-                                if (ratio >= 1) {
+                                if (actualRound > targetRound) {
                                     status = 'OVERSPENT';
                                     barColor = 'bg-red-500';
                                     chipClass = 'bg-red-500/10 text-red-500';
+                                } else if (actualRound === targetRound && targetRound > 0) {
+                                    status = 'FULLY SPENT';
+                                    barColor = 'bg-orange-500';
+                                    chipClass = 'bg-orange-500/10 text-orange-500';
                                 } else if (ratio >= 0.90) {
                                     status = 'OVERSPEND RISK';
                                     barColor = 'bg-orange-500';

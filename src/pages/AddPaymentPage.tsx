@@ -10,13 +10,15 @@ export function AddPaymentPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const urlAccountId = searchParams.get('accountId') || '';
+    const urlBudgetId = searchParams.get('budgetId') || '';
+    const from = searchParams.get('from') || '';
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
 
     const [payee, setPayee] = useState('');
     const [amount, setAmount] = useState('');
-    const [budgetId, setBudgetId] = useState('');
+    const [budgetId, setBudgetId] = useState(urlBudgetId);
     const [accountId, setAccountId] = useState(urlAccountId);
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -38,7 +40,9 @@ export function AddPaymentPage() {
             accountId
         });
 
-        if (urlAccountId) {
+        if (from === 'dashboard') {
+            navigate('/');
+        } else if (urlAccountId) {
             navigate(`/transactions?accountId=${urlAccountId}`);
         } else {
             navigate('/transactions');

@@ -135,7 +135,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 <div className="flex items-center justify-end gap-2 text-slate-400">
                                                     <div
                                                         className="cursor-pointer hover:text-slate-700 transition-colors"
-                                                        onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}`)}
+                                                        onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}&from=dashboard`)}
                                                     >
                                                         <Icon name="receipt_long" className="w-5 h-5" />
                                                     </div>
@@ -241,7 +241,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                     <div className="flex items-center gap-4 text-slate-500">
                                                         <div
                                                             className="cursor-pointer"
-                                                            onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}`)}
+                                                            onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}&from=dashboard`)}
                                                         >
                                                             <Icon name="receipt_long" className="w-6 h-6 hover:text-slate-800 transition-colors" />
                                                         </div>

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 export function AddPaymentPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const urlAccountId = searchParams.get('accountId') || '';
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -15,7 +17,7 @@ export function AddPaymentPage() {
     const [payee, setPayee] = useState('');
     const [amount, setAmount] = useState('');
     const [budgetId, setBudgetId] = useState('');
-    const [accountId, setAccountId] = useState('');
+    const [accountId, setAccountId] = useState(urlAccountId);
     const [type, setType] = useState<'income' | 'expense'>('expense');
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [suggestedBudgetIds, setSuggestedBudgetIds] = useState<string[]>([]);
@@ -36,7 +38,11 @@ export function AddPaymentPage() {
             accountId
         });
 
-        navigate('/transactions');
+        if (urlAccountId) {
+            navigate(`/transactions?accountId=${urlAccountId}`);
+        } else {
+            navigate('/transactions');
+        }
     };
 
     const handlePayeeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {

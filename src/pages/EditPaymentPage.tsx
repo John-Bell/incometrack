@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 
 export function EditPaymentPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const urlAccountId = searchParams.get('accountId') || '';
 
     const transaction = useLiveQuery(() => db.transactions.get(id as string));
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
@@ -48,14 +50,22 @@ export function EditPaymentPage() {
             accountId
         });
 
-        navigate('/transactions');
+        if (urlAccountId) {
+            navigate(`/transactions?accountId=${urlAccountId}`);
+        } else {
+            navigate('/transactions');
+        }
     };
 
     const handleDelete = async () => {
         if (!id) return;
         if (confirm('Are you sure you want to delete this payment?')) {
             await db.transactions.delete(id);
-            navigate('/transactions');
+            if (urlAccountId) {
+                navigate(`/transactions?accountId=${urlAccountId}`);
+            } else {
+                navigate('/transactions');
+            }
         }
     };
 

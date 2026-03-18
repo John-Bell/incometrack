@@ -1,72 +1,40 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { db } from '@/lib/db';
-import { useStore } from '@/store/useStore';
 import { Icon } from '@/components/ui/Icon';
 import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
+import { useAddAccountForm } from '@/hooks/useAddAccountForm';
 
 export function AddAccountPage() {
-    const navigate = useNavigate();
-    const { profile } = useStore();
-    const p1Name = profile?.partner1Name || 'Partner 1';
-    const p2Name = profile?.partner2Name || 'Partner 2';
-
-    const [accountName, setAccountName] = useState('');
-    const [nickname, setNickname] = useState('');
-    const [last4Digits, setLast4Digits] = useState('');
-    const [category, setCategory] = useState<AccountCategory | ''>('');
-
-    // Effect to clear budget order when category is not 'Current Account'
-    useEffect(() => {
-        if (category !== 'Current Account') {
-            setBudgetOrder('');
-        }
-    }, [category]);
-    const [balance, setBalance] = useState('');
-    const [interestRate, setInterestRate] = useState('');
-    const [budgetOrder, setBudgetOrder] = useState('');
-    const [bonusRateActive, setBonusRateActive] = useState(false);
-    const [bonusEndDate, setBonusEndDate] = useState('');
-    const [payoutFrequency, setPayoutFrequency] = useState<'monthly' | 'annually' | 'at_maturity' | ''>('');
-    const [payoutDate, setPayoutDate] = useState('');
-    const [ownerId, setOwnerId] = useState('joint'); // 'person1', 'person2', 'joint'
-
-    const showAER = category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
-    const showBonus = category === '' || ['Easy Access Savings', 'Cash ISA', 'Current Account', 'Fixed Term Savings'].includes(category as string);
-
-    const handleSave = async () => {
-        if (!accountName || !balance || !category) return;
-        if (showAER && !interestRate) return;
-
-        const finalInterestRate = showAER ? parseFloat(interestRate) : 0;
-
-        const newAccount = {
-            id: crypto.randomUUID(),
-            ownerId,
-            name: accountName,
-            nickname: nickname || undefined,
-            last4Digits: last4Digits || undefined,
-            balance: parseFloat(balance),
-            interestRate: finalInterestRate,
-            category,
-            budgetOrder: budgetOrder !== '' ? parseInt(budgetOrder, 10) : undefined,
-            bonusRateActive: showBonus ? bonusRateActive : false,
-            // Convert 'YYYY-MM-DD' back to timestamp if active, else undefined
-            bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
-            interestPayoutFrequency: payoutFrequency || undefined,
-            interestPayoutDate: (payoutFrequency === 'annually' || payoutFrequency === 'at_maturity') && payoutDate
-                ? new Date(payoutDate).getTime()
-                : undefined,
-            updatedAt: Date.now(),
-        };
-
-        try {
-            await db.accounts.add(newAccount);
-            navigate('/accounts');
-        } catch (error) {
-            console.error('Failed to add account', error);
-        }
-    };
+    const {
+        navigate,
+        p1Name,
+        p2Name,
+        accountName,
+        setAccountName,
+        nickname,
+        setNickname,
+        last4Digits,
+        setLast4Digits,
+        category,
+        setCategory,
+        balance,
+        setBalance,
+        interestRate,
+        setInterestRate,
+        budgetOrder,
+        setBudgetOrder,
+        bonusRateActive,
+        setBonusRateActive,
+        bonusEndDate,
+        setBonusEndDate,
+        payoutFrequency,
+        setPayoutFrequency,
+        payoutDate,
+        setPayoutDate,
+        ownerId,
+        setOwnerId,
+        showAER,
+        showBonus,
+        handleSave
+    } = useAddAccountForm();
 
     return (
         <div className="w-full max-w-3xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl">
@@ -227,7 +195,9 @@ export function AddAccountPage() {
                     <div className="p-5 rounded-xl border border-primary/20 bg-primary/5 space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="font-bold text-slate-900 dark:text-slate-100">Bonus Rate</h3>
+                                <h3 className="font-bold text-slate-900 dark:text-slate-100">
+                                    {category === 'Fixed Term Savings' || category === 'Notice Savings' ? 'Maturity Tracking' : 'Bonus Rate'}
+                                </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Additional interest for a limited period</p>
                             </div>
                             <label className="relative inline-flex items-center cursor-pointer">

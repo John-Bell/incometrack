@@ -1,47 +1,25 @@
+import { useParams } from 'react-router-dom';
 import { Icon } from '@/components/ui/Icon';
 import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
 import { InterestLedger } from '@/components/accounts/InterestLedger';
-import { useEditAccountForm } from '@/hooks/useEditAccountForm';
+import { useAccountForm } from '@/hooks/useAccountForm';
 
 export function EditAccountPage() {
+    const { id } = useParams<{ id: string }>();
     const {
         account,
         navigate,
         p1Name,
         p2Name,
-        accountName,
-        setAccountName,
-        nickname,
-        setNickname,
-        last4Digits,
-        setLast4Digits,
-        category,
-        setCategory,
-        balance,
-        setBalance,
-        interestRate,
-        setInterestRate,
-        budgetOrder,
-        setBudgetOrder,
-        interestTrackingMethod,
-        setInterestTrackingMethod,
-        bonusRateActive,
-        setBonusRateActive,
-        bonusEndDate,
-        setBonusEndDate,
-        payoutFrequency,
-        setPayoutFrequency,
-        payoutDate,
-        setPayoutDate,
-        ownerId,
-        setOwnerId,
+        formData,
+        handleChange,
         showDeleteConfirm,
         setShowDeleteConfirm,
-        isEligibleForAER,
+        showAER: isEligibleForAER,
         showBonus,
         handleSave,
         handleDelete
-    } = useEditAccountForm();
+    } = useAccountForm(id);
 
     if (!account) return <div className="p-4 text-center">Loading...</div>;
 
@@ -59,7 +37,7 @@ export function EditAccountPage() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col xl:flex-row gap-8">
-                <main className={`space-y-6 ${interestTrackingMethod === 'manual' ? 'xl:w-[calc(40%-1rem)]' : 'flex-1'}`}>
+                <main className={`space-y-6 ${formData.interestTrackingMethod === 'manual' ? 'xl:w-[calc(40%-1rem)]' : 'flex-1'}`}>
                     <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
                     {/* Account Name Field */}
                 <div className="space-y-2">
@@ -67,8 +45,8 @@ export function EditAccountPage() {
                     <input
                         className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
-                        value={accountName}
-                        onChange={(e) => setAccountName(e.target.value)}
+                        value={formData.accountName}
+                        onChange={(e) => handleChange('accountName', e.target.value)}
                     />
                 </div>
 
@@ -80,8 +58,8 @@ export function EditAccountPage() {
                         className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         placeholder="e.g. Holiday Fund"
-                        value={nickname}
-                        onChange={(e) => setNickname(e.target.value)}
+                        value={formData.nickname}
+                        onChange={(e) => handleChange('nickname', e.target.value)}
                     />
                 </div>
 
@@ -93,8 +71,8 @@ export function EditAccountPage() {
                         type="text"
                         maxLength={4}
                         placeholder="e.g. 1234"
-                        value={last4Digits}
-                        onChange={(e) => setLast4Digits(e.target.value.replace(/\D/g, ''))}
+                        value={formData.last4Digits}
+                        onChange={(e) => handleChange('last4Digits', e.target.value.replace(/\D/g, ''))}
                     />
                 </div>
 
@@ -104,8 +82,8 @@ export function EditAccountPage() {
                     <div className="relative">
                         <select
                             className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value as AccountCategory)}
+                            value={formData.category}
+                            onChange={(e) => handleChange('category', e.target.value as AccountCategory)}
                         >
                             <option value="" disabled>Select Category</option>
                             {ACCOUNT_CATEGORIES.map((cat) => (
@@ -117,15 +95,15 @@ export function EditAccountPage() {
                 </div>
 
                 {/* Budget Order Field */}
-                {category === 'Current Account' && (
+                {formData.category === 'Current Account' && (
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
                         <input
                             className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                             type="number"
                             placeholder="e.g. 1"
-                            value={budgetOrder}
-                            onChange={(e) => setBudgetOrder(e.target.value)}
+                            value={formData.budgetOrder}
+                            onChange={(e) => handleChange('budgetOrder', e.target.value)}
                         />
                     </div>
                 )}
@@ -138,9 +116,9 @@ export function EditAccountPage() {
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Calculation Method</label>
                         <div className="flex bg-slate-100 dark:bg-primary/10 rounded-lg p-1">
                             <button
-                                onClick={() => setInterestTrackingMethod('aer')}
+                                onClick={() => handleChange('interestTrackingMethod', 'aer')}
                                 className={`flex-1 py-3 text-sm font-semibold rounded-md transition-all ${
-                                    interestTrackingMethod === 'aer'
+                                    formData.interestTrackingMethod === 'aer'
                                         ? 'bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 shadow-sm'
                                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                                 }`}
@@ -148,9 +126,9 @@ export function EditAccountPage() {
                                 AER (%)
                             </button>
                             <button
-                                onClick={() => setInterestTrackingMethod('manual')}
+                                onClick={() => handleChange('interestTrackingMethod', 'manual')}
                                 className={`flex-1 py-3 text-sm font-semibold rounded-md transition-all ${
-                                    interestTrackingMethod === 'manual'
+                                    formData.interestTrackingMethod === 'manual'
                                         ? 'bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 shadow-sm'
                                         : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                                 }`}
@@ -162,21 +140,21 @@ export function EditAccountPage() {
                 )}
 
                 {/* Balance and Interest Rate Fields */}
-                <div className={isEligibleForAER && interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
+                <div className={isEligibleForAER && formData.interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
                         <div className="relative flex items-center">
                             <input
                                 className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                 type="number"
-                                value={balance}
-                                onChange={(e) => setBalance(e.target.value)}
+                                value={formData.balance}
+                                onChange={(e) => handleChange('balance', e.target.value)}
                             />
                             <span className="absolute right-4 text-primary material-symbols-outlined">attach_money</span>
                         </div>
                     </div>
 
-                    {isEligibleForAER && interestTrackingMethod === 'aer' && (
+                    {isEligibleForAER && formData.interestTrackingMethod === 'aer' && (
                         <div className="space-y-2">
                             <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
                             <div className="relative flex items-center">
@@ -184,8 +162,8 @@ export function EditAccountPage() {
                                     className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                     type="number"
                                     step="0.01"
-                                    value={interestRate}
-                                    onChange={(e) => setInterestRate(e.target.value)}
+                                    value={formData.interestRate}
+                                    onChange={(e) => handleChange('interestRate', e.target.value)}
                                 />
                                 <span className="absolute right-4 text-slate-400 font-bold">%</span>
                             </div>
@@ -194,7 +172,7 @@ export function EditAccountPage() {
                 </div>
 
                 {/* Interest Payout Section */}
-                {isEligibleForAER && interestTrackingMethod === 'aer' && parseFloat(interestRate) > 0 && (
+                {isEligibleForAER && formData.interestTrackingMethod === 'aer' && parseFloat(formData.interestRate || '0') > 0 && (
                     <div className="space-y-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
                         <h3 className="font-bold text-slate-900 dark:text-slate-100">Interest Payout</h3>
                         <div className="space-y-2">
@@ -202,8 +180,8 @@ export function EditAccountPage() {
                             <div className="relative">
                                 <select
                                     className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                                    value={payoutFrequency}
-                                    onChange={(e) => setPayoutFrequency(e.target.value as 'monthly' | 'annually' | 'at_maturity' | '')}
+                                    value={formData.interestPayoutFrequency}
+                                    onChange={(e) => handleChange('interestPayoutFrequency', e.target.value as 'monthly' | 'annually' | 'at_maturity' | '')}
                                 >
                                     <option value="" disabled>Select Frequency</option>
                                     <option value="monthly">Monthly</option>
@@ -214,15 +192,15 @@ export function EditAccountPage() {
                             </div>
                         </div>
 
-                        {(payoutFrequency === 'annually' || payoutFrequency === 'at_maturity') && (
+                        {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && (
                             <div className="space-y-2 fade-in">
                                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Next Payout Date</label>
                                 <div className="relative">
                                     <input
                                         className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
                                         type="date"
-                                        value={payoutDate}
-                                        onChange={(e) => setPayoutDate(e.target.value)}
+                                        value={formData.interestPayoutDate}
+                                        onChange={(e) => handleChange('interestPayoutDate', e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -236,7 +214,7 @@ export function EditAccountPage() {
                         <div className="flex items-center justify-between">
                             <div>
                                 <h3 className="font-bold text-slate-900 dark:text-slate-100">
-                                    {category === 'Fixed Term Savings' || category === 'Notice Savings' ? 'Maturity Tracking' : 'Bonus Rate'}
+                                    {formData.category === 'Fixed Term Savings' || formData.category === 'Notice Savings' ? 'Maturity Tracking' : 'Bonus Rate'}
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Additional interest for a limited period</p>
                             </div>
@@ -244,22 +222,22 @@ export function EditAccountPage() {
                                 <input
                                     type="checkbox"
                                     className="sr-only peer"
-                                    checked={bonusRateActive}
-                                    onChange={(e) => setBonusRateActive(e.target.checked)}
+                                    checked={formData.bonusRateActive}
+                                    onChange={(e) => handleChange('bonusRateActive', e.target.checked)}
                                 />
                                 <div className="w-11 h-6 bg-slate-200 dark:bg-primary/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                             </label>
                         </div>
 
-                        {bonusRateActive && (
+                        {formData.bonusRateActive && (
                             <div className="space-y-2 fade-in">
                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
                                 <div className="relative">
                                     <input
                                         className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
                                         type="date"
-                                        value={bonusEndDate}
-                                        onChange={(e) => setBonusEndDate(e.target.value)}
+                                        value={formData.bonusEndDate}
+                                        onChange={(e) => handleChange('bonusEndDate', e.target.value)}
                                     />
                                 </div>
                             </div>
@@ -272,8 +250,8 @@ export function EditAccountPage() {
                     <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Ownership</label>
                     <div className="grid grid-cols-3 gap-2">
                         <button
-                            onClick={() => setOwnerId('person1')}
-                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${ownerId === 'person1'
+                            onClick={() => handleChange('ownerId', 'person1')}
+                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${formData.ownerId === 'person1'
                                 ? 'border-primary bg-primary/10 text-primary font-bold'
                                 : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
                                 }`}
@@ -281,8 +259,8 @@ export function EditAccountPage() {
                             {p1Name}
                         </button>
                         <button
-                            onClick={() => setOwnerId('person2')}
-                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${ownerId === 'person2'
+                            onClick={() => handleChange('ownerId', 'person2')}
+                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${formData.ownerId === 'person2'
                                 ? 'border-primary bg-primary/10 text-primary font-bold'
                                 : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
                                 }`}
@@ -290,8 +268,8 @@ export function EditAccountPage() {
                             {p2Name}
                         </button>
                         <button
-                            onClick={() => setOwnerId('joint')}
-                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${ownerId === 'joint'
+                            onClick={() => handleChange('ownerId', 'joint')}
+                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${formData.ownerId === 'joint'
                                 ? 'border-2 border-primary bg-primary/10 text-primary font-bold'
                                 : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
                                 }`}
@@ -302,9 +280,9 @@ export function EditAccountPage() {
                 </div>
                 </main>
 
-                {interestTrackingMethod === 'manual' && (
+                {formData.interestTrackingMethod === 'manual' && (
                     <aside className="w-full xl:w-[calc(60%-1rem)]">
-                        <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(balance) || 0} />
+                        <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(formData.balance) || 0} />
                     </aside>
                 )}
             </div>
@@ -313,7 +291,7 @@ export function EditAccountPage() {
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!accountName || !balance || (isEligibleForAER && interestTrackingMethod === 'aer' && !interestRate) || !category}
+                    disabled={!formData.accountName || !formData.balance || (isEligibleForAER && formData.interestTrackingMethod === 'aer' && !formData.interestRate) || !formData.category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Save Changes
@@ -337,7 +315,7 @@ export function EditAccountPage() {
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Delete Account?</h3>
                             <p className="text-slate-500 dark:text-[#9db9b0] text-sm leading-relaxed">
-                                Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-white">"{accountName}"</span>? This action cannot be undone and will remove it from all calculations.
+                                Are you sure you want to delete <span className="font-semibold text-slate-900 dark:text-white">"{formData.accountName}"</span>? This action cannot be undone and will remove it from all calculations.
                             </p>
                         </div>
                         <div className="flex gap-3">

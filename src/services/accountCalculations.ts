@@ -1,5 +1,6 @@
 import { type Account, type InterestAccrual } from '@/lib/db';
 import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { getTaxYearDates } from '@/constants/taxConstants';
 
 export function calculateTotalSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -19,11 +20,14 @@ export function calculateTaxableSavings(accounts: Account[]): number {
     }, 0);
 }
 
-export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = []): number {
+export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {
     const totalSavingsValueForRate = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+
+    const { startTs, endTs } = getTaxYearDates(taxYear);
+
     const totalInterestValue = accounts.reduce((sum, acc) => {
         const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-        return sum + calculateProjectedAnnualInterest(acc, accountAccruals);
+        return sum + calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
     }, 0);
 
     const blendedRateValue = totalSavingsValueForRate > 0 ? (totalInterestValue / totalSavingsValueForRate) * 100 : 0;

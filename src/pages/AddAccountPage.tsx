@@ -200,7 +200,7 @@ export function AddAccountPage() {
 
                         {bonusRateActive && (
                             <div className="space-y-2 fade-in">
-                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Maturity Date</label>
                                 <div className="relative">
                                     <input
                                         className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"

@@ -16,7 +16,7 @@ export function IncomePage() {
         p1Incomes, p2Incomes,
         p1TaxResult, p2TaxResult,
         p1TotalIncome: p1Total, p2TotalIncome: p2Total,
-        combinedNet, combinedEffectiveRate
+        combinedNet
     } = useTaxCalculations();
 
     const totalRental = p1Incomes.rental + p2Incomes.rental;
@@ -87,24 +87,59 @@ export function IncomePage() {
             }
         >
             <div className="mx-auto p-4 space-y-6">
-                {/* Summary Stats Grid */}
-                <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-primary/60">Tax Saved</p>
-                        <p className="text-lg font-extrabold text-primary">--</p>
-                        <p className="text-[10px] text-emerald-500 font-bold">&nbsp;</p>
+                {/* Detailed Breakdown */}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between px-1">
+                        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40">Detailed Breakdown</h2>
+                        <Link to="/income-config" className="text-slate-400 hover:text-primary transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-primary/10">
+                            <Icon name="edit" className="text-[20px]" />
+                        </Link>
                     </div>
-                    <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-primary/60">Combined Net</p>
-                        <p className="text-lg font-extrabold">{formatCurr(combinedNet)}</p>
-                        <p className="text-[10px] text-emerald-500 font-bold">&nbsp;</p>
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-primary/10">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 dark:bg-primary/10 text-slate-500 dark:text-primary/60">
+                                <tr>
+                                    <th className="px-4 py-3 font-bold">Source</th>
+                                    <th className="px-4 py-3 font-bold text-right">{p1Name}</th>
+                                    <th className="px-4 py-3 font-bold text-right">{p2Name}</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-primary/10 bg-white dark:bg-background-dark/50">
+                                <tr>
+                                    <td className="px-4 py-4 font-medium">Salary / Pension</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment + p1Incomes.pension)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment + p2Incomes.pension)}</td>
+                                </tr>
+                                <tr>
+                                    <td className="px-4 py-4 font-medium">Rental Income</td>
+                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.rental)}</td>
+                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.rental)}</td>
+                                </tr>
+                                <tr>
+                                    <td className="px-4 py-4 font-medium">Dividends</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.dividends)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.dividends)}</td>
+                                </tr>
+                                <tr>
+                                    <td className="px-4 py-4 font-medium">Interest</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.interest)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.interest)}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot className="bg-slate-50 dark:bg-primary/5 font-extrabold">
+                                <tr>
+                                    <td className="px-4 py-4">Total Gross</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Total)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Total)}</td>
+                                </tr>
+                                <tr className="border-t border-slate-200 dark:border-primary/10">
+                                    <td className="px-4 py-4 text-primary">Combined Net</td>
+                                    <td colSpan={2} className="px-4 py-4 text-right text-primary text-lg">{formatCurr(combinedNet)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
-                    <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-xl p-3 flex flex-col gap-1">
-                        <p className="text-[10px] uppercase tracking-wider font-bold text-slate-500 dark:text-primary/60">Eff. Rate</p>
-                        <p className="text-lg font-extrabold">{combinedEffectiveRate.toFixed(1)}%</p>
-                        <p className="text-[10px] text-rose-500 font-bold">&nbsp;</p>
-                    </div>
-                </div>
+                </section>
 
                 {/* Income Allocation Sliders */}
                 <section className="space-y-4">
@@ -169,55 +204,6 @@ export function IncomePage() {
                     </div>
                 </section>
 
-                {/* Detailed Breakdown */}
-                <section className="space-y-4 mb-24">
-                    <div className="flex items-center justify-between px-1">
-                        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40">Detailed Breakdown</h2>
-                        <Link to="/income-config" className="text-slate-400 hover:text-primary transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-primary/10">
-                            <Icon name="edit" className="text-[20px]" />
-                        </Link>
-                    </div>
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-primary/10">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 dark:bg-primary/10 text-slate-500 dark:text-primary/60">
-                                <tr>
-                                    <th className="px-4 py-3 font-bold">Source</th>
-                                    <th className="px-4 py-3 font-bold text-right">{p1Name}</th>
-                                    <th className="px-4 py-3 font-bold text-right">{p2Name}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-primary/10 bg-white dark:bg-background-dark/50">
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Salary / Pension</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment + p1Incomes.pension)}</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment + p2Incomes.pension)}</td>
-                                </tr>
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Rental Income</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.rental)}</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.rental)}</td>
-                                </tr>
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Dividends</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.dividends)}</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.dividends)}</td>
-                                </tr>
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Interest</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.interest)}</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.interest)}</td>
-                                </tr>
-                            </tbody>
-                            <tfoot className="bg-slate-50 dark:bg-primary/5 font-extrabold">
-                                <tr>
-                                    <td className="px-4 py-4">Total Gross</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p1Total)}</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p2Total)}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </section>
             </div>
         </AppLayout>
     );

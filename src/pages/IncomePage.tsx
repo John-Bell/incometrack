@@ -133,6 +133,11 @@ export function IncomePage() {
                                     <td className="px-4 py-4 text-right">{formatCurr(p2Total)}</td>
                                 </tr>
                                 <tr className="border-t border-slate-200 dark:border-primary/10">
+                                    <td className="px-4 py-4 text-red-500">Total Tax</td>
+                                    <td className="px-4 py-4 text-right text-red-500">{formatCurr(p1TaxResult?.totalTax || 0)}</td>
+                                    <td className="px-4 py-4 text-right text-red-500">{formatCurr(p2TaxResult?.totalTax || 0)}</td>
+                                </tr>
+                                <tr className="border-t border-slate-200 dark:border-primary/10">
                                     <td className="px-4 py-4 text-primary">Combined Net</td>
                                     <td colSpan={2} className="px-4 py-4 text-right text-primary text-lg">{formatCurr(combinedNet)}</td>
                                 </tr>

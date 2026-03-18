@@ -15,6 +15,7 @@ export interface UseTaxCalculationsResult {
     p1TotalIncome: number;
     p2TotalIncome: number;
     combinedNet: number;
+    combinedTotalTax: number;
     combinedEffectiveRate: number;
     isReady: boolean;
 }
@@ -113,6 +114,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             p1TotalIncome,
             p2TotalIncome,
             combinedNet,
+            combinedTotalTax,
             combinedEffectiveRate,
             isReady: !!dbAccounts && !!dbIncomes && !!taxService
         };

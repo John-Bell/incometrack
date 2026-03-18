@@ -182,3 +182,15 @@ export const getDefaultTaxYear = (taxYear?: string): string => {
   const currentYear = getCurrentTaxYearKey();
   return requestedYear ?? (TAX_YEAR_CONSTANTS[currentYear] ? currentYear : DEFAULT_TAX_YEAR);
 };
+
+export const getTaxYearDates = (taxYear?: string): { startTs: number; endTs: number } => {
+  const resolvedYear = getDefaultTaxYear(taxYear);
+  const startYearStr = resolvedYear.split('-')[0];
+  const startYear = parseInt(startYearStr, 10);
+
+  // UK tax year: 6th April to 5th April
+  const startTs = new Date(startYear, 3, 6).getTime(); // Month 3 is April
+  const endTs = new Date(startYear + 1, 3, 5, 23, 59, 59, 999).getTime();
+
+  return { startTs, endTs };
+};

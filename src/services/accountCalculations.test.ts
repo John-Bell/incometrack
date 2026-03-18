@@ -94,15 +94,24 @@ describe('accountCalculations', () => {
             };
             const aerAccount = createMockAccount(1000, 5); // 1000 * 0.05 = 50
 
+            // To ensure 12 months remaining, we will set the latest date to exactly 12 months before tax year end.
+            // Let's explicitly pass a tax year to calculateBlendedRate so we know the end date.
+            // Using "2024-2025" tax year -> ends April 5, 2025.
+            const taxYearEnd = new Date(2025, 3, 5, 23, 59, 59, 999); // April 5, 2025
+            const twelveMonthsPrior = new Date(taxYearEnd.getFullYear() - 1, taxYearEnd.getMonth(), taxYearEnd.getDate());
+
             const accruals = [
-                { id: '1', accountId: 'acc1', date: 1000, balance: 2000, interestAccrued: 10 },
-                { id: '2', accountId: 'acc1', date: 2000, balance: 2000, interestAccrued: 15 } // latest
+                { id: '1', accountId: 'acc1', date: twelveMonthsPrior.getTime() - 100000, balance: 2000, interestAccrued: 10 },
+                { id: '2', accountId: 'acc1', date: twelveMonthsPrior.getTime(), balance: 2000, interestAccrued: 15 } // latest
             ];
-            // manualAccount projected interest: 15 * 12 = 180
-            // total interest: 180 + 50 = 230
+            // manualAccount actual interest so far: 10 + 15 = 25
+            // projected remaining: 15 * 12 months = 180
+            // total manual interest: 25 + 180 = 205
+            // aer account interest: 50
+            // total interest: 205 + 50 = 255
             // total balance: 2000 + 1000 = 3000
-            // rate: 230 / 3000 = 0.07666... = 7.666...%
-            expect(calculateBlendedRate([manualAccount, aerAccount], accruals)).toBeCloseTo(7.6667, 4);
+            // rate: 255 / 3000 = 0.085 = 8.5%
+            expect(calculateBlendedRate([manualAccount, aerAccount], accruals, '2024-2025')).toBeCloseTo(8.5, 4);
         });
     });
 });

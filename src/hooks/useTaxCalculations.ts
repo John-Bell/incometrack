@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { getTaxYearDates } from '@/constants/taxConstants';
 
 export interface UseTaxCalculationsResult {
     p1Incomes: { employment: number; pension: number; rental: number; dividends: number; interest: number };
@@ -43,6 +44,8 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
         }
 
         if (dbAccounts) {
+            const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
+
             dbAccounts.forEach(acc => {
                 const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
                 if (acc.category && taxFreeCategories.includes(acc.category as string)) {
@@ -50,7 +53,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
                 }
 
                 const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-                const amount = calculateProjectedAnnualInterest(acc, accountAccruals);
+                const amount = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
 
                 if (acc.ownerId === 'person1') p1Incomes.interest += amount;
                 else if (acc.ownerId === 'person2') p2Incomes.interest += amount;

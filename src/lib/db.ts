@@ -30,6 +30,8 @@ export interface Account {
     // --- Bonus Rate Fields ---
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
+    interestPayoutFrequency?: 'monthly' | 'annually' | 'at_maturity';
+    interestPayoutDate?: number; // timestamp for next expected payout or maturity payout
     // --- Import Fields ---
     importId?: string;
     externalRef?: string;
@@ -249,6 +251,21 @@ db.version(6).stores({
     interestAccruals: '&id, accountId, date, updatedAt'
 });
 
+db.version(7).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt'
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -288,6 +305,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             balance: Number(a.balance) || 0,
             interestRate: Number(a.interestRate) || 0,
             budgetOrder: a.budgetOrder !== undefined ? Number(a.budgetOrder) : undefined,
+            interestPayoutDate: a.interestPayoutDate !== undefined ? Number(a.interestPayoutDate) : undefined,
         }));
     }
 

@@ -26,6 +26,8 @@ export function EditAccountPage() {
     const [interestTrackingMethod, setInterestTrackingMethod] = useState<'aer' | 'manual'>('aer');
     const [bonusRateActive, setBonusRateActive] = useState(false);
     const [bonusEndDate, setBonusEndDate] = useState('');
+    const [payoutFrequency, setPayoutFrequency] = useState<'monthly' | 'annually' | 'at_maturity' | ''>('');
+    const [payoutDate, setPayoutDate] = useState('');
     const [ownerId, setOwnerId] = useState('joint');
 
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -48,6 +50,16 @@ export function EditAccountPage() {
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 setBonusEndDate(`${year}-${month}-${day}`);
+            }
+            setPayoutFrequency(account.interestPayoutFrequency || '');
+            if (account.interestPayoutDate) {
+                const pDate = new Date(account.interestPayoutDate);
+                const pYear = pDate.getFullYear();
+                const pMonth = String(pDate.getMonth() + 1).padStart(2, '0');
+                const pDay = String(pDate.getDate()).padStart(2, '0');
+                setPayoutDate(`${pYear}-${pMonth}-${pDay}`);
+            } else {
+                setPayoutDate('');
             }
             setOwnerId(account.ownerId);
         }
@@ -80,6 +92,10 @@ export function EditAccountPage() {
                 budgetOrder: budgetOrder !== '' ? parseInt(budgetOrder, 10) : undefined,
                 bonusRateActive: showBonus ? bonusRateActive : false,
                 bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
+                interestPayoutFrequency: payoutFrequency || undefined,
+                interestPayoutDate: (payoutFrequency === 'annually' || payoutFrequency === 'at_maturity') && payoutDate
+                    ? new Date(payoutDate).getTime()
+                    : undefined,
                 ownerId,
                 updatedAt: Date.now(),
             });
@@ -248,6 +264,43 @@ export function EditAccountPage() {
                         </div>
                     )}
                 </div>
+
+                {/* Interest Payout Section */}
+                {isEligibleForAER && interestTrackingMethod === 'aer' && parseFloat(interestRate) > 0 && (
+                    <div className="space-y-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100">Interest Payout</h3>
+                        <div className="space-y-2">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Frequency</label>
+                            <div className="relative">
+                                <select
+                                    className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    value={payoutFrequency}
+                                    onChange={(e) => setPayoutFrequency(e.target.value as 'monthly' | 'annually' | 'at_maturity' | '')}
+                                >
+                                    <option value="" disabled>Select Frequency</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="annually">Annually</option>
+                                    <option value="at_maturity">At Maturity</option>
+                                </select>
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-slate-400">expand_more</span>
+                            </div>
+                        </div>
+
+                        {(payoutFrequency === 'annually' || payoutFrequency === 'at_maturity') && (
+                            <div className="space-y-2 fade-in">
+                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Next Payout Date</label>
+                                <div className="relative">
+                                    <input
+                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
+                                        type="date"
+                                        value={payoutDate}
+                                        onChange={(e) => setPayoutDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Bonus Rate Section */}
                 {showBonus && (

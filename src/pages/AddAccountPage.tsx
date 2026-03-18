@@ -27,6 +27,8 @@ export function AddAccountPage() {
     const [budgetOrder, setBudgetOrder] = useState('');
     const [bonusRateActive, setBonusRateActive] = useState(false);
     const [bonusEndDate, setBonusEndDate] = useState('');
+    const [payoutFrequency, setPayoutFrequency] = useState<'monthly' | 'annually' | 'at_maturity' | ''>('');
+    const [payoutDate, setPayoutDate] = useState('');
     const [ownerId, setOwnerId] = useState('joint'); // 'person1', 'person2', 'joint'
 
     const showAER = category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
@@ -51,6 +53,10 @@ export function AddAccountPage() {
             bonusRateActive: showBonus ? bonusRateActive : false,
             // Convert 'YYYY-MM-DD' back to timestamp if active, else undefined
             bonusEndDate: showBonus && bonusRateActive && bonusEndDate ? new Date(bonusEndDate).getTime() : undefined,
+            interestPayoutFrequency: payoutFrequency || undefined,
+            interestPayoutDate: (payoutFrequency === 'annually' || payoutFrequency === 'at_maturity') && payoutDate
+                ? new Date(payoutDate).getTime()
+                : undefined,
             updatedAt: Date.now(),
         };
 
@@ -176,6 +182,43 @@ export function AddAccountPage() {
                             />
                             <span className="absolute right-4 text-slate-400 font-bold">%</span>
                         </div>
+                    </div>
+                )}
+
+                {/* Interest Payout Section */}
+                {showAER && parseFloat(interestRate) > 0 && (
+                    <div className="space-y-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100">Interest Payout</h3>
+                        <div className="space-y-2">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Frequency</label>
+                            <div className="relative">
+                                <select
+                                    className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    value={payoutFrequency}
+                                    onChange={(e) => setPayoutFrequency(e.target.value as 'monthly' | 'annually' | 'at_maturity' | '')}
+                                >
+                                    <option value="" disabled>Select Frequency</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="annually">Annually</option>
+                                    <option value="at_maturity">At Maturity</option>
+                                </select>
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined pointer-events-none text-slate-400">expand_more</span>
+                            </div>
+                        </div>
+
+                        {(payoutFrequency === 'annually' || payoutFrequency === 'at_maturity') && (
+                            <div className="space-y-2 fade-in">
+                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Next Payout Date</label>
+                                <div className="relative">
+                                    <input
+                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
+                                        type="date"
+                                        value={payoutDate}
+                                        onChange={(e) => setPayoutDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

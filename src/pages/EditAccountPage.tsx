@@ -194,7 +194,9 @@ export function EditAccountPage() {
 
                         {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && (
                             <div className="space-y-2 fade-in">
-                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Next Payout Date</label>
+                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                    {formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}
+                                </label>
                                 <div className="relative">
                                     <input
                                         className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark]"
@@ -213,9 +215,7 @@ export function EditAccountPage() {
                     <div className="p-5 rounded-xl border border-primary/20 bg-primary/5 space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="font-bold text-slate-900 dark:text-slate-100">
-                                    {formData.category === 'Fixed Term Savings' || formData.category === 'Notice Savings' ? 'Maturity Tracking' : 'Bonus Rate'}
-                                </h3>
+                                <h3 className="font-bold text-slate-900 dark:text-slate-100">Bonus Rate</h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Additional interest for a limited period</p>
                             </div>
                             <label className="relative inline-flex items-center cursor-pointer">

@@ -34,7 +34,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
             if (t.budgetId !== budgetId) return false;
             const d = new Date(t.date);
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        });
+        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     };
 
     const formatCurrency = (amount: number) => {

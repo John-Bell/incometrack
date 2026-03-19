@@ -122,18 +122,30 @@ export function AccountsPage() {
                 </button>
 
                 <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
-                    {['person1', 'person2', 'joint'].map((tab) => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveAccountsTab(tab)}
-                            className={`flex-1 py-1.5 rounded-lg text-center transition-all ${activeAccountsTab === tab
-                                ? 'bg-white dark:bg-[#1a2b25] text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                : 'text-slate-500 dark:text-[#7d998f] hover:text-slate-700 dark:hover:text-[#9db9b0]'
-                                }`}
-                        >
-                            {tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}
-                        </button>
-                    ))}
+                    {['person1', 'person2', 'joint'].map((tab) => {
+                        const tabAccounts = rawAccounts.filter(acc => acc.ownerId === tab);
+                        const tabTaxable = calculateTaxableSavings(tabAccounts);
+                        const formattedTabTaxable = new Intl.NumberFormat('en-GB', {
+                            style: 'currency',
+                            currency: 'GBP',
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }).format(tabTaxable);
+
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveAccountsTab(tab)}
+                                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${activeAccountsTab === tab
+                                    ? 'bg-white dark:bg-[#1a2b25] text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                    : 'text-slate-500 dark:text-[#7d998f] hover:text-slate-700 dark:hover:text-[#9db9b0]'
+                                    }`}
+                            >
+                                <div className="font-semibold">{tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}</div>
+                                <div className="text-xs font-normal opacity-80 mt-0.5">{formattedTabTaxable}</div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 

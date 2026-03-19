@@ -118,7 +118,7 @@ export function useAccountForm(accountId?: string) {
                 ? new Date(formData.bonusEndDate).getTime()
                 : undefined,
             interestPayoutFrequency: formData.interestPayoutFrequency || undefined,
-            interestPayoutDate: (formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && formData.interestPayoutDate
+            interestPayoutDate: formData.interestPayoutFrequency && formData.interestPayoutDate
                 ? new Date(formData.interestPayoutDate).getTime()
                 : undefined,
             updatedAt: Date.now(),

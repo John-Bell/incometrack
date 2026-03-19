@@ -187,7 +187,7 @@ export function AddAccountPage() {
                             </div>
                         </div>
 
-                        {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && (
+                        {formData.interestPayoutFrequency !== '' && (
                             <div className="space-y-2 fade-in">
                                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
                                     {formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}

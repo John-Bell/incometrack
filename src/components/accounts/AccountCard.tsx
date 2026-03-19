@@ -16,6 +16,8 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     ownerTagColor: 'purple' | 'blue' | 'pink';
     balance: string;
     rate?: string;
+    interestPayoutFrequency?: string;
+    interestPayoutDate?: number;
     isStale?: boolean;
     isWarned?: boolean;
     updatedAt: string;
@@ -56,6 +58,8 @@ export function AccountCard({
     ownerTagColor,
     balance,
     rate,
+    interestPayoutFrequency,
+    interestPayoutDate,
     isStale = false,
     isWarned = false,
     updatedAt,
@@ -66,6 +70,31 @@ export function AccountCard({
     ...props
 }: AccountCardProps) {
     const navigate = useNavigate();
+
+    const getPayoutDisplay = () => {
+        if (!interestPayoutFrequency) return null;
+
+        const freqMap: Record<string, string> = {
+            monthly: 'Monthly',
+            annually: 'Annually',
+            at_maturity: 'At Maturity',
+        };
+
+        const displayFreq = freqMap[interestPayoutFrequency] || interestPayoutFrequency;
+
+        if ((interestPayoutFrequency === 'annually' || interestPayoutFrequency === 'at_maturity') && interestPayoutDate) {
+            const dateStr = new Intl.DateTimeFormat('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            }).format(new Date(interestPayoutDate));
+            return `${displayFreq} - ${dateStr}`;
+        }
+
+        return displayFreq;
+    };
+
+    const payoutDisplay = getPayoutDisplay();
 
     return (
         <div
@@ -116,6 +145,11 @@ export function AccountCard({
                     <div className="flex flex-col items-end">
                         <span className="text-xs text-slate-500 dark:text-[#9db9b0] mb-0.5">AER</span>
                         <span className={cn('text-2xl font-bold', isWarned ? 'text-slate-400 dark:text-slate-500' : 'text-primary')}>{rate}</span>
+                        {payoutDisplay && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                                {payoutDisplay}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

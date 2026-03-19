@@ -59,6 +59,8 @@ export function AccountsPage() {
             ownerTagColor,
             balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
             rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
+            interestPayoutFrequency: acc.interestPayoutFrequency,
+            interestPayoutDate: acc.interestPayoutDate,
             updatedAt: formatRelativeTime(acc.updatedAt),
             alertText: acc.alertText,
             alertType: acc.alertType as any,

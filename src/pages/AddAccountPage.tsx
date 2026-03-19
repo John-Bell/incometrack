@@ -10,7 +10,7 @@ export function AddAccountPage() {
         p2Name,
         formData,
         handleChange,
-        showAER: isEligibleForAER,
+        showAER,
         showBonus,
         handleSave
     } = useAccountForm();
@@ -104,7 +104,7 @@ export function AddAccountPage() {
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-8 mb-4">FINANCIAL SETTINGS</h2>
 
                 {/* Calculation Method Field */}
-                {isEligibleForAER && (
+                {showAER && (
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Calculation Method</label>
                         <div className="flex bg-slate-100 dark:bg-primary/10 rounded-lg p-1">
@@ -133,7 +133,7 @@ export function AddAccountPage() {
                 )}
 
                 {/* Balance and Interest Rate Fields */}
-                <div className={isEligibleForAER && formData.interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
+                <div className={showAER && formData.interestTrackingMethod === 'aer' ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
                     <div className="space-y-2">
                         <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
                         <div className="relative flex items-center">
@@ -148,7 +148,7 @@ export function AddAccountPage() {
                         </div>
                     </div>
 
-                    {isEligibleForAER && formData.interestTrackingMethod === 'aer' && (
+                    {showAER && formData.interestTrackingMethod === 'aer' && (
                         <div className="space-y-2">
                             <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
                             <div className="relative flex items-center">
@@ -286,7 +286,7 @@ export function AddAccountPage() {
             <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
-                    disabled={!formData.accountName || !formData.balance || (isEligibleForAER && formData.interestTrackingMethod === 'aer' && !formData.interestRate) || !formData.category}
+                    disabled={!formData.accountName || !formData.balance || (showAER && formData.interestTrackingMethod === 'aer' && !formData.interestRate) || !formData.category}
                     className="w-full py-4 rounded-xl bg-primary text-background-dark font-bold text-lg hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Add Account

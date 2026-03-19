@@ -167,7 +167,7 @@ export function AddAccountPage() {
                 </div>
 
                 {/* Interest Payout Section */}
-                {showAER && formData.interestTrackingMethod === 'aer' && parseFloat(formData.interestRate || '0') > 0 && (
+                {showAER && formData.interestTrackingMethod === 'aer' && (
                     <div className="space-y-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
                         <h3 className="font-bold text-slate-900 dark:text-slate-100">Interest Payout</h3>
                         <div className="space-y-2">
@@ -187,7 +187,7 @@ export function AddAccountPage() {
                             </div>
                         </div>
 
-                        {formData.interestPayoutFrequency !== '' && (
+                        {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && (
                             <div className="space-y-2 fade-in">
                                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
                                     {formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}

@@ -172,7 +172,7 @@ export function EditAccountPage() {
                 </div>
 
                 {/* Interest Payout Section */}
-                {isEligibleForAER && formData.interestTrackingMethod === 'aer' && parseFloat(formData.interestRate || '0') > 0 && (
+                {isEligibleForAER && formData.interestTrackingMethod === 'aer' && (
                     <div className="space-y-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
                         <h3 className="font-bold text-slate-900 dark:text-slate-100">Interest Payout</h3>
                         <div className="space-y-2">

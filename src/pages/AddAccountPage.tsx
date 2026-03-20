@@ -5,6 +5,7 @@ import { useAccountForm } from '@/hooks/useAccountForm';
 
 export function AddAccountPage() {
     const {
+        activeAccountId,
         navigate,
         p1Name,
         p2Name,
@@ -277,7 +278,7 @@ export function AddAccountPage() {
 
                 {formData.interestTrackingMethod === 'manual' && (
                     <aside className="w-full xl:w-[calc(60%-1rem)]">
-                        <InterestLedger accountId="temp-new-account" currentBalance={parseFloat(formData.balance) || 0} />
+                        <InterestLedger accountId={activeAccountId} currentBalance={parseFloat(formData.balance) || 0} />
                     </aside>
                 )}
             </div>

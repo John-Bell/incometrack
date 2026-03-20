@@ -8,6 +8,7 @@ export function EditAccountPage() {
     const { id } = useParams<{ id: string }>();
     const {
         account,
+        activeAccountId,
         navigate,
         p1Name,
         p2Name,
@@ -282,7 +283,7 @@ export function EditAccountPage() {
 
                 {formData.interestTrackingMethod === 'manual' && (
                     <aside className="w-full xl:w-[calc(60%-1rem)]">
-                        <InterestLedger accountId={account?.id || ''} currentBalance={parseFloat(formData.balance) || 0} />
+                        <InterestLedger accountId={activeAccountId} currentBalance={parseFloat(formData.balance) || 0} />
                     </aside>
                 )}
             </div>

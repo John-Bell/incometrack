@@ -49,6 +49,8 @@ export function useAccountForm(accountId?: string) {
 
     const [formData, setFormData] = useState<AccountFormData>(defaultFormData);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [draftId] = useState(() => crypto.randomUUID());
+    const activeAccountId = accountId || draftId;
 
     useEffect(() => {
         if (account) {
@@ -130,7 +132,7 @@ export function useAccountForm(accountId?: string) {
             } else {
                 await db.accounts.add({
                     ...accountData,
-                    id: crypto.randomUUID(),
+                    id: activeAccountId,
                 } as Account);
             }
             navigate('/accounts');
@@ -151,6 +153,7 @@ export function useAccountForm(accountId?: string) {
 
     return {
         account,
+        activeAccountId,
         navigate,
         p1Name,
         p2Name,

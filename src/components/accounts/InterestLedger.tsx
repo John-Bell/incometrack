@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useInterestAccruals, addInterestAccrual, deleteInterestAccrual } from '@/hooks/useInterestAccruals';
+import { useInterestAccruals, addInterestAccrual, updateInterestAccrual, deleteInterestAccrual } from '@/hooks/useInterestAccruals';
 import { Icon } from '@/components/ui/Icon';
+import type { InterestAccrual } from '@/lib/db';
 
 interface InterestLedgerProps {
     accountId: string;
@@ -11,11 +12,12 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
     const { accruals, isLoading } = useInterestAccruals(accountId);
 
     // For "MONTH & YEAR" we can use a string input of "YYYY-MM"
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [monthYear, setMonthYear] = useState('');
     const [balance, setBalance] = useState('');
     const [interest, setInterest] = useState('');
 
-    const handleAdd = async () => {
+    const handleAddOrEdit = async () => {
         if (!monthYear || !interest || !balance || !accountId) return;
 
         // Convert "YYYY-MM" to a Date object. Use the 1st of the month, or the end of the month?
@@ -23,13 +25,42 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
         const [year, month] = monthYear.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, 1).getTime();
 
-        await addInterestAccrual({
-            accountId,
-            date,
-            balance: parseFloat(balance),
-            interestAccrued: parseFloat(interest),
-        });
+        if (editingId) {
+            await updateInterestAccrual(editingId, {
+                accountId,
+                date,
+                balance: parseFloat(balance),
+                interestAccrued: parseFloat(interest),
+            });
+            setEditingId(null);
+        } else {
+            await addInterestAccrual({
+                accountId,
+                date,
+                balance: parseFloat(balance),
+                interestAccrued: parseFloat(interest),
+            });
+        }
 
+        setInterest('');
+        setMonthYear('');
+        setBalance('');
+    };
+
+    const handleEditClick = (accrual: InterestAccrual) => {
+        setEditingId(accrual.id);
+
+        const dateObj = new Date(accrual.date);
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+
+        setMonthYear(`${year}-${month}`);
+        setBalance(accrual.balance.toString());
+        setInterest(accrual.interestAccrued.toString());
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
         setInterest('');
         setMonthYear('');
         setBalance('');
@@ -95,14 +126,24 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                         </div>
                     </div>
                 </div>
-                <button
-                    onClick={handleAdd}
-                    disabled={!interest || !monthYear || !balance}
-                    className="w-full h-12 rounded-xl bg-[#1ce86f] text-slate-900 font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Icon name="add_circle" className="text-[18px]" />
-                    Log Interest Entry
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleAddOrEdit}
+                        disabled={!interest || !monthYear || !balance}
+                        className="flex-1 h-12 rounded-xl bg-[#1ce86f] text-slate-900 font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <Icon name={editingId ? "save" : "add_circle"} className="text-[18px]" />
+                        {editingId ? "Save Changes" : "Log Interest Entry"}
+                    </button>
+                    {editingId && (
+                        <button
+                            onClick={handleCancelEdit}
+                            className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-primary/10 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors flex items-center justify-center"
+                        >
+                            <Icon name="close" className="text-[18px]" />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Ledger List */}
@@ -134,12 +175,20 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                                             Accrued Interest
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => deleteInterestAccrual(accrual.id)}
-                                        className="text-slate-300 hover:text-red-500 transition-colors"
-                                    >
-                                        <Icon name="delete" className="text-[24px]" />
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleEditClick(accrual)}
+                                            className="text-slate-300 hover:text-blue-500 transition-colors"
+                                        >
+                                            <Icon name="edit" className="text-[24px]" />
+                                        </button>
+                                        <button
+                                            onClick={() => deleteInterestAccrual(accrual.id)}
+                                            className="text-slate-300 hover:text-red-500 transition-colors"
+                                        >
+                                            <Icon name="delete" className="text-[24px]" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}

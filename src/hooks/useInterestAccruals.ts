@@ -30,6 +30,13 @@ export const addInterestAccrual = async (accrualData: Omit<InterestAccrual, 'id'
     });
 };
 
+export const updateInterestAccrual = async (id: string, accrualData: Partial<Omit<InterestAccrual, 'id' | 'updatedAt'>>) => {
+    return db.interestAccruals.update(id, {
+        ...accrualData,
+        updatedAt: Date.now()
+    });
+};
+
 export const deleteInterestAccrual = async (id: string) => {
     return db.interestAccruals.delete(id);
 };

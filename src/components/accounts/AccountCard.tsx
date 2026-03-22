@@ -15,6 +15,7 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     ownerTag: string;
     ownerTagColor: 'purple' | 'blue' | 'pink';
     balance: string;
+    projectedInterest?: string;
     rate?: string;
     interestPayoutFrequency?: string;
     interestPayoutDate?: number;
@@ -57,6 +58,7 @@ export function AccountCard({
     ownerTag,
     ownerTagColor,
     balance,
+    projectedInterest,
     rate,
     interestPayoutFrequency,
     interestPayoutDate,
@@ -140,6 +142,11 @@ export function AccountCard({
                 <div className="flex flex-col">
                     <span className="text-xs text-slate-500 dark:text-[#9db9b0] mb-0.5">Current Balance</span>
                     <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{balance}</span>
+                    {projectedInterest && (
+                        <span className="text-xs text-slate-500 dark:text-[#9db9b0] mt-0.5">
+                            + {projectedInterest} interest this year
+                        </span>
+                    )}
                 </div>
                 {rate && (
                     <div className="flex flex-col items-end">

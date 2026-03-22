@@ -6,6 +6,8 @@ import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
 import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateTaxableInterest } from '@/services/accountCalculations';
+import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { getTaxYearDates } from '@/constants/taxConstants';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -32,6 +34,8 @@ export function AccountsPage() {
         }
     });
 
+    const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
+
     const mappedAccounts = sortedRawAccounts.map(acc => {
         let ownerTagColor: 'blue' | 'pink' | 'purple' = 'purple';
 
@@ -47,6 +51,10 @@ export function AccountsPage() {
         else if (accountIcon === 'B') iconColor = 'blue';
         else if (accountIcon === 'L') iconColor = 'green';
 
+        const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
+        const projectedInterestValue = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
+        const projectedInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(projectedInterestValue);
+
         return {
             id: acc.id,
             ownerId: acc.ownerId, // used for filtering
@@ -59,6 +67,7 @@ export function AccountsPage() {
             ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
             ownerTagColor,
             balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
+            projectedInterest: projectedInterestValue > 0 ? projectedInterest : undefined,
             rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
             interestPayoutFrequency: acc.interestPayoutFrequency,
             interestPayoutDate: acc.interestPayoutDate,

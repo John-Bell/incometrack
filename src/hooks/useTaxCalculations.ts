@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
+import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
@@ -21,7 +22,8 @@ export interface UseTaxCalculationsResult {
 }
 
 export function useTaxCalculations(): UseTaxCalculationsResult {
-    const { taxService, taxYear } = useStore();
+    const { taxYear } = useStore();
+    const taxService = useTaxService();
 
     const dbAccounts = useLiveQuery(() => db.accounts.toArray());
     const dbIncomes = useLiveQuery(() => db.incomes.toArray());

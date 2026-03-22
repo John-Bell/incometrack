@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { db, initDb, type Profile } from '@/lib/db';
 import { syncTaxRules } from '@/lib/seed';
-import { TaxCalculationService } from '@/services/TaxCalculationService';
 import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
 
 export interface AppState {
@@ -9,7 +8,7 @@ export interface AppState {
     profile: Profile | null;
     hydratingError: string | null;
     activeAccountsTab: string;
-    taxService: TaxCalculationService | null;
+    taxRules: TaxRulesByYear | null;
     taxYear: string | null;
     syncStatus: 'disconnected' | 'connected' | 'permission_needed';
     lastSynced: number | null;
@@ -26,7 +25,7 @@ export const useStore = create<AppState>()((set) => ({
     profile: null,
     hydratingError: null,
     activeAccountsTab: 'joint',
-    taxService: null,
+    taxRules: null,
     taxYear: null,
     syncStatus: 'disconnected',
     lastSynced: null,
@@ -58,13 +57,10 @@ export const useStore = create<AppState>()((set) => ({
             const settings = await db.settings.get('default');
             const currentTaxYear = settings?.taxYear || getDefaultTaxYear();
 
-            // Instantiate the tax service
-            const taxService = new TaxCalculationService(taxRulesMap, currentTaxYear);
-
             set({
                 isHydrated: true,
                 profile: activeProfile,
-                taxService,
+                taxRules: taxRulesMap,
                 taxYear: currentTaxYear,
                 hydratingError: null
             });

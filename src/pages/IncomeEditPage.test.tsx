@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { IncomeConfigPage } from './IncomeConfigPage';
+import { IncomeEditPage } from './IncomeEditPage';
 import { useStore } from '@/store/useStore';
 import { BrowserRouter } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ vi.mock('@/store/useStore', () => ({
     useStore: vi.fn(),
 }));
 
-describe('IncomeConfigPage', () => {
+describe('IncomeEditPage', () => {
     it('renders tabs and allows switching between partners', () => {
         // Mock store return value
         (useStore as any).mockReturnValue({
@@ -21,7 +21,7 @@ describe('IncomeConfigPage', () => {
 
         render(
             <BrowserRouter>
-                <IncomeConfigPage />
+                <IncomeEditPage />
             </BrowserRouter>
         );
 
@@ -55,7 +55,7 @@ describe('IncomeConfigPage', () => {
 
         render(
             <BrowserRouter>
-                <IncomeConfigPage />
+                <IncomeEditPage />
             </BrowserRouter>
         );
 

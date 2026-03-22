@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings } from '@/services/accountCalculations';
+import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateTaxableInterest } from '@/services/accountCalculations';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -15,13 +15,14 @@ import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function AccountsPage() {
     const navigate = useNavigate();
-    const { profile, activeAccountsTab, setActiveAccountsTab } = useStore();
+    const { profile, activeAccountsTab, setActiveAccountsTab, taxYear } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
 
     const [sortBy, setSortBy] = useState<'rate' | 'name'>('rate');
 
     const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
+    const allAccruals = useLiveQuery(() => db.interestAccruals.toArray()) || [];
 
     const sortedRawAccounts = [...rawAccounts].sort((a, b) => {
         if (sortBy === 'rate') {
@@ -124,13 +125,13 @@ export function AccountsPage() {
                 <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
                     {['person1', 'person2', 'joint'].map((tab) => {
                         const tabAccounts = rawAccounts.filter(acc => acc.ownerId === tab);
-                        const tabTaxable = calculateTaxableSavings(tabAccounts);
-                        const formattedTabTaxable = new Intl.NumberFormat('en-GB', {
+                        const tabTaxableInterest = calculateTaxableInterest(tabAccounts, allAccruals, taxYear || undefined);
+                        const formattedTabTaxableInterest = new Intl.NumberFormat('en-GB', {
                             style: 'currency',
                             currency: 'GBP',
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
-                        }).format(tabTaxable);
+                        }).format(tabTaxableInterest);
 
                         return (
                             <button
@@ -142,7 +143,7 @@ export function AccountsPage() {
                                     }`}
                             >
                                 <div className="font-semibold">{tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}</div>
-                                <div className="text-xs font-normal opacity-80 mt-0.5">{formattedTabTaxable}</div>
+                                <div className="text-xs font-normal opacity-80 mt-0.5">{formattedTabTaxableInterest}</div>
                             </button>
                         );
                     })}

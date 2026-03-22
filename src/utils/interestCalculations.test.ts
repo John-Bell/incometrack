@@ -21,7 +21,7 @@ describe('calculateProjectedAnnualInterest', () => {
     });
 
     describe('Group 1: Manual Tracking Method', () => {
-        it('Scenario 1: Monthly - Standard Mid-Year Projection', () => {
+        it('Scenario 1: Monthly - Returns only sum of actuals', () => {
             const account = createMockAccount({
                 interestTrackingMethod: 'manual',
                 interestPayoutFrequency: 'monthly',
@@ -38,14 +38,10 @@ describe('calculateProjectedAnnualInterest', () => {
             const result = calculateProjectedAnnualInterest(account, accruals, taxYearStartTs, taxYearEndTs);
 
             // Sum of 3 entries = 35.
-            // Latest is July (month 6 in JS). End is April (month 3 in JS, next year).
-            // Months remaining = (2025 - 2024) * 12 + (3 - 6) = 12 - 3 = 9.
-            // 9 * 15 = 135
-            // Total = 35 + 135 = 170
-            expect(result).toBe(170);
+            expect(result).toBe(35);
         });
 
-        it('Scenario 2: Monthly - Mid-Year Cutoff', () => {
+        it('Scenario 2: Monthly with Cutoff - Returns only sum of actuals', () => {
             const account = createMockAccount({
                 interestTrackingMethod: 'manual',
                 interestPayoutFrequency: 'monthly',
@@ -64,14 +60,10 @@ describe('calculateProjectedAnnualInterest', () => {
             const result = calculateProjectedAnnualInterest(account, accruals, taxYearStartTs, taxYearEndTs);
 
             // Sum of 4 entries = 50.
-            // Latest is Aug (month 7). Payout is Oct (month 9).
-            // Months remaining = 9 - 7 = 2.
-            // 2 * 20 = 40.
-            // Total = 50 + 40 = 90.
-            expect(result).toBe(90);
+            expect(result).toBe(50);
         });
 
-        it('Scenario 3: Lump Sum - Not Yet Paid This Year', () => {
+        it('Scenario 3: Lump Sum - Not Yet Paid This Year Returns 0', () => {
             const account = createMockAccount({
                 interestTrackingMethod: 'manual',
                 interestPayoutFrequency: 'annually',
@@ -84,11 +76,11 @@ describe('calculateProjectedAnnualInterest', () => {
 
             const result = calculateProjectedAnnualInterest(account, accruals, taxYearStartTs, taxYearEndTs);
 
-            // Estimated AER lump sum = 1000 * 5% = 50
-            expect(result).toBe(50);
+            // Sum of 0 entries = 0
+            expect(result).toBe(0);
         });
 
-        it('Scenario 4: Lump Sum - Already Paid This Year', () => {
+        it('Scenario 4: Returns only sum of actuals', () => {
             const account = createMockAccount({
                 interestTrackingMethod: 'manual',
                 interestPayoutFrequency: 'annually',
@@ -107,7 +99,7 @@ describe('calculateProjectedAnnualInterest', () => {
             expect(result).toBe(60);
         });
 
-        it('Scenario 5: Lump Sum - Pays Outside Tax Year', () => {
+        it('Scenario 5: Returns only sum of actuals', () => {
             const account = createMockAccount({
                 interestTrackingMethod: 'manual',
                 interestPayoutFrequency: 'annually',

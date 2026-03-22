@@ -105,13 +105,12 @@ describe('accountCalculations', () => {
                 { id: '2', accountId: 'acc1', date: twelveMonthsPrior.getTime(), balance: 2000, interestAccrued: 15 } // latest
             ];
             // manualAccount actual interest so far: 10 + 15 = 25
-            // projected remaining: 15 * 12 months = 180
-            // total manual interest: 25 + 180 = 205
+            // no projection for manual tracking, so total manual interest: 25
             // aer account interest: 50
-            // total interest: 205 + 50 = 255
+            // total interest: 25 + 50 = 75
             // total balance: 2000 + 1000 = 3000
-            // rate: 255 / 3000 = 0.085 = 8.5%
-            expect(calculateBlendedRate([manualAccount, aerAccount], accruals, '2024-2025')).toBeCloseTo(8.5, 4);
+            // rate: 75 / 3000 = 0.025 = 2.5%
+            expect(calculateBlendedRate([manualAccount, aerAccount], accruals, '2024-2025')).toBeCloseTo(2.5, 4);
         });
     });
 });

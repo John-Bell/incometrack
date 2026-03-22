@@ -76,7 +76,7 @@ export function RemoteSyncingPage() {
         setIsProcessing(true);
         setStatusMessage(null);
         try {
-            const response = await fetch(syncServerUrl.trim(), { headers: getHeaders() });
+            const response = await fetch(syncServerUrl.trim(), { headers: getHeaders(), cache: 'no-store' });
             if (!response.ok) {
                 throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
             }
@@ -133,6 +133,7 @@ export function RemoteSyncingPage() {
                     'Content-Type': 'application/octet-stream',
                 },
                 body: encryptedBlob,
+                cache: 'no-store'
             });
 
             if (!response.ok) {

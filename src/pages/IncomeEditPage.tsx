@@ -12,7 +12,7 @@ import { IncomeInputCard } from '../components/income/IncomeInputCard';
 import { useStore } from '@/store/useStore';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
-export function IncomeConfigPage() {
+export function IncomeEditPage() {
     const navigate = useNavigate();
     const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Partner 1';

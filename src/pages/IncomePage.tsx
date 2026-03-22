@@ -91,7 +91,7 @@ export function IncomePage() {
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                         <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40">Detailed Breakdown</h2>
-                        <Link to="/income-config" className="text-slate-400 hover:text-primary transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-primary/10">
+                        <Link to="/income-edit" className="text-slate-400 hover:text-primary transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-primary/10">
                             <Icon name="edit" className="text-[20px]" />
                         </Link>
                     </div>

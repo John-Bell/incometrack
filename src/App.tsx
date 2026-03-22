@@ -8,8 +8,7 @@ import { DataImportsPage } from '@/pages/DataImportsPage';
 import { HistoricAccountsPage } from '@/pages/HistoricAccountsPage';
 import { RemoteSyncingPage } from '@/pages/RemoteSyncingPage';
 import { SimplifiedAppSetupPage } from '@/pages/SimplifiedAppSetupPage';
-import { StreamlinedIncomeConfigurationPage } from '@/pages/StreamlinedIncomeConfigurationPage';
-import { IncomeConfigPage } from '@/pages/IncomeConfigPage';
+import { IncomeEditPage } from '@/pages/IncomeEditPage';
 import { IncomePage } from '@/pages/IncomePage'; // Keep your local additions
 import { AddAccountPage } from '@/pages/AddAccountPage';
 import { EditAccountPage } from '@/pages/EditAccountPage';
@@ -43,7 +42,7 @@ function AppRoutes() {
     return <div className="flex h-screen w-screen items-center justify-center text-gray-500">Loading your data...</div>;
   }
 
-  const isSetupRoute = location.pathname === '/setup' || location.pathname === '/income-setup';
+  const isSetupRoute = location.pathname === '/setup';
 
   // Force users without a profile to the setup route
   if (!profile && !isSetupRoute) {
@@ -63,7 +62,7 @@ function AppRoutes() {
       <Route path="/remote-syncing" element={<RemoteSyncingPage />} />
       <Route path="/settings/import/:table" element={<ImportProcessor />} />
       <Route path="/income" element={<IncomePage />} />
-      <Route path="/income-config" element={<IncomeConfigPage />} />
+      <Route path="/income-edit" element={<IncomeEditPage />} />
       <Route path="/budgets" element={<BudgetsPage />} />
       <Route path="/budgets/add" element={<AddBudgetPage />} />
       <Route path="/budgets/edit/:id" element={<EditBudgetPage />} />
@@ -73,7 +72,6 @@ function AppRoutes() {
       <Route path="/payment-mappings" element={<PaymentMappingsPage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
-      <Route path="/income-setup" element={<StreamlinedIncomeConfigurationPage />} />
 
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />

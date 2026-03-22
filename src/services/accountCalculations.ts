@@ -20,6 +20,19 @@ export function calculateTaxableSavings(accounts: Account[]): number {
     }, 0);
 }
 
+export function calculateTaxableInterest(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {
+    const excludedCategories = ['DC Pension', 'Premium Bonds', 'Cash ISA', 'Shares ISA'];
+    const { startTs, endTs } = getTaxYearDates(taxYear);
+
+    return accounts.reduce((sum, acc) => {
+        if (acc.category && excludedCategories.includes(acc.category)) {
+            return sum;
+        }
+        const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
+        return sum + calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
+    }, 0);
+}
+
 export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {
     const totalSavingsValueForRate = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 

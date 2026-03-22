@@ -197,7 +197,7 @@ export const remoteSyncService = {
                 customHeaders['x-chaser-token'] = syncHeaderKey;
             }
 
-            const versionResponse = await fetch(`${syncUrl}/version`, { headers: customHeaders });
+            const versionResponse = await fetch(`${syncUrl}/version`, { headers: customHeaders, cache: 'no-store' });
             if (versionResponse.ok) {
                 const versionData = await versionResponse.json();
                 serverLastUpdated = versionData.lastUpdated || 0;
@@ -213,7 +213,7 @@ export const remoteSyncService = {
 
             // 2. Pull & Merge (If Needed)
             if (serverLastUpdated > localLastSynced) {
-                const pullResponse = await fetch(syncUrl, { headers: customHeaders });
+                const pullResponse = await fetch(syncUrl, { headers: customHeaders, cache: 'no-store' });
                 if (pullResponse.ok) {
                     const buffer = await pullResponse.arrayBuffer();
                     if (buffer.byteLength > 0) {
@@ -244,6 +244,7 @@ export const remoteSyncService = {
                         'Content-Type': 'application/octet-stream',
                     },
                     body: encryptedBlob,
+                    cache: 'no-store'
                 });
 
                 if (!pushResponse.ok) {

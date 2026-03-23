@@ -7,10 +7,12 @@ import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
 import { getTaxYearDates } from '@/constants/taxConstants';
+import { calculatePropertyIncomeForTaxYear } from '@/utils/propertyCalculations';
+
 
 export interface UseTaxCalculationsResult {
-    p1Incomes: { employment: number; pension: number; rental: number; dividends: number; interest: number };
-    p2Incomes: { employment: number; pension: number; rental: number; dividends: number; interest: number };
+    p1Incomes: { employment: number; pension: number; rental: number; propertyIncome: number; dividends: number; interest: number };
+    p2Incomes: { employment: number; pension: number; rental: number; propertyIncome: number; dividends: number; interest: number };
     p1TaxResult: TaxCalculationResult | null;
     p2TaxResult: TaxCalculationResult | null;
     p1TotalIncome: number;
@@ -28,11 +30,14 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
     const dbAccounts = useLiveQuery(() => db.accounts.toArray());
     const dbIncomes = useLiveQuery(() => db.incomes.toArray());
     const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.toArray());
+    const dbProperties = useLiveQuery(() => db.properties.toArray());
+    const dbPropertyIncomes = useLiveQuery(() => db.propertyIncomes.toArray());
+    const dbPropertyOwnerships = useLiveQuery(() => db.propertyOwnership.toArray());
 
     return useMemo(() => {
         const allAccruals = dbInterestAccruals || [];
-        const p1Incomes = { employment: 0, pension: 0, rental: 0, dividends: 0, interest: 0 };
-        const p2Incomes = { employment: 0, pension: 0, rental: 0, dividends: 0, interest: 0 };
+        const p1Incomes = { employment: 0, pension: 0, rental: 0, propertyIncome: 0, dividends: 0, interest: 0 };
+        const p2Incomes = { employment: 0, pension: 0, rental: 0, propertyIncome: 0, dividends: 0, interest: 0 };
 
         if (dbIncomes) {
             dbIncomes.forEach(inc => {
@@ -46,8 +51,20 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             });
         }
 
+        const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
+
+        if (dbProperties && dbPropertyIncomes && dbPropertyOwnerships) {
+            const { p1Rental, p2Rental } = calculatePropertyIncomeForTaxYear(
+                dbPropertyIncomes,
+                dbPropertyOwnerships,
+                startTs,
+                endTs
+            );
+            p1Incomes.propertyIncome += p1Rental;
+            p2Incomes.propertyIncome += p2Rental;
+        }
+
         if (dbAccounts) {
-            const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 
             dbAccounts.forEach(acc => {
                 const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
@@ -69,7 +86,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
         const p1Input: TaxCalculationInput = {
             salary: p1Incomes.employment,
-            rentalIncome: p1Incomes.rental,
+            rentalIncome: p1Incomes.rental + p1Incomes.propertyIncome,
             pensionIncome: p1Incomes.pension,
             untaxedInterest: p1Incomes.interest,
             dividends: p1Incomes.dividends,
@@ -79,7 +96,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
         const p2Input: TaxCalculationInput = {
             salary: p2Incomes.employment,
-            rentalIncome: p2Incomes.rental,
+            rentalIncome: p2Incomes.rental + p2Incomes.propertyIncome,
             pensionIncome: p2Incomes.pension,
             untaxedInterest: p2Incomes.interest,
             dividends: p2Incomes.dividends,
@@ -118,8 +135,8 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             combinedNet,
             combinedTotalTax,
             combinedEffectiveRate,
-            isReady: !!dbAccounts && !!dbIncomes && !!taxService
+            isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyOwnerships
         };
 
-    }, [dbAccounts, dbIncomes, dbInterestAccruals, taxService, taxYear]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyOwnerships, taxService, taxYear]);
 }

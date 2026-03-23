@@ -1,41 +1,73 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
+import { getDefaultTaxYear, getTaxYearDates } from '@/constants/taxConstants';
 
 export function PropertiesPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const defaultTaxYear = getDefaultTaxYear();
+    const taxYearFilter = searchParams.get('taxYear') || defaultTaxYear;
+
     const properties = useLiveQuery(() => db.properties.toArray(), []);
     const expenses = useLiveQuery(() => db.propertyExpenses.toArray(), []);
     const incomes = useLiveQuery(() => db.propertyIncomes.toArray(), []);
+    const taxRules = useLiveQuery(() => db.taxRules.toArray(), []);
+
+    const { startTs, endTs } = getTaxYearDates(taxYearFilter);
 
     const calculateTotalExpenses = (propertyId: string) => {
         if (!expenses) return 0;
         return expenses
-            .filter(e => e.propertyId === propertyId)
+            .filter(e => e.propertyId === propertyId && e.date >= startTs && e.date <= endTs)
             .reduce((sum, e) => sum + e.amount, 0);
     };
 
     const calculateTotalIncomes = (propertyId: string) => {
         if (!incomes) return 0;
         return incomes
-            .filter(i => i.propertyId === propertyId)
+            .filter(i => i.propertyId === propertyId && i.date >= startTs && i.date <= endTs)
             .reduce((sum, i) => sum + i.amount, 0);
+    };
+
+    const handleTaxYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newTaxYear = e.target.value;
+        if (newTaxYear === defaultTaxYear) {
+            searchParams.delete('taxYear');
+        } else {
+            searchParams.set('taxYear', newTaxYear);
+        }
+        setSearchParams(searchParams);
     };
 
     return (
         <AppLayout header={<Header title="Properties" />}>
             <div className="max-w-4xl mx-auto space-y-6 p-4">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <h2 className="text-2xl font-semibold text-slate-800 dark:text-white">Properties</h2>
-                    <Link
-                        to="/properties/add"
-                        className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-colors font-medium shadow-sm"
-                    >
-                        <Icon name="add" className="text-xl" />
-                        <span>Add Property</span>
-                    </Link>
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
+                        <div className="relative flex-1 sm:w-48">
+                            <select
+                                value={taxYearFilter}
+                                onChange={handleTaxYearChange}
+                                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-[#283933] rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
+                            >
+                                {taxRules?.map(rule => (
+                                    <option key={rule.id} value={rule.id}>{rule.id}</option>
+                                ))}
+                            </select>
+                            <Icon name="calendar_today" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+                        </div>
+                        <Link
+                            to="/properties/add"
+                            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-colors font-medium shadow-sm"
+                        >
+                            <Icon name="add" className="text-xl" />
+                            <span>Add Property</span>
+                        </Link>
+                    </div>
                 </div>
 
                 {!properties || properties.length === 0 ? (

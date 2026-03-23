@@ -4,23 +4,28 @@ import { db } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
+import { getDefaultTaxYear, getTaxYearDates } from '@/constants/taxConstants';
 
 export function PropertyExpensesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const propertyIdFilter = searchParams.get('propertyId') || 'all';
+    const defaultTaxYear = getDefaultTaxYear();
+    const taxYearFilter = searchParams.get('taxYear') || defaultTaxYear;
 
     const properties = useLiveQuery(() => db.properties.toArray(), []) || [];
+    const taxRules = useLiveQuery(() => db.taxRules.toArray(), []) || [];
 
     const expenses = useLiveQuery(async () => {
         let collection = db.propertyExpenses.orderBy('date').reverse();
+        const filteredArray = await collection.toArray();
+        const { startTs, endTs } = getTaxYearDates(taxYearFilter);
 
-        if (propertyIdFilter !== 'all') {
-            const filteredArray = await collection.toArray();
-            return filteredArray.filter(e => e.propertyId === propertyIdFilter);
-        }
-
-        return collection.toArray();
-    }, [propertyIdFilter]);
+        return filteredArray.filter(e => {
+            const matchesProperty = propertyIdFilter === 'all' || e.propertyId === propertyIdFilter;
+            const matchesTaxYear = e.date >= startTs && e.date <= endTs;
+            return matchesProperty && matchesTaxYear;
+        });
+    }, [propertyIdFilter, taxYearFilter]);
 
     const handlePropertyFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
@@ -28,6 +33,16 @@ export function PropertyExpensesPage() {
             searchParams.delete('propertyId');
         } else {
             searchParams.set('propertyId', value);
+        }
+        setSearchParams(searchParams);
+    };
+
+    const handleTaxYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        if (value === defaultTaxYear) {
+            searchParams.delete('taxYear');
+        } else {
+            searchParams.set('taxYear', value);
         }
         setSearchParams(searchParams);
     };
@@ -60,6 +75,19 @@ export function PropertyExpensesPage() {
                     </h2>
 
                     <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
+                         <div className="relative flex-1 sm:w-48">
+                            <select
+                                value={taxYearFilter}
+                                onChange={handleTaxYearChange}
+                                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-[#283933] rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-transparent appearance-none"
+                            >
+                                {taxRules?.map(rule => (
+                                    <option key={rule.id} value={rule.id}>{rule.id}</option>
+                                ))}
+                            </select>
+                            <Icon name="calendar_today" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+                        </div>
+
                          <div className="relative flex-1 sm:w-48">
                             <select
                                 value={propertyIdFilter}

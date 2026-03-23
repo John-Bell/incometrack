@@ -53,6 +53,9 @@ export function usePropertyForm(id?: string) {
             // Delete associated expenses when property is deleted
             const expenses = await db.propertyExpenses.where('propertyId').equals(id).toArray();
             await db.propertyExpenses.bulkDelete(expenses.map(e => e.id));
+            // Delete associated incomes when property is deleted
+            const incomes = await db.propertyIncomes.where('propertyId').equals(id).toArray();
+            await db.propertyIncomes.bulkDelete(incomes.map(i => i.id));
         }
     };
 

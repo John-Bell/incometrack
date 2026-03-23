@@ -25,6 +25,9 @@ import { EditPropertyPage } from '@/pages/EditPropertyPage';
 import { PropertyExpensesPage } from '@/pages/PropertyExpensesPage';
 import { AddPropertyExpensePage } from '@/pages/AddPropertyExpensePage';
 import { EditPropertyExpensePage } from '@/pages/EditPropertyExpensePage';
+import { PropertyIncomesPage } from '@/pages/PropertyIncomesPage';
+import { AddPropertyIncomePage } from '@/pages/AddPropertyIncomePage';
+import { EditPropertyIncomePage } from '@/pages/EditPropertyIncomePage';
 import { ImportProcessor } from '@/pages/ImportProcessor';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
@@ -82,6 +85,9 @@ function AppRoutes() {
       <Route path="/property-expenses" element={<PropertyExpensesPage />} />
       <Route path="/property-expenses/add" element={<AddPropertyExpensePage />} />
       <Route path="/property-expenses/edit/:id" element={<EditPropertyExpensePage />} />
+      <Route path="/property-incomes" element={<PropertyIncomesPage />} />
+      <Route path="/property-incomes/add" element={<AddPropertyIncomePage />} />
+      <Route path="/property-incomes/edit/:id" element={<EditPropertyIncomePage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
 

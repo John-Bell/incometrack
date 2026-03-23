@@ -90,7 +90,7 @@ export const importDatabase = async () => {
         const tables = [
             'profile', 'accounts', 'incomes', 'scenarios', 'settings',
             'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets',
-            'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses'
+            'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes'
         ];
         const dexieTables = tables.map(t => (db as any)[t]);
 

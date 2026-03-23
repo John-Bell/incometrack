@@ -34,9 +34,9 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 
 export async function mergeData(cloudData: Record<string, any[]>): Promise<boolean> {
     let hasLocalChanges = false;
-    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses'];
+    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes'];
 
-    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.paymentMappings, db.interestAccruals, db.properties, db.propertyExpenses];
+    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.paymentMappings, db.interestAccruals, db.properties, db.propertyExpenses, db.propertyIncomes];
 
     dbHooks.isSyncing = true;
     await db.transaction('rw', tableList, async () => {

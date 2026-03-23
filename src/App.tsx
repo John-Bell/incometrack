@@ -19,6 +19,12 @@ import { TransactionsPage } from '@/pages/TransactionsPage';
 import { AddPaymentPage } from '@/pages/AddPaymentPage';
 import { EditPaymentPage } from '@/pages/EditPaymentPage';
 import { PaymentMappingsPage } from '@/pages/PaymentMappingsPage';
+import { PropertiesPage } from '@/pages/PropertiesPage';
+import { AddPropertyPage } from '@/pages/AddPropertyPage';
+import { EditPropertyPage } from '@/pages/EditPropertyPage';
+import { PropertyExpensesPage } from '@/pages/PropertyExpensesPage';
+import { AddPropertyExpensePage } from '@/pages/AddPropertyExpensePage';
+import { EditPropertyExpensePage } from '@/pages/EditPropertyExpensePage';
 import { ImportProcessor } from '@/pages/ImportProcessor';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
@@ -70,6 +76,12 @@ function AppRoutes() {
       <Route path="/transactions/add" element={<AddPaymentPage />} />
       <Route path="/transactions/edit/:id" element={<EditPaymentPage />} />
       <Route path="/payment-mappings" element={<PaymentMappingsPage />} />
+      <Route path="/properties" element={<PropertiesPage />} />
+      <Route path="/properties/add" element={<AddPropertyPage />} />
+      <Route path="/properties/edit/:id" element={<EditPropertyPage />} />
+      <Route path="/property-expenses" element={<PropertyExpensesPage />} />
+      <Route path="/property-expenses/add" element={<AddPropertyExpensePage />} />
+      <Route path="/property-expenses/edit/:id" element={<EditPropertyExpensePage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
 

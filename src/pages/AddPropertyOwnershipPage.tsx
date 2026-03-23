@@ -43,8 +43,8 @@ export function AddPropertyOwnershipPage() {
         }
     };
 
-    const person1Name = profile?.name || 'Person 1';
-    const person2Name = profile?.partner1Name || 'Person 2';
+    const person1Name = profile?.partner1Name || 'Person 1';
+    const person2Name = profile?.partner2Name || 'Person 2';
 
     return (
         <AppLayout header={<Header title="Add Ownership Record" leftElement={<button onClick={() => navigate(`/property-ownerships${defaultPropertyId && defaultPropertyId !== 'all' ? `?propertyId=${defaultPropertyId}` : ''}`)}><Icon name="arrow_back" className="text-2xl" /></button>} />}>

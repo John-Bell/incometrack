@@ -56,6 +56,9 @@ export function usePropertyForm(id?: string) {
             // Delete associated incomes when property is deleted
             const incomes = await db.propertyIncomes.where('propertyId').equals(id).toArray();
             await db.propertyIncomes.bulkDelete(incomes.map(i => i.id));
+            // Delete associated ownerships when property is deleted
+            const ownerships = await db.propertyOwnership.where('propertyId').equals(id).toArray();
+            await db.propertyOwnership.bulkDelete(ownerships.map(o => o.id));
         }
     };
 

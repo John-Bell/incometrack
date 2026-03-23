@@ -86,7 +86,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
         const p1Input: TaxCalculationInput = {
             salary: p1Incomes.employment,
-            rentalIncome: p1Incomes.rental + p1Incomes.propertyIncome,
+            rentalIncome: p1Incomes.propertyIncome,
             pensionIncome: p1Incomes.pension,
             untaxedInterest: p1Incomes.interest,
             dividends: p1Incomes.dividends,
@@ -96,7 +96,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
         const p2Input: TaxCalculationInput = {
             salary: p2Incomes.employment,
-            rentalIncome: p2Incomes.rental + p2Incomes.propertyIncome,
+            rentalIncome: p2Incomes.propertyIncome,
             pensionIncome: p2Incomes.pension,
             untaxedInterest: p2Incomes.interest,
             dividends: p2Incomes.dividends,

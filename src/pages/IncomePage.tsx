@@ -19,8 +19,8 @@ export function IncomePage() {
         combinedNet
     } = useTaxCalculations();
 
-    const totalRental = p1Incomes.rental + p2Incomes.rental;
-    const p1RentalPct = totalRental > 0 ? Math.round((p1Incomes.rental / totalRental) * 100) : 50;
+    const totalRental = p1Incomes.propertyIncome + p2Incomes.propertyIncome;
+    const p1RentalPct = totalRental > 0 ? Math.round((p1Incomes.propertyIncome / totalRental) * 100) : 50;
     const p2RentalPct = totalRental > 0 ? 100 - p1RentalPct : 50;
 
     const totalInterest = p1Incomes.interest + p2Incomes.interest;
@@ -112,17 +112,13 @@ export function IncomePage() {
                                 </tr>
 
                                 <tr>
-                                    <td className="px-4 py-4 font-medium">Property Income (Calculated)</td>
+                                    <td className="px-4 py-4 font-medium">Rental Income</td>
                                     <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.propertyIncome)}</td>
                                     <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.propertyIncome)}</td>
                                 </tr>
+
                                 <tr>
-                                    <td className="px-4 py-4 font-medium">Rental Income</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.rental)}</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.rental)}</td>
-                                </tr>
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Property Expenses</td>
+                                    <td className="px-4 py-4 font-medium">Rental Expenses</td>
                                     <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1Incomes.propertyExpense)}</td>
                                     <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2Incomes.propertyExpense)}</td>
                                 </tr>
@@ -172,8 +168,8 @@ export function IncomePage() {
                                 <div className="absolute top-0 right-0 h-full bg-primary" style={{ width: `${p2RentalPct}%` }}></div>
                             </div>
                             <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
-                                <span>{p1Name} ({formatCurrK(p1Incomes.rental)})</span>
-                                <span>{p2Name} ({formatCurrK(p2Incomes.rental)})</span>
+                                <span>{p1Name} ({formatCurrK(p1Incomes.propertyIncome)})</span>
+                                <span>{p2Name} ({formatCurrK(p2Incomes.propertyIncome)})</span>
                             </div>
                         </div>
 

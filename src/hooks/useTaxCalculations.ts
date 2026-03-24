@@ -11,8 +11,8 @@ import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear 
 
 
 export interface UseTaxCalculationsResult {
-    p1Incomes: { employment: number; pension: number; rental: number; propertyIncome: number; propertyExpense: number; dividends: number; interest: number };
-    p2Incomes: { employment: number; pension: number; rental: number; propertyIncome: number; propertyExpense: number; dividends: number; interest: number };
+    p1Incomes: { employment: number; pension: number; propertyIncome: number; propertyExpense: number; dividends: number; interest: number };
+    p2Incomes: { employment: number; pension: number; propertyIncome: number; propertyExpense: number; dividends: number; interest: number };
     p1TaxResult: TaxCalculationResult | null;
     p2TaxResult: TaxCalculationResult | null;
     p1TotalIncome: number;
@@ -37,8 +37,8 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
     return useMemo(() => {
         const allAccruals = dbInterestAccruals || [];
-        const p1Incomes = { employment: 0, pension: 0, rental: 0, propertyIncome: 0, propertyExpense: 0, dividends: 0, interest: 0 };
-        const p2Incomes = { employment: 0, pension: 0, rental: 0, propertyIncome: 0, propertyExpense: 0, dividends: 0, interest: 0 };
+        const p1Incomes = { employment: 0, pension: 0, propertyIncome: 0, propertyExpense: 0, dividends: 0, interest: 0 };
+        const p2Incomes = { employment: 0, pension: 0, propertyIncome: 0, propertyExpense: 0, dividends: 0, interest: 0 };
 
         if (dbIncomes) {
             dbIncomes.forEach(inc => {
@@ -47,7 +47,6 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
                 if (inc.type === 'employment') target.employment += amount;
                 else if (inc.type === 'pension') target.pension += amount;
-                else if (inc.type === 'rental') target.rental += amount;
                 else if (inc.type === 'dividends') target.dividends += amount;
             });
         }
@@ -98,22 +97,20 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
 
         const p1Input: TaxCalculationInput = {
             salary: p1Incomes.employment,
-            rentalIncome: p1Incomes.propertyIncome,
             pensionIncome: p1Incomes.pension,
             untaxedInterest: p1Incomes.interest,
             dividends: p1Incomes.dividends,
             directPensionContrib: 0,
-            otherIncome: 0
+            otherIncome: p1Incomes.propertyIncome
         };
 
         const p2Input: TaxCalculationInput = {
             salary: p2Incomes.employment,
-            rentalIncome: p2Incomes.propertyIncome,
             pensionIncome: p2Incomes.pension,
             untaxedInterest: p2Incomes.interest,
             dividends: p2Incomes.dividends,
             directPensionContrib: 0,
-            otherIncome: 0
+            otherIncome: p2Incomes.propertyIncome
         };
 
         let p1TaxResult: TaxCalculationResult | null = null;
@@ -124,8 +121,8 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             p2TaxResult = taxService.calculateTax(p2Input, taxYear || undefined);
         }
 
-        const p1TotalIncome = p1Incomes.employment + p1Incomes.pension + p1Incomes.rental + p1Incomes.propertyIncome + p1Incomes.dividends + p1Incomes.interest;
-        const p2TotalIncome = p2Incomes.employment + p2Incomes.pension + p2Incomes.rental + p2Incomes.propertyIncome + p2Incomes.dividends + p2Incomes.interest;
+        const p1TotalIncome = p1Incomes.employment + p1Incomes.pension + p1Incomes.propertyIncome + p1Incomes.dividends + p1Incomes.interest;
+        const p2TotalIncome = p2Incomes.employment + p2Incomes.pension + p2Incomes.propertyIncome + p2Incomes.dividends + p2Incomes.interest;
 
         const p1Net = p1TotalIncome - (p1TaxResult?.totalTax || 0);
         const p2Net = p2TotalIncome - (p2TaxResult?.totalTax || 0);

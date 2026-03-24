@@ -10,7 +10,7 @@ describe('SavingsTaxService', () => {
     const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 10000;
-    const grossNonSavingsIncome = 2000; // rental income
+    const grossNonSavingsIncome = 2000;
     const personalAllowance = constants.StandardPersonalAllowance; // 12570
     const brbTracker = new BrbTracker(constants.BasicRateBand); // 37700
 
@@ -47,13 +47,12 @@ describe('SavingsTaxService', () => {
     const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const salary = 100800;
-    const rentalIncome = 0;
     const pensionIncome = 0;
     const untaxedInterest = 10000; // savings
     const directPensionContrib = 60000;
     const personalAllowance = constants.StandardPersonalAllowance; // 12570
     const brbExtended = constants.BasicRateBand + directPensionContrib; // 37700 + 60000 = 97700
-    const grossNonSavingsIncome = salary + rentalIncome + pensionIncome; // 100800
+    const grossNonSavingsIncome = salary + pensionIncome; // 100800
     const brbTracker = new BrbTracker(brbExtended);
 
     brbTracker.use(salary - personalAllowance); // 100800 - 12570 = 88230

@@ -23,13 +23,11 @@ export function IncomeEditPage() {
     const [incomeData, setIncomeData] = useState({
         partner1: {
             pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
-            rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
             employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
             dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
         },
         partner2: {
             pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
-            rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
             employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
             dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
         }
@@ -44,13 +42,11 @@ export function IncomeEditPage() {
                 const newData = {
                     partner1: {
                         pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
-                        rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
                         employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
                         dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
                     },
                     partner2: {
                         pension: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
-                        rental: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
                         employment: { amount: "0", frequency: "annual" as 'annual' | 'monthly' },
                         dividends: { amount: "0", frequency: "annual" as 'annual' | 'monthly' }
                     }
@@ -85,7 +81,6 @@ export function IncomeEditPage() {
             const incomeTypes = [
                 { type: 'employment', name: 'Employment / Other', taxCategory: 'Earned' },
                 { type: 'pension', name: 'State / Private Pension', taxCategory: 'Pension' },
-                { type: 'rental', name: 'Rental Income', taxCategory: 'Earned' },
                 { type: 'dividends', name: 'Dividends', taxCategory: 'Dividend' }
             ] as const;
 
@@ -187,13 +182,6 @@ export function IncomeEditPage() {
                         frequency={currentData.pension.frequency}
                         onChange={(e) => handleInputChange('pension', e.target.value)}
                         onFrequencyChange={(freq) => handleFrequencyChange('pension', freq)}
-                    />
-                    <IncomeInputCard
-                        label="Rental Income (Net)"
-                        value={currentData.rental.amount}
-                        frequency={currentData.rental.frequency}
-                        onChange={(e) => handleInputChange('rental', e.target.value)}
-                        onFrequencyChange={(freq) => handleFrequencyChange('rental', freq)}
                     />
                     <IncomeInputCard
                         label="Employment / Other"

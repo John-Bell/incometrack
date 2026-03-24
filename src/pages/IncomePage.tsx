@@ -19,10 +19,6 @@ export function IncomePage() {
         combinedNet
     } = useTaxCalculations();
 
-    const totalRental = p1Incomes.rental + p2Incomes.rental;
-    const p1RentalPct = totalRental > 0 ? Math.round((p1Incomes.rental / totalRental) * 100) : 50;
-    const p2RentalPct = totalRental > 0 ? 100 - p1RentalPct : 50;
-
     const totalInterest = p1Incomes.interest + p2Incomes.interest;
     const p1InterestPct = totalInterest > 0 ? Math.round((p1Incomes.interest / totalInterest) * 100) : 50;
     const p2InterestPct = totalInterest > 0 ? 100 - p1InterestPct : 50;
@@ -117,11 +113,6 @@ export function IncomePage() {
                                     <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.propertyIncome)}</td>
                                 </tr>
                                 <tr>
-                                    <td className="px-4 py-4 font-medium">Rental Income</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.rental)}</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.rental)}</td>
-                                </tr>
-                                <tr>
                                     <td className="px-4 py-4 font-medium">Property Expenses</td>
                                     <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1Incomes.propertyExpense)}</td>
                                     <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2Incomes.propertyExpense)}</td>
@@ -161,21 +152,6 @@ export function IncomePage() {
                 <section className="space-y-4">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40 px-1">Income Allocation</h2>
                     <div className="space-y-6 bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5">
-                        {/* Rental Income Slider */}
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-end">
-                                <label className="text-sm font-semibold">Rental Income Split</label>
-                                <span className="text-xs font-bold text-primary">{p1RentalPct}% / {p2RentalPct}%</span>
-                            </div>
-                            <div className="relative h-2 w-full bg-slate-200 dark:bg-primary/20 rounded-full overflow-hidden">
-                                <div className="absolute top-0 left-0 h-full bg-primary/40" style={{ width: `${p1RentalPct}%` }}></div>
-                                <div className="absolute top-0 right-0 h-full bg-primary" style={{ width: `${p2RentalPct}%` }}></div>
-                            </div>
-                            <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
-                                <span>{p1Name} ({formatCurrK(p1Incomes.rental)})</span>
-                                <span>{p2Name} ({formatCurrK(p2Incomes.rental)})</span>
-                            </div>
-                        </div>
 
                         {/* Savings Interest Slider */}
                         <div className="space-y-3">

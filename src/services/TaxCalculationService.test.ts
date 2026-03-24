@@ -7,16 +7,16 @@ const CURRENT_TAX_YEAR = '2025-2026';
 const PRIOR_TAX_YEAR = '2024-2025';
 
 describe('TaxCalculationService', () => {
-  it('calculates tax for a basic rate taxpayer (salary, rental, savings, dividends)', () => {
+  it('calculates tax for a basic rate taxpayer (salary, savings, dividends)', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 30000,
-      rentalIncome: 5000,
       pensionIncome: 0,
       untaxedInterest: 1000,
       dividends: 500,
       directPensionContrib: 0,
+      otherIncome: 5000,
     };
     const result = service.calculateTax(input, CURRENT_TAX_YEAR);
     expect(result.personalAllowance).toBe(constants.StandardPersonalAllowance);
@@ -37,7 +37,6 @@ describe('TaxCalculationService', () => {
     const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 110000,
-      rentalIncome: 0,
       pensionIncome: 0,
       untaxedInterest: 0,
       dividends: 0,
@@ -53,7 +52,6 @@ describe('TaxCalculationService', () => {
     const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 150000,
-      rentalIncome: 0,
       pensionIncome: 0,
       untaxedInterest: 5000,
       dividends: 10000,
@@ -78,7 +76,6 @@ describe('TaxCalculationService', () => {
     const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 110270,
-      rentalIncome: 0,
       pensionIncome: 0,
       untaxedInterest: 0,
       dividends: 0,
@@ -93,16 +90,16 @@ describe('TaxCalculationService', () => {
     expect(generalBands.some(b => b.rate === constants.HigherRate)).toBe(false);
   });
 
-  it('calculates tax for a complex scenario (rental, savings, dividends, pension contrib)', () => {
+  it('calculates tax for a complex scenario (savings, dividends, pension contrib, other income)', () => {
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const service = new TaxCalculationService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const input: TaxCalculationInput = {
       salary: 0,
-      rentalIncome: 25000,
       pensionIncome: 0,
       untaxedInterest: 2000,
       dividends: 20000,
       directPensionContrib: 5000,
+      otherIncome: 25000,
     };
     const result = service.calculateTax(input, CURRENT_TAX_YEAR);
     expect(result.incomeBreakdown.generalIncome).toBe(25000);
@@ -124,7 +121,6 @@ describe('TaxCalculationService', () => {
 
     const commonInput: TaxCalculationInput = {
       salary: 0,
-      rentalIncome: 0,
       pensionIncome: 0,
       untaxedInterest: 0,
       dividends: 2000,

@@ -1,4 +1,4 @@
-import type { PropertyIncome, PropertyOwnership } from '@/lib/db';
+import type { PropertyIncome, PropertyOwnership, PropertyExpense } from '@/lib/db';
 
 export function calculatePropertyIncomeForTaxYear(
 
@@ -30,4 +30,30 @@ export function calculatePropertyIncomeForTaxYear(
     }
 
     return { p1Rental, p2Rental };
+}
+
+export function calculatePropertyExpensesForTaxYear(
+    propertyExpenses: PropertyExpense[],
+    propertyOwnerships: PropertyOwnership[],
+    startTs: number,
+    endTs: number
+): { p1Expenses: number; p2Expenses: number } {
+    let p1Expenses = 0;
+    let p2Expenses = 0;
+
+    for (const expense of propertyExpenses) {
+        if (expense.date >= startTs && expense.date <= endTs) {
+            const ownershipsForProperty = propertyOwnerships.filter(o => o.propertyId === expense.propertyId);
+            ownershipsForProperty.sort((a, b) => b.startDate - a.startDate);
+
+            const applicableOwnership = ownershipsForProperty.find(o => o.startDate <= expense.date);
+
+            if (applicableOwnership) {
+                p1Expenses += expense.amount * (applicableOwnership.person1Percent / 100);
+                p2Expenses += expense.amount * (applicableOwnership.person2Percent / 100);
+            }
+        }
+    }
+
+    return { p1Expenses, p2Expenses };
 }

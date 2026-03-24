@@ -122,6 +122,11 @@ export function IncomePage() {
                                     <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.rental)}</td>
                                 </tr>
                                 <tr>
+                                    <td className="px-4 py-4 font-medium">Property Expenses</td>
+                                    <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1Incomes.propertyExpense)}</td>
+                                    <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2Incomes.propertyExpense)}</td>
+                                </tr>
+                                <tr>
                                     <td className="px-4 py-4 font-medium">Dividends</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.dividends)}</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.dividends)}</td>

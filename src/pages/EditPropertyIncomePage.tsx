@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { usePropertyIncomeForm } from '@/hooks/usePropertyIncomeForm';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
+import { DateInput } from '@/components/ui/DateInput';
 
 export function EditPropertyIncomePage() {
     const { id } = useParams<{ id: string }>();
@@ -59,28 +60,30 @@ export function EditPropertyIncomePage() {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Property <span className="text-red-500">*</span>
                                 </label>
-                                <select
-                                    value={formData.propertyId}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, propertyId: e.target.value }))}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                                    required
-                                >
-                                    <option value="" disabled>Select a property</option>
-                                    {properties.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        value={formData.propertyId}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, propertyId: e.target.value }))}
+                                        className="w-full px-4 py-3 pr-10 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none"
+                                        required
+                                    >
+                                        <option value="" disabled>Select a property</option>
+                                        {properties.map(p => (
+                                            <option key={p.id} value={p.id}>{p.name}</option>
+                                        ))}
+                                    </select>
+                                    <Icon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl pointer-events-none" />
+                                </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Date <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="date"
+                                <DateInput
                                     value={formData.date}
                                     onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                                    className="block max-w-full appearance-none min-w-0 w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all dark:[color-scheme:dark]"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                     required
                                 />
                             </div>

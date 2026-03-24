@@ -2,6 +2,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
 import { InterestLedger } from '@/components/accounts/InterestLedger';
 import { useAccountForm } from '@/hooks/useAccountForm';
+import { DateInput } from '@/components/ui/DateInput';
 
 export function AddAccountPage() {
     const {
@@ -194,9 +195,8 @@ export function AddAccountPage() {
                                     {formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}
                                 </label>
                                 <div className="relative min-w-0 w-full">
-                                    <input
-                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] block max-w-full appearance-none min-w-0"
-                                        type="date"
+                                    <DateInput
+                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100"
                                         value={formData.interestPayoutDate}
                                         onChange={(e) => handleChange('interestPayoutDate', e.target.value)}
                                     />
@@ -229,9 +229,8 @@ export function AddAccountPage() {
                             <div className="space-y-2 fade-in min-w-0 w-full">
                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
                                 <div className="relative min-w-0 w-full">
-                                    <input
-                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] block max-w-full appearance-none min-w-0"
-                                        type="date"
+                                    <DateInput
+                                        className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100"
                                         value={formData.bonusEndDate}
                                         onChange={(e) => handleChange('bonusEndDate', e.target.value)}
                                     />

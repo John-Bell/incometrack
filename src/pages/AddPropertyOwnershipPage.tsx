@@ -7,6 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
 import { usePropertyOwnershipForm } from '@/hooks/usePropertyOwnershipForm';
 import { useStore } from '@/store/useStore';
+import { DateInput } from '@/components/ui/DateInput';
 
 export function AddPropertyOwnershipPage() {
     const navigate = useNavigate();
@@ -88,8 +89,7 @@ export function AddPropertyOwnershipPage() {
                                     Start Date *
                                 </label>
                                 <div className="relative">
-                                    <input
-                                        type="date"
+                                    <DateInput
                                         className="w-full bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-[#283933] text-slate-800 dark:text-slate-200 rounded-xl px-4 py-3 pl-11 focus:outline-none focus:ring-2 focus:ring-primary transition-shadow"
                                         value={formData.startDate}
                                         onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}

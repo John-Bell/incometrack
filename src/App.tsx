@@ -4,8 +4,6 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { AccountsPage } from '@/pages/AccountsPage';
 import { ScenariosPage } from '@/pages/ScenariosPage';
 import { SettingsPage } from '@/pages/SettingsPage';
-import { DataImportsPage } from '@/pages/DataImportsPage';
-import { HistoricAccountsPage } from '@/pages/HistoricAccountsPage';
 import { RemoteSyncingPage } from '@/pages/RemoteSyncingPage';
 import { SimplifiedAppSetupPage } from '@/pages/SimplifiedAppSetupPage';
 import { IncomeEditPage } from '@/pages/IncomeEditPage';
@@ -31,7 +29,6 @@ import { EditPropertyIncomePage } from '@/pages/EditPropertyIncomePage';
 import { PropertyOwnershipsPage } from '@/pages/PropertyOwnershipsPage';
 import { AddPropertyOwnershipPage } from '@/pages/AddPropertyOwnershipPage';
 import { EditPropertyOwnershipPage } from '@/pages/EditPropertyOwnershipPage';
-import { ImportProcessor } from '@/pages/ImportProcessor';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
 import { dbHooks } from '@/lib/db';
@@ -69,10 +66,7 @@ function AppRoutes() {
       <Route path="/accounts/edit/:id" element={<EditAccountPage />} />
       <Route path="/scenarios" element={<ScenariosPage />} />
       <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/data-imports" element={<DataImportsPage />} />
-      <Route path="/historic-accounts" element={<HistoricAccountsPage />} />
       <Route path="/remote-syncing" element={<RemoteSyncingPage />} />
-      <Route path="/settings/import/:table" element={<ImportProcessor />} />
       <Route path="/income" element={<IncomePage />} />
       <Route path="/income-edit" element={<IncomeEditPage />} />
       <Route path="/budgets" element={<BudgetsPage />} />

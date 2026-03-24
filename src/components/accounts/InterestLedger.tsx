@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useInterestAccruals, addInterestAccrual, updateInterestAccrual, deleteInterestAccrual } from '@/hooks/useInterestAccruals';
 import { Icon } from '@/components/ui/Icon';
 import type { InterestAccrual } from '@/lib/db';
+import { DateInput } from '@/components/ui/DateInput';
 
 interface InterestLedgerProps {
     accountId: string;
@@ -90,9 +91,9 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div className="sm:col-span-2 min-w-0 w-full">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month & Year</label>
-                        <input
+                        <DateInput
                             type="month"
-                            className="w-full h-11 px-3 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:[color-scheme:dark] block max-w-full appearance-none min-w-0"
+                            className="w-full h-11 px-3 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
                             value={monthYear}
                             onChange={(e) => setMonthYear(e.target.value)}
                         />

@@ -1,6 +1,7 @@
 export interface TaxCalculationInput {
   salary: number;
   pensionIncome: number;
+  propertyIncome: number;
   untaxedInterest: number;
   dividends: number;
   directPensionContrib: number;
@@ -11,6 +12,7 @@ export function getTotalIncome(input: TaxCalculationInput): number {
   return (
     input.salary +
     input.pensionIncome +
+    input.propertyIncome +
     input.untaxedInterest +
     input.dividends +
     (input.otherIncome ?? 0)

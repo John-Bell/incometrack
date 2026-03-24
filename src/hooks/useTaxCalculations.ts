@@ -95,22 +95,27 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             });
         }
 
+        const p1TaxablePropertyIncome = Math.max(0, p1Incomes.propertyIncome - p1Incomes.propertyExpense);
+        const p2TaxablePropertyIncome = Math.max(0, p2Incomes.propertyIncome - p2Incomes.propertyExpense);
+
         const p1Input: TaxCalculationInput = {
             salary: p1Incomes.employment,
             pensionIncome: p1Incomes.pension,
+            propertyIncome: p1TaxablePropertyIncome,
             untaxedInterest: p1Incomes.interest,
             dividends: p1Incomes.dividends,
             directPensionContrib: 0,
-            otherIncome: p1Incomes.propertyIncome
+            otherIncome: 0
         };
 
         const p2Input: TaxCalculationInput = {
             salary: p2Incomes.employment,
             pensionIncome: p2Incomes.pension,
+            propertyIncome: p2TaxablePropertyIncome,
             untaxedInterest: p2Incomes.interest,
             dividends: p2Incomes.dividends,
             directPensionContrib: 0,
-            otherIncome: p2Incomes.propertyIncome
+            otherIncome: 0
         };
 
         let p1TaxResult: TaxCalculationResult | null = null;
@@ -124,8 +129,8 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
         const p1TotalIncome = p1Incomes.employment + p1Incomes.pension + p1Incomes.propertyIncome + p1Incomes.dividends + p1Incomes.interest;
         const p2TotalIncome = p2Incomes.employment + p2Incomes.pension + p2Incomes.propertyIncome + p2Incomes.dividends + p2Incomes.interest;
 
-        const p1Net = p1TotalIncome - (p1TaxResult?.totalTax || 0);
-        const p2Net = p2TotalIncome - (p2TaxResult?.totalTax || 0);
+        const p1Net = p1TotalIncome - p1Incomes.propertyExpense - (p1TaxResult?.totalTax || 0);
+        const p2Net = p2TotalIncome - p2Incomes.propertyExpense - (p2TaxResult?.totalTax || 0);
 
         const combinedNet = p1Net + p2Net;
 

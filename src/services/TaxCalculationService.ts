@@ -103,7 +103,7 @@ export class TaxCalculationService {
 
   private calculateIncomeBreakdown(input: TaxCalculationInput): IncomeBreakdown {
     return {
-      generalIncome: input.salary + input.pensionIncome + (input.otherIncome ?? 0),
+      generalIncome: input.salary + input.pensionIncome + input.propertyIncome + (input.otherIncome ?? 0),
       savingsIncome: input.untaxedInterest,
       dividendIncome: input.dividends,
     };
@@ -123,6 +123,7 @@ export class TaxCalculationService {
     return (
       input.salary +
       input.pensionIncome +
+      input.propertyIncome +
       input.untaxedInterest +
       input.dividends +
       (input.otherIncome ?? 0)

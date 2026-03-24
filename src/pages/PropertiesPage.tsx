@@ -62,7 +62,7 @@ export function PropertiesPage() {
                         </div>
                         <Link
                             to="/properties/add"
-                            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-colors font-medium shadow-sm"
+                            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-xl transition-colors font-medium shadow-sm whitespace-nowrap"
                         >
                             <Icon name="add" className="text-xl" />
                             <span>Add Property</span>
@@ -88,7 +88,7 @@ export function PropertiesPage() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {properties.map(property => (
                             <div key={property.id} className="bg-white dark:bg-surface-dark rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-[#283933] flex flex-col h-full">
                                 <div className="flex-1">
@@ -99,33 +99,43 @@ export function PropertiesPage() {
                                     </div>
                                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1 line-clamp-1">{property.name}</h3>
 
+                                    <div className="mt-3 flex">
+                                        <Link
+                                            to={`/property-ownerships?propertyId=${property.id}`}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 dark:bg-black/20 hover:bg-slate-100 dark:hover:bg-black/40 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold border border-slate-200 dark:border-[#283933] transition-colors shadow-sm"
+                                        >
+                                            <Icon name="real_estate_agent" className="text-[14px]" />
+                                            <span>Ownerships</span>
+                                        </Link>
+                                    </div>
+
                                     <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#283933] grid grid-cols-2 gap-4">
                                         <div>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Incomes</p>
-                                            <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">Total Incomes</p>
+                                            <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                                                 +{Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(calculateTotalIncomes(property.id))}
                                             </p>
                                         </div>
                                         <div>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">Total Expenses</p>
-                                            <p className="text-xl font-semibold text-rose-600 dark:text-rose-400">
+                                            <p className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">Total Expenses</p>
+                                            <p className="text-xl font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap">
                                                 -{Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(calculateTotalExpenses(property.id))}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex justify-end gap-2">
+                                <div className="mt-6 flex flex-wrap justify-end gap-2">
                                     <Link
                                         to={`/property-incomes?propertyId=${property.id}`}
-                                        className="flex-1 inline-flex justify-center items-center gap-2 bg-slate-100 dark:bg-black/30 hover:bg-slate-200 dark:hover:bg-black/50 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg transition-colors font-medium text-sm"
+                                        className="flex-1 inline-flex justify-center items-center gap-2 bg-slate-100 dark:bg-black/30 hover:bg-slate-200 dark:hover:bg-black/50 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap"
                                     >
                                         <Icon name="payments" className="text-base" />
                                         <span>Incomes</span>
                                     </Link>
                                      <Link
                                         to={`/property-expenses?propertyId=${property.id}`}
-                                        className="flex-1 inline-flex justify-center items-center gap-2 bg-slate-100 dark:bg-black/30 hover:bg-slate-200 dark:hover:bg-black/50 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg transition-colors font-medium text-sm"
+                                        className="flex-1 inline-flex justify-center items-center gap-2 bg-slate-100 dark:bg-black/30 hover:bg-slate-200 dark:hover:bg-black/50 text-slate-700 dark:text-slate-300 px-3 py-2 rounded-lg transition-colors font-medium text-sm whitespace-nowrap"
                                     >
                                         <Icon name="receipt_long" className="text-base" />
                                         <span>Expenses</span>

@@ -1,12 +1,13 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
 import { useStore } from '@/store/useStore';
 
 export function PropertyOwnershipsPage() {
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const propertyIdFilter = searchParams.get('propertyId') || 'all';
     const { profile } = useStore();
@@ -45,7 +46,7 @@ export function PropertyOwnershipsPage() {
     const person2Name = profile?.partner2Name || 'Person 2';
 
     return (
-        <AppLayout header={<Header title="Property Ownership" />}>
+        <AppLayout header={<Header title="Property Ownership" leftElement={<button onClick={() => navigate('/properties')}><Icon name="arrow_back" className="text-2xl" /></button>} />}>
             <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1a2e26] p-4 rounded-xl shadow-sm border border-slate-200 dark:border-[#283933]">
                     <div className="flex items-center gap-2">

@@ -106,9 +106,14 @@ export function IncomePage() {
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-primary/10 bg-white dark:bg-background-dark/50">
                                 <tr>
-                                    <td className="px-4 py-4 font-medium">Salary / Pension</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment + p1Incomes.pension)}</td>
-                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment + p2Incomes.pension)}</td>
+                                    <td className="px-4 py-4 font-medium">Employment</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.employment)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.employment)}</td>
+                                </tr>
+                                <tr>
+                                    <td className="px-4 py-4 font-medium">Pensions</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.pension)}</td>
+                                    <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.pension)}</td>
                                 </tr>
 
                                 <tr>

@@ -60,16 +60,14 @@ describe('IncomeEditPage', () => {
         );
 
         // Initial check for Alice's value (Partner 1 default)
-        // Note: The component initializes with '0' for all fields.
-        const initialZeroInputs = screen.getAllByDisplayValue('0');
+        const initialZeroInputs = screen.getAllByPlaceholderText('0.00');
         expect(initialZeroInputs.length).toBeGreaterThan(0);
 
         const tabBob = screen.getByText('Bob');
         fireEvent.click(tabBob);
 
-        // After switching to Bob, the input should show 0 (Partner 2 default)
-        // Check for Bob's values (0) - we expect multiple
-        const zeroInputs = screen.getAllByDisplayValue('0');
+        // After switching to Bob, the input should show empty placeholder
+        const zeroInputs = screen.getAllByPlaceholderText('0.00');
         expect(zeroInputs.length).toBeGreaterThan(0);
     });
 });

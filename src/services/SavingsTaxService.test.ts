@@ -6,7 +6,75 @@ import { getTaxConstants, TAX_YEAR_CONSTANTS } from '../constants/taxConstants';
 const CURRENT_TAX_YEAR = '2025-2026';
 
 describe('SavingsTaxService', () => {
-  it('calculates starting rate for savings correctly', () => {
+  it('applies unused Personal Allowance before Starting Rate for Savings (Johns scenario)', () => {
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
+    const constants = getTaxConstants(CURRENT_TAX_YEAR);
+
+    const grossNonSavingsIncome = 9240; // Pension
+    const savingsIncome = 5827; // Interest
+    const personalAllowance = constants.StandardPersonalAllowance; // 12570
+    const brbTracker = new BrbTracker(constants.BasicRateBand); // 37700
+
+    const result = service.calculateSavingsTax(
+      savingsIncome,
+      grossNonSavingsIncome,
+      personalAllowance,
+      brbTracker,
+      [],
+      CURRENT_TAX_YEAR
+    );
+
+    // Total tax should be exactly £0
+    const totalSavingsTax = result.reduce((sum, b) => sum + b.tax, 0);
+    expect(totalSavingsTax).toBe(0);
+
+    // There should be no bands applying the 20% basic rate
+    const basicRateBands = result.filter(b => b.rate === constants.BasicRate && b.tax > 0);
+    expect(basicRateBands.length).toBe(0);
+  });
+
+  it('calculates full starting rate for savings when PA is exactly used up', () => {
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
+    const constants = getTaxConstants(CURRENT_TAX_YEAR);
+
+    const grossNonSavingsIncome = 12570; // Salary exactly uses up PA
+    const savingsIncome = 10000; // Savings
+    const personalAllowance = constants.StandardPersonalAllowance; // 12570
+    const brbTracker = new BrbTracker(constants.BasicRateBand); // 37700
+
+    const result = service.calculateSavingsTax(
+      savingsIncome,
+      grossNonSavingsIncome,
+      personalAllowance,
+      brbTracker,
+      [],
+      CURRENT_TAX_YEAR
+    );
+
+    // 1. Starting rate band should catch the first £5000 at 0%
+    const startingRateBand = result.find(b => b.band === constants.StartingBand);
+    expect(startingRateBand).toBeDefined();
+    expect(startingRateBand?.amount).toBe(constants.StartingRateForSavingsThreshold); // 5000
+    expect(startingRateBand?.tax).toBe(0);
+
+    // 2. Personal Savings Allowance should catch the next £1000 at 0%
+    const allowanceBand = result.find(b => b.band === constants.BasicBand && b.rate === 0);
+    expect(allowanceBand).toBeDefined();
+    expect(allowanceBand?.amount).toBe(constants.SavingsAllowanceBasic); // 1000
+    expect(allowanceBand?.tax).toBe(0);
+
+    // 3. The remaining £4000 should be taxed at basic rate (20%)
+    const basicRateBand = result.find(b => b.band === constants.BasicBand && b.rate === constants.BasicRate);
+    expect(basicRateBand).toBeDefined();
+    expect(basicRateBand?.amount).toBe(4000);
+    expect(basicRateBand?.tax).toBeCloseTo(4000 * constants.BasicRate); // £800
+
+    // Total tax should be £800
+    const totalSavingsTax = result.reduce((sum, b) => sum + b.tax, 0);
+    expect(totalSavingsTax).toBeCloseTo(800);
+  });
+
+  it('calculates zero tax when total income is below Personal Allowance', () => {
     const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);
     const savingsIncome = 10000;
@@ -23,26 +91,15 @@ describe('SavingsTaxService', () => {
       CURRENT_TAX_YEAR
     );
 
-    const startingRateBand = result.find(b => b.band === constants.StartingBand);
-    expect(startingRateBand).toBeDefined();
-    expect(startingRateBand?.amount).toBe(constants.StartingRateForSavingsThreshold);
-    expect(startingRateBand?.rate).toBe(constants.StartingRateForSavings);
-    expect(startingRateBand?.tax).toBe(0);
-
-    const allowanceBand = result.find(b => b.band === constants.BasicBand && b.rate === 0);
-    expect(allowanceBand).toBeDefined();
-    expect(allowanceBand?.amount).toBe(constants.SavingsAllowanceBasic);
-    expect(allowanceBand?.tax).toBe(0);
-
-    const basicRateBand = result.find(b => b.band === constants.BasicBand && b.rate === constants.BasicRate);
-    expect(basicRateBand).toBeDefined();
-    expect(basicRateBand?.amount).toBe(5000 - constants.SavingsAllowanceBasic);
-    expect(basicRateBand?.tax).toBeCloseTo((5000 - constants.SavingsAllowanceBasic) * constants.BasicRate);
-
+    // The unused Personal Allowance (£12,570 - £2,000 = £10,570) 
+    // entirely covers the £10,000 savings income.
     const totalSavingsTax = result.reduce((sum, b) => sum + b.tax, 0);
-    expect(totalSavingsTax).toBeCloseTo((5000 - constants.SavingsAllowanceBasic) * constants.BasicRate);
-  });
+    expect(totalSavingsTax).toBe(0);
 
+    // Verify no basic rate tax bands were applied
+    const basicRateBands = result.filter(b => b.rate === constants.BasicRate && b.tax > 0);
+    expect(basicRateBands.length).toBe(0);
+  });
   it('should apply savings allowance when savings push into higher rate', () => {
     const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, CURRENT_TAX_YEAR);
     const constants = getTaxConstants(CURRENT_TAX_YEAR);

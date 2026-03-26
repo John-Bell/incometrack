@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { useTaxCalculations } from '@/hooks/useTaxCalculations';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
+import { TaxBandVisualizer } from '../components/income/TaxBandVisualizer';
 
 export function IncomePage() {
     const { profile } = useStore();
@@ -34,39 +35,16 @@ export function IncomePage() {
     const formatCurr = (v: number) => `£${v.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
     const formatCurrK = (v: number) => `£${(v / 1000).toLocaleString('en-GB', { maximumFractionDigits: 1 })}k`;
 
-    const renderTaxBar = (name: string, income: number, taxResult: TaxCalculationResult | null, isPrimary: boolean) => {
-        const pa = taxResult?.personalAllowance || 12570;
-        const brb = taxResult?.brbExtended || 50270;
-
-        // Scale to a reasonable max, e.g. 150k or income if higher
-        const maxScale = Math.max(150000, income, brb + 20000);
-
-        const paWidth = (Math.min(income, pa) / maxScale) * 100;
-        const basicInc = Math.max(0, Math.min(income - pa, brb - pa));
-        const basicWidth = (basicInc / maxScale) * 100;
-        const higherInc = Math.max(0, income - brb);
-        const higherWidth = (higherInc / maxScale) * 100;
-
+    const renderTaxBarWrapper = (name: string, income: number, taxResult: TaxCalculationResult | null, isPrimary: boolean) => {
         return (
             <div className="bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-2xl p-5 space-y-4">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-2">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${isPrimary ? 'bg-primary/20 text-primary' : 'bg-primary text-background-dark'}`}>
                         {name.charAt(0).toUpperCase()}
                     </div>
                     <span className="font-bold">{name}</span>
                 </div>
-                <div className="space-y-1">
-                    <div className="relative h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden flex">
-                        {paWidth > 0 && <div className="h-full bg-primary/30 border-r border-slate-900/10 dark:border-white/10" style={{ width: `${paWidth}%` }} title="Personal Allowance"></div>}
-                        {basicWidth > 0 && <div className="h-full bg-primary border-r border-slate-900/10 dark:border-white/10" style={{ width: `${basicWidth}%` }} title="Basic Rate"></div>}
-                        {higherWidth > 0 && <div className="h-full bg-primary/80" style={{ width: `${higherWidth}%` }} title="Higher Rate"></div>}
-                    </div>
-                    <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
-                        <span>{formatCurrK(pa)} PA</span>
-                        <span>{formatCurrK(brb)} Basic</span>
-                        <span>Higher</span>
-                    </div>
-                </div>
+                <TaxBandVisualizer totalIncome={income} taxResult={taxResult} />
             </div>
         );
     };
@@ -216,8 +194,8 @@ export function IncomePage() {
                 <section className="space-y-4">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40 px-1">Tax Band Utilization</h2>
                     <div className="grid grid-cols-1 gap-4">
-                        {renderTaxBar(p1Name, p1Total, p1TaxResult, true)}
-                        {renderTaxBar(p2Name, p2Total, p2TaxResult, false)}
+                        {renderTaxBarWrapper(p1Name, p1Total, p1TaxResult, true)}
+                        {renderTaxBarWrapper(p2Name, p2Total, p2TaxResult, false)}
                     </div>
                 </section>
 

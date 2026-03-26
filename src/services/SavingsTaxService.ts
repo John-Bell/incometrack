@@ -27,21 +27,38 @@ export class SavingsTaxService {
     let remainingSavings = savingsIncome;
     let maxRateApplied = generalTaxBands && generalTaxBands.length > 0 ? Math.max(...generalTaxBands.map(b => b.rate)) : 0;
 
-    // STARTING RATE
-    if (grossNonSavingsIncome < personalAllowance) {
-      const startingRateLimit = taxConstants.StartingRateForSavingsThreshold;
-      const maxStarting = Math.min(startingRateLimit, personalAllowance - grossNonSavingsIncome);
-      const startingApplied = Math.min(remainingSavings, maxStarting);
-      if (startingApplied > 0) {
+    // 1. APPLY UNUSED PERSONAL ALLOWANCE FIRST
+    const unusedPA = Math.max(0, personalAllowance - grossNonSavingsIncome);
+    if (unusedPA > 0) {
+      const paApplied = Math.min(remainingSavings, unusedPA);
+      if (paApplied > 0) {
         taxBands.push({
-          band: taxConstants.StartingBand,
+          band: 'Personal Allowance', // Or however you define this in your constants
           type: taxConstants.SavingsBandType,
-          amount: startingApplied,
-          rate: taxConstants.StartingRateForSavings,
+          amount: paApplied,
+          rate: 0,
           tax: 0,
         });
-        remainingSavings -= startingApplied;
+        remainingSavings -= paApplied;
       }
+    }
+
+    // STARTING RATE
+    // 2. CALCULATE STARTING RATE FOR SAVINGS
+    // The £5,000 band is reduced by £1 for every £1 of non-savings income *above* the PA.
+    const taxableNonSavingsIncome = Math.max(0, grossNonSavingsIncome - personalAllowance);
+    const startingRateLimit = Math.max(0, taxConstants.StartingRateForSavingsThreshold - taxableNonSavingsIncome);
+
+    if (startingRateLimit > 0 && remainingSavings > 0) {
+      const startingApplied = Math.min(remainingSavings, startingRateLimit);
+      taxBands.push({
+        band: taxConstants.StartingBand,
+        type: taxConstants.SavingsBandType,
+        amount: startingApplied,
+        rate: taxConstants.StartingRateForSavings,
+        tax: 0,
+      });
+      remainingSavings -= startingApplied;
     }
 
     // Collect all bands before applying savings allowance

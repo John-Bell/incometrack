@@ -9,6 +9,15 @@ vi.mock('@/store/useStore', () => ({
     useStore: vi.fn(),
 }));
 
+vi.mock('@/hooks/useTaxCalculations', () => ({
+    useTaxCalculations: vi.fn(() => ({
+        p1TaxResult: { personalAllowance: 12570, brbExtended: 50270, incomeBreakdown: { savingsIncome: 0 } },
+        p2TaxResult: { personalAllowance: 12570, brbExtended: 50270, incomeBreakdown: { savingsIncome: 0 } },
+        p1TotalIncome: 50000,
+        p2TotalIncome: 50000,
+    })),
+}));
+
 describe('IncomeEditPage', () => {
     it('renders tabs and allows switching between partners', () => {
         // Mock store return value

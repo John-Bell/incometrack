@@ -12,6 +12,7 @@ import { IncomeEntryForm } from '../components/income/IncomeEntryForm';
 import { useStore } from '@/store/useStore';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { useIncomeForm } from '@/hooks/useIncomeForm';
+import { useTaxCalculations } from '@/hooks/useTaxCalculations';
 
 export function IncomeEditPage() {
     const navigate = useNavigate();
@@ -21,6 +22,14 @@ export function IncomeEditPage() {
 
     const [activeTabKey, setActiveTabKey] = useState<'partner1' | 'partner2'>('partner1');
     const ownerId = activeTabKey === 'partner1' ? 'person1' : 'person2';
+
+    const {
+        p1TaxResult, p2TaxResult,
+        p1TotalIncome, p2TotalIncome
+    } = useTaxCalculations();
+
+    const activeTaxResult = activeTabKey === 'partner1' ? p1TaxResult : p2TaxResult;
+    const activeTotalIncome = activeTabKey === 'partner1' ? p1TotalIncome : p2TotalIncome;
 
     const {
         incomes,
@@ -76,7 +85,7 @@ export function IncomeEditPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8 px-4 py-6 md:pb-12 max-w-7xl mx-auto">
                 {/* Left Column: Flow & Lists */}
                 <div className="space-y-8">
-                    <TaxBandVisualizer />
+                    <TaxBandVisualizer totalIncome={activeTotalIncome} taxResult={activeTaxResult} />
 
                     {/* Pensions */}
                     <section>

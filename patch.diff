@@ -1,0 +1,96 @@
+--- src/hooks/useSimulatorCalculations.ts
++++ src/hooks/useSimulatorCalculations.ts
+@@ -34,7 +34,7 @@
+     isReady: boolean;
+ }
+
+-export function useSimulatorCalculations(): UseSimulatorCalculationsResult {
++export function useSimulatorCalculations(movableInterestP1Percent?: number): UseSimulatorCalculationsResult {
+     const { taxYear } = useStore();
+     const taxService = useTaxService();
+
+@@ -133,31 +133,33 @@
+                 const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
+                 const amount = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
+
+-                if (acc.ownerId === 'person1') p1Incomes.interest += amount;
+-                else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
+-                else if (acc.ownerId === 'joint') {
+-                    p1Incomes.interest += amount / 2;
+-                    p2Incomes.interest += amount / 2;
+-                }
+-
+                 // Check for movable interest
++                let isMovable = false;
+                 const movableTaxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds', 'DC Pension'];
+-                if (acc.category && movableTaxFreeCategories.includes(acc.category as string)) {
+-                    return;
++                if (!acc.category || !movableTaxFreeCategories.includes(acc.category as string)) {
++                    const frequency = acc.interestPayoutFrequency || 'monthly';
++                    const payoutTs = acc.interestPayoutDate;
++
++                    if (frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs) {
++                        isMovable = true;
++                    }
+                 }
+
+-                const frequency = acc.interestPayoutFrequency || 'monthly';
+-                const payoutTs = acc.interestPayoutDate;
+-
+-                if (frequency === 'annually' || frequency === 'at_maturity' || payoutTs) {
+-                    return;
+-                }
+-
+-                if (acc.ownerId === 'person1') p1MovableInterest += amount;
+-                else if (acc.ownerId === 'person2') p2MovableInterest += amount;
+-                else if (acc.ownerId === 'joint') {
+-                    p1MovableInterest += amount / 2;
+-                    p2MovableInterest += amount / 2;
++                if (isMovable) {
++                    if (acc.ownerId === 'person1') p1MovableInterest += amount;
++                    else if (acc.ownerId === 'person2') p2MovableInterest += amount;
++                    else if (acc.ownerId === 'joint') {
++                        p1MovableInterest += amount / 2;
++                        p2MovableInterest += amount / 2;
++                    }
++                } else {
++                    if (acc.ownerId === 'person1') p1Incomes.interest += amount;
++                    else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
++                    else if (acc.ownerId === 'joint') {
++                        p1Incomes.interest += amount / 2;
++                        p2Incomes.interest += amount / 2;
++                    }
+                 }
+             });
+         }
+@@ -165,6 +167,14 @@
+         const p1NetPropertyIncome = Math.max(0, p1Incomes.propertyIncome - p1Incomes.propertyExpense);
+         const p2NetPropertyIncome = Math.max(0, p2Incomes.propertyIncome - p2Incomes.propertyExpense);
+
++        const totalMovableInterest = p1MovableInterest + p2MovableInterest;
++        if (movableInterestP1Percent !== undefined) {
++            p1MovableInterest = totalMovableInterest * (movableInterestP1Percent / 100);
++            p2MovableInterest = totalMovableInterest - p1MovableInterest;
++        }
++        p1Incomes.interest += p1MovableInterest;
++        p2Incomes.interest += p2MovableInterest;
++
+         const p1Input: TaxCalculationInput = {
+             salary: p1Incomes.employment,
+             rentalIncome: p1NetPropertyIncome,
+@@ -200,8 +210,6 @@
+
+         const combinedEffectiveRate = combinedTotalIncome > 0 ? (combinedTotalTax / combinedTotalIncome) * 100 : 0;
+
+-        const totalMovableInterest = p1MovableInterest + p2MovableInterest;
+-
+         return {
+             p1Incomes,
+             p2Incomes,
+@@ -219,6 +227,6 @@
+             isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyExpenses && !!dbPropertyOwnerships
+         };
+
+-    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear]);
++    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear, movableInterestP1Percent]);
+ }

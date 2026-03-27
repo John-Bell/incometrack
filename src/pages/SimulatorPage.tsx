@@ -125,6 +125,10 @@ export function SimulatorPage() {
                                     <td className="px-4 py-4 text-primary">Combined Net</td>
                                     <td colSpan={2} className="px-4 py-4 text-right text-primary text-lg">{formatCurr(combinedNet)}</td>
                                 </tr>
+                                <tr className="border-t border-slate-200 dark:border-primary/10">
+                                    <td className="px-4 py-4 text-red-500">Combined Tax</td>
+                                    <td colSpan={2} className="px-4 py-4 text-right text-red-500 font-bold text-lg">{formatCurr((p1TaxResult?.totalTax || 0) + (p2TaxResult?.totalTax || 0))}</td>
+                                </tr>
                             </tfoot>
                         </table>
                     </div>

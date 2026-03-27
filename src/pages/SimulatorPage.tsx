@@ -9,6 +9,7 @@ import { useSimulatorCalculations } from '@/hooks/useSimulatorCalculations';
 export function SimulatorPage() {
     const { profile } = useStore();
     const [movableInterestP1Percent, setMovableInterestP1Percent] = React.useState<number | undefined>();
+    const [propertySplits, setPropertySplits] = React.useState<Record<string, number>>({});
     const p1Name = profile?.partner1Name || 'Person 1';
     const p2Name = profile?.partner2Name || 'Person 2';
 
@@ -21,7 +22,11 @@ export function SimulatorPage() {
         p1MovableInterest,
         p2MovableInterest,
         totalMovableInterest
-    } = useSimulatorCalculations(movableInterestP1Percent);
+    } = useSimulatorCalculations(movableInterestP1Percent, propertySplits);
+
+    const handlePropertySplitChange = (propertyId: string, value: number) => {
+        setPropertySplits(prev => ({ ...prev, [propertyId]: value }));
+    };
 
     const formatCurr = (v: number) => `£${v.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
 
@@ -182,6 +187,47 @@ export function SimulatorPage() {
                             />
                         </div>
                     )}
+
+                    {propertyBreakdowns.length > 0 && propertyBreakdowns.map((prop) => {
+                        const totalPropIncome = prop.p1Income + prop.p2Income;
+                        const currentValue = propertySplits[prop.propertyId] !== undefined
+                            ? propertySplits[prop.propertyId]
+                            : (totalPropIncome > 0 ? (prop.p1Income / totalPropIncome) * 100 : 50);
+
+                        return (
+                            <div key={prop.propertyId} className="bg-slate-50 dark:bg-primary/5 rounded-2xl p-6 space-y-4 mt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">{prop.propertyName} Income Split</h3>
+                                        <p className="text-sm text-slate-500 dark:text-primary/60">Split projected {formatCurr(totalPropIncome)}</p>
+                                    </div>
+                                    <div className="w-12 h-12 rounded-full bg-white dark:bg-background-dark flex items-center justify-center text-primary shadow-sm">
+                                        <Icon name="home" className="text-2xl" />
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-between items-end mb-2">
+                                    <div className="space-y-1">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-primary/60">{p1Name}</div>
+                                        <div className="text-2xl font-bold text-primary">{formatCurr(prop.p1Income)}</div>
+                                    </div>
+                                    <div className="space-y-1 text-right">
+                                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-primary/60">{p2Name}</div>
+                                        <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{formatCurr(prop.p2Income)}</div>
+                                    </div>
+                                </div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={currentValue}
+                                    onChange={(e) => handlePropertySplitChange(prop.propertyId, Number(e.target.value))}
+                                    className="w-full appearance-none bg-transparent [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-slate-200 dark:[&::-webkit-slider-runnable-track]:bg-primary/20 [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-primary [&::-webkit-slider-thumb]:-mt-2"
+                                />
+                            </div>
+                        );
+                    })}
                 </section>
             </div>
         </AppLayout>

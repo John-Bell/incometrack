@@ -35,7 +35,7 @@ export interface UseSimulatorCalculationsResult {
     isReady: boolean;
 }
 
-export function useSimulatorCalculations(movableInterestP1Percent?: number): UseSimulatorCalculationsResult {
+export function useSimulatorCalculations(movableInterestP1Percent?: number, propertySplits?: Record<string, number>): UseSimulatorCalculationsResult {
     const { taxYear } = useStore();
     const taxService = useTaxService();
 
@@ -86,21 +86,39 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number): Use
                     endTs
                 );
 
-                if (p1Rental > 0 || p2Rental > 0 || p1Expenses > 0 || p2Expenses > 0) {
+                let finalP1Rental = p1Rental;
+                let finalP2Rental = p2Rental;
+                let finalP1Expenses = p1Expenses;
+                let finalP2Expenses = p2Expenses;
+
+                if (propertySplits && propertySplits[property.id] !== undefined) {
+                    const splitP1 = propertySplits[property.id];
+                    const splitP2 = 100 - splitP1;
+
+                    const totalRental = p1Rental + p2Rental;
+                    const totalExpense = p1Expenses + p2Expenses;
+
+                    finalP1Rental = totalRental * (splitP1 / 100);
+                    finalP2Rental = totalRental * (splitP2 / 100);
+                    finalP1Expenses = totalExpense * (splitP1 / 100);
+                    finalP2Expenses = totalExpense * (splitP2 / 100);
+                }
+
+                if (finalP1Rental > 0 || finalP2Rental > 0 || finalP1Expenses > 0 || finalP2Expenses > 0) {
                     propertyBreakdowns.push({
                         propertyId: property.id,
                         propertyName: property.name,
-                        p1Income: p1Rental,
-                        p2Income: p2Rental,
-                        p1Expense: p1Expenses,
-                        p2Expense: p2Expenses
+                        p1Income: finalP1Rental,
+                        p2Income: finalP2Rental,
+                        p1Expense: finalP1Expenses,
+                        p2Expense: finalP2Expenses
                     });
                 }
 
-                p1Incomes.propertyIncome += p1Rental;
-                p2Incomes.propertyIncome += p2Rental;
-                p1Incomes.propertyExpense += p1Expenses;
-                p2Incomes.propertyExpense += p2Expenses;
+                p1Incomes.propertyIncome += finalP1Rental;
+                p2Incomes.propertyIncome += finalP2Rental;
+                p1Incomes.propertyExpense += finalP1Expenses;
+                p2Incomes.propertyExpense += finalP2Expenses;
             });
         } else if (dbPropertyIncomes && dbPropertyOwnerships && dbPropertyExpenses) {
             // Fallback if no dbProperties loaded yet but we have the raw incomes/expenses
@@ -236,5 +254,5 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number): Use
             isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyExpenses && !!dbPropertyOwnerships
         };
 
-    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear, movableInterestP1Percent]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear, movableInterestP1Percent, propertySplits]);
 }

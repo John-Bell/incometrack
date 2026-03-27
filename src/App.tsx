@@ -29,6 +29,7 @@ import { EditPropertyIncomePage } from '@/pages/EditPropertyIncomePage';
 import { PropertyOwnershipsPage } from '@/pages/PropertyOwnershipsPage';
 import { AddPropertyOwnershipPage } from '@/pages/AddPropertyOwnershipPage';
 import { EditPropertyOwnershipPage } from '@/pages/EditPropertyOwnershipPage';
+import { SimulatorPage } from '@/pages/SimulatorPage';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
 import { dbHooks } from '@/lib/db';
@@ -88,6 +89,7 @@ function AppRoutes() {
       <Route path="/property-ownerships" element={<PropertyOwnershipsPage />} />
       <Route path="/property-ownerships/add" element={<AddPropertyOwnershipPage />} />
       <Route path="/property-ownerships/edit/:id" element={<EditPropertyOwnershipPage />} />
+      <Route path="/simulator" element={<SimulatorPage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
 

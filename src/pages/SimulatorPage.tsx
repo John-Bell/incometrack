@@ -15,6 +15,7 @@ export function SimulatorPage() {
     const {
         p1Incomes, p2Incomes,
         p1TotalIncome: p1Total, p2TotalIncome: p2Total,
+        p1TaxResult, p2TaxResult,
         combinedNet,
         propertyBreakdowns,
         p1MovableInterest,
@@ -109,6 +110,11 @@ export function SimulatorPage() {
                                     <td className="px-4 py-4">Total Gross</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p1Total)}</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p2Total)}</td>
+                                </tr>
+                                <tr className="border-t border-slate-200 dark:border-primary/10">
+                                    <td className="px-4 py-4 font-medium text-slate-500">Tax</td>
+                                    <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1TaxResult?.totalTax || 0)}</td>
+                                    <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2TaxResult?.totalTax || 0)}</td>
                                 </tr>
                                 <tr className="border-t border-slate-200 dark:border-primary/10">
                                     <td className="px-4 py-4 text-primary">Combined Net</td>

@@ -1,63 +1,25 @@
+import React from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
 import { useStore } from '@/store/useStore';
-import { useTaxCalculations } from '@/hooks/useTaxCalculations';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
-import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
-import { getTaxYearDates } from '@/constants/taxConstants';
+import { useSimulatorCalculations } from '@/hooks/useSimulatorCalculations';
 
 export function SimulatorPage() {
-    const { profile, taxYear } = useStore();
+    const { profile } = useStore();
     const p1Name = profile?.partner1Name || 'Person 1';
     const p2Name = profile?.partner2Name || 'Person 2';
-
-    const dbAccounts = useLiveQuery(() => db.accounts.toArray());
-    const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.toArray());
-
-    const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
-
-    let p1MovableInterest = 0;
-    let p2MovableInterest = 0;
-
-    if (dbAccounts) {
-        const allAccruals = dbInterestAccruals || [];
-        dbAccounts.forEach(acc => {
-            // 1. Exclude tax-free accounts
-            const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds', 'DC Pension'];
-            if (acc.category && taxFreeCategories.includes(acc.category as string)) {
-                return;
-            }
-
-            // 2. Exclude accounts with annual or at_maturity payouts, or specific payout dates
-            const frequency = acc.interestPayoutFrequency || 'monthly';
-            const payoutTs = acc.interestPayoutDate;
-
-            if (frequency === 'annually' || frequency === 'at_maturity' || payoutTs) {
-                return;
-            }
-
-            const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-            const amount = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
-
-            if (acc.ownerId === 'person1') p1MovableInterest += amount;
-            else if (acc.ownerId === 'person2') p2MovableInterest += amount;
-            else if (acc.ownerId === 'joint') {
-                p1MovableInterest += amount / 2;
-                p2MovableInterest += amount / 2;
-            }
-        });
-    }
-
-    const totalMovableInterest = p1MovableInterest + p2MovableInterest;
 
     const {
         p1Incomes, p2Incomes,
         p1TotalIncome: p1Total, p2TotalIncome: p2Total,
-        combinedNet
-    } = useTaxCalculations();
+        combinedNet,
+        propertyBreakdowns,
+        p1MovableInterest,
+        p2MovableInterest,
+        totalMovableInterest
+    } = useSimulatorCalculations();
 
     const formatCurr = (v: number) => `£${v.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
 
@@ -101,16 +63,35 @@ export function SimulatorPage() {
                                     <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.pension)}</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p2Incomes.pension)}</td>
                                 </tr>
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Rental Income</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.propertyIncome)}</td>
-                                    <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.propertyIncome)}</td>
-                                </tr>
-                                <tr>
-                                    <td className="px-4 py-4 font-medium">Rental Expenses</td>
-                                    <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1Incomes.propertyExpense)}</td>
-                                    <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2Incomes.propertyExpense)}</td>
-                                </tr>
+                                {propertyBreakdowns.length > 0 ? (
+                                    propertyBreakdowns.map((prop) => (
+                                        <React.Fragment key={prop.propertyId}>
+                                            <tr>
+                                                <td className="px-4 py-4 font-medium">{prop.propertyName} Income</td>
+                                                <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(prop.p1Income)}</td>
+                                                <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(prop.p2Income)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="px-4 py-4 font-medium">{prop.propertyName} Expenses</td>
+                                                <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(prop.p1Expense)}</td>
+                                                <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(prop.p2Expense)}</td>
+                                            </tr>
+                                        </React.Fragment>
+                                    ))
+                                ) : (
+                                    <>
+                                        <tr>
+                                            <td className="px-4 py-4 font-medium">Rental Income</td>
+                                            <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p1Incomes.propertyIncome)}</td>
+                                            <td className="px-4 py-4 text-right text-primary font-bold">{formatCurr(p2Incomes.propertyIncome)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="px-4 py-4 font-medium">Rental Expenses</td>
+                                            <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1Incomes.propertyExpense)}</td>
+                                            <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2Incomes.propertyExpense)}</td>
+                                        </tr>
+                                    </>
+                                )}
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Dividends</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.dividends)}</td>

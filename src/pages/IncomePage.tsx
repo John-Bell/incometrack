@@ -105,6 +105,13 @@ export function IncomePage() {
                                     <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p1Incomes.propertyExpense)}</td>
                                     <td className="px-4 py-4 text-right text-red-500 font-bold">{formatCurr(p2Incomes.propertyExpense)}</td>
                                 </tr>
+                                {(p1TaxResult?.propertyAllowanceApplied || p2TaxResult?.propertyAllowanceApplied) && (
+                                    <tr className="bg-slate-50/50 dark:bg-primary/5 text-xs text-slate-500 dark:text-primary/60 italic">
+                                        <td className="px-4 py-2"></td>
+                                        <td className="px-4 py-2 text-right">{p1TaxResult?.propertyAllowanceApplied ? 'Property Allowance Applied' : ''}</td>
+                                        <td className="px-4 py-2 text-right">{p2TaxResult?.propertyAllowanceApplied ? 'Property Allowance Applied' : ''}</td>
+                                    </tr>
+                                )}
                                 <tr>
                                     <td className="px-4 py-4 font-medium">Dividends</td>
                                     <td className="px-4 py-4 text-right">{formatCurr(p1Incomes.dividends)}</td>

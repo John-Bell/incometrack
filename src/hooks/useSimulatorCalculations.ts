@@ -199,6 +199,7 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
         const p1Input: TaxCalculationInput = {
             salary: p1Incomes.employment,
             rentalIncome: p1NetPropertyIncome,
+            propertyExpenses: p1Incomes.propertyExpense,
             pensionIncome: p1Incomes.pension,
             untaxedInterest: p1Incomes.interest,
             dividends: p1Incomes.dividends,
@@ -209,6 +210,7 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
         const p2Input: TaxCalculationInput = {
             salary: p2Incomes.employment,
             rentalIncome: p2NetPropertyIncome,
+            propertyExpenses: p2Incomes.propertyExpense,
             pensionIncome: p2Incomes.pension,
             untaxedInterest: p2Incomes.interest,
             dividends: p2Incomes.dividends,

@@ -34,8 +34,7 @@ export class TaxCalculationService {
 
     // Calculate personal allowance
     const personalAllowance = this.calculatePersonalAllowance(
-      this.getAdjustedNetIncome(input),
-      taxConstants
+      this.getAdjustedNetIncome(incomeBreakdown, input), taxConstants
     );
 
     // Calculate extended basic rate band
@@ -49,8 +48,6 @@ export class TaxCalculationService {
     const generalIncome = incomeBreakdown.generalIncome;
     const savingsIncome = incomeBreakdown.savingsIncome;
     const dividendIncome = incomeBreakdown.dividendIncome;
-    const rentalIncome = incomeBreakdown.rentalIncome;
-
 
     // Apply personal allowance to general income first
     const generalIncomeAfterPA = paTracker.applyTo(generalIncome);
@@ -65,7 +62,7 @@ export class TaxCalculationService {
 
     // --- NEW PROPERTY WIRING ---
     const propertyResult = this.propertyTaxService.calculatePropertyTax(
-      rentalIncome,
+      input.rentalIncome,
       input.propertyExpenses ?? 0,
       paTracker,  // Pass the PA tracker so it can use leftover allowance
       brbTracker, // Pass the BRB tracker so it knows what band we are in
@@ -102,7 +99,7 @@ export class TaxCalculationService {
 
     // Calculate totals
     const totalTax = taxByBand.reduce((sum, band) => sum + band.tax, 0);
-    const totalIncome = this.getTotalIncome(input);
+    const totalIncome = this.getTotalIncome(incomeBreakdown, input);
     const effectiveTaxRate = totalIncome > 0 ? totalTax / totalIncome : 0;
 
     return {
@@ -124,10 +121,16 @@ export class TaxCalculationService {
     };
   }
 
-  private calculateIncomeBreakdown(input: TaxCalculationInput): IncomeBreakdown {
+  private calculateIncomeBreakdown(input: TaxCalculationInput, taxYear?: string): IncomeBreakdown {
+    const { taxablePropertyIncome } = this.propertyTaxService.calculateNetPropertyIncome(
+      input.rentalIncome,
+      input.propertyExpenses,
+      taxYear
+    );
+
     return {
       generalIncome: input.salary + input.pensionIncome,
-      rentalIncome: input.rentalIncome,
+      rentalIncome: taxablePropertyIncome, // <-- Safe to use: This is now the true Net Profit
       savingsIncome: input.untaxedInterest,
       dividendIncome: input.dividends,
     };
@@ -143,18 +146,17 @@ export class TaxCalculationService {
     return Math.max(0, taxConstants.StandardPersonalAllowance - reduction);
   }
 
-  private getTotalIncome(input: TaxCalculationInput): number {
+  private getTotalIncome(breakdown: IncomeBreakdown, input: TaxCalculationInput): number {
     return (
-      input.salary +
-      input.rentalIncome +
-      input.pensionIncome +
-      input.untaxedInterest +
-      input.dividends +
+      breakdown.generalIncome +
+      breakdown.rentalIncome + // <-- FIX: Now using the netted breakdown figure
+      breakdown.savingsIncome +
+      breakdown.dividendIncome +
       (input.otherIncome ?? 0)
     );
   }
 
-  private getAdjustedNetIncome(input: TaxCalculationInput): number {
-    return this.getTotalIncome(input) - input.directPensionContrib;
+  private getAdjustedNetIncome(breakdown: IncomeBreakdown, input: TaxCalculationInput): number {
+    return this.getTotalIncome(breakdown, input) - input.directPensionContrib;
   }
 }

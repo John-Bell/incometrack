@@ -23,7 +23,7 @@ describe('TaxCalculationService', () => {
     expect(result.personalAllowance).toBe(constants.StandardPersonalAllowance);
     expect(result.brbExtended).toBe(constants.BasicRateBand);
     expect(result.incomeBreakdown.generalIncome).toBe(30000);
-    expect(result.incomeBreakdown.rentalIncome).toBe(5000);
+    expect(result.incomeBreakdown.rentalIncome).toBe(4000);
     expect(result.incomeBreakdown.savingsIncome).toBe(1000);
     expect(result.incomeBreakdown.dividendIncome).toBe(500);
     const generalTax = result.taxByBand.filter(b => b.type === constants.GeneralBandType).reduce((sum, b) => sum + b.tax, 0);
@@ -116,7 +116,7 @@ describe('TaxCalculationService', () => {
 
     // 1. Updated Income Breakdown
     expect(result.incomeBreakdown.generalIncome).toBe(0); // Was 25000
-    expect(result.incomeBreakdown.rentalIncome).toBe(25000); // NEW
+    expect(result.incomeBreakdown.rentalIncome).toBe(24000); // NEW
     expect(result.incomeBreakdown.savingsIncome).toBe(2000);
     expect(result.incomeBreakdown.dividendIncome).toBe(20000);
 

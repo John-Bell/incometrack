@@ -25,6 +25,8 @@ export type TaxYearConstants = {
   RentalHigherRate: number;
   RentalAdditionalRate: number;
 
+  PropertyAllowance: number;
+
   SavingsAllowanceBasic: number;
   SavingsAllowanceHigher: number;
   SavingsAllowanceAdditional: number;
@@ -35,6 +37,7 @@ export type TaxYearConstants = {
   GeneralBandType: string;
   SavingsBandType: string;
   DividendsBandType: string;
+  PropertyBandType: string;
 
   AllowanceBand: string;
   BasicBand: string;
@@ -98,6 +101,8 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     RentalHigherRate: 0.4,
     RentalAdditionalRate: 0.45,
 
+    PropertyAllowance: 1000,
+
     SavingsAllowanceBasic: 1000,
     SavingsAllowanceHigher: 1000,
     SavingsAllowanceAdditional: 0,
@@ -108,6 +113,7 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     GeneralBandType: 'General',
     SavingsBandType: 'Savings',
     DividendsBandType: 'Dividends',
+    PropertyBandType: 'Property',
 
     AllowanceBand: 'Allowance',
     BasicBand: 'Basic',
@@ -142,6 +148,8 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     RentalHigherRate: 0.4,
     RentalAdditionalRate: 0.45,
 
+    PropertyAllowance: 1000,
+
     SavingsAllowanceBasic: 1000,
     SavingsAllowanceHigher: 500,
     SavingsAllowanceAdditional: 0,
@@ -152,6 +160,7 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     GeneralBandType: 'General',
     SavingsBandType: 'Savings',
     DividendsBandType: 'Dividends',
+    PropertyBandType: 'Property',
 
     AllowanceBand: 'Allowance',
     BasicBand: 'Basic',
@@ -159,6 +168,100 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     AdditionalBand: 'Additional',
     StartingBand: 'Starting',
   },
+  '2026-2027': {
+    StandardPersonalAllowance: 12570,
+    PersonalAllowanceThreshold: 100000,
+    PersonalAllowanceRemovalThreshold: 125140,
+    PersonalAllowanceReductionRate: 0.5,
+
+    BasicRateBand: 37700,
+    BasicRate: 0.2,
+
+    HigherRateBand: 125140,
+    HigherRate: 0.4,
+
+    AdditionalRate: 0.45,
+
+    DividendAllowance: 500,
+    DividendBasicRate: 0.1075,
+    DividendHigherRate: 0.3575,
+    DividendAdditionalRate: 0.3935,
+
+    SavingsBasicRate: 0.2,
+    SavingsHigherRate: 0.4,
+    SavingsAdditionalRate: 0.45,
+
+    RentalBasicRate: 0.2,
+    RentalHigherRate: 0.4,
+    RentalAdditionalRate: 0.45,
+
+    PropertyAllowance: 1000,
+
+    SavingsAllowanceBasic: 1000,
+    SavingsAllowanceHigher: 500,
+    SavingsAllowanceAdditional: 0,
+
+    StartingRateForSavingsThreshold: 5000,
+    StartingRateForSavings: 0,
+
+    GeneralBandType: 'General',
+    SavingsBandType: 'Savings',
+    DividendsBandType: 'Dividends',
+    PropertyBandType: 'Property',
+
+    AllowanceBand: 'Allowance',
+    BasicBand: 'Basic',
+    HigherBand: 'Higher',
+    AdditionalBand: 'Additional',
+    StartingBand: 'Starting',
+  },
+  '2027-2028': {
+    StandardPersonalAllowance: 12570,
+    PersonalAllowanceThreshold: 100000,
+    PersonalAllowanceRemovalThreshold: 125140,
+    PersonalAllowanceReductionRate: 0.5,
+
+    BasicRateBand: 37700,
+    BasicRate: 0.2,
+
+    HigherRateBand: 125140,
+    HigherRate: 0.4,
+
+    AdditionalRate: 0.45,
+
+    DividendAllowance: 500,
+    DividendBasicRate: 0.1075,
+    DividendHigherRate: 0.3575,
+    DividendAdditionalRate: 0.3935,
+
+    SavingsBasicRate: 0.22,
+    SavingsHigherRate: 0.42,
+    SavingsAdditionalRate: 0.47,
+
+    RentalBasicRate: 0.22,
+    RentalHigherRate: 0.42,
+    RentalAdditionalRate: 0.47,
+
+    PropertyAllowance: 1000,
+
+    SavingsAllowanceBasic: 1000,
+    SavingsAllowanceHigher: 500,
+    SavingsAllowanceAdditional: 0,
+
+    StartingRateForSavingsThreshold: 5000,
+    StartingRateForSavings: 0,
+
+    GeneralBandType: 'General',
+    SavingsBandType: 'Savings',
+    DividendsBandType: 'Dividends',
+    PropertyBandType: 'Property',
+
+    AllowanceBand: 'Allowance',
+    BasicBand: 'Basic',
+    HigherBand: 'Higher',
+    AdditionalBand: 'Additional',
+    StartingBand: 'Starting',
+  }
 };
 
 const getCurrentTaxYearKey = (): string => {

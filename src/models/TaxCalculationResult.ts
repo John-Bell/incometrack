@@ -2,6 +2,7 @@ export interface IncomeBreakdown {
   generalIncome: number;
   savingsIncome: number;
   dividendIncome: number;
+  rentalIncome: number;
 }
 
 export interface TaxCalculationResult {
@@ -13,4 +14,5 @@ export interface TaxCalculationResult {
   effectiveTaxRate: number;
   // Optionally, add taxableIncome if needed
   taxableIncome?: number;
+  propertyAllowanceApplied: boolean;
 }

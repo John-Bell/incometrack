@@ -13,6 +13,7 @@ describe('TaxCalculationService', () => {
     const input: TaxCalculationInput = {
       salary: 30000,
       rentalIncome: 5000,
+      propertyExpenses: 0,
       pensionIncome: 0,
       untaxedInterest: 1000,
       dividends: 500,
@@ -21,11 +22,14 @@ describe('TaxCalculationService', () => {
     const result = service.calculateTax(input, CURRENT_TAX_YEAR);
     expect(result.personalAllowance).toBe(constants.StandardPersonalAllowance);
     expect(result.brbExtended).toBe(constants.BasicRateBand);
-    expect(result.incomeBreakdown.generalIncome).toBe(35000);
+    expect(result.incomeBreakdown.generalIncome).toBe(30000);
+    expect(result.incomeBreakdown.rentalIncome).toBe(5000);
     expect(result.incomeBreakdown.savingsIncome).toBe(1000);
     expect(result.incomeBreakdown.dividendIncome).toBe(500);
     const generalTax = result.taxByBand.filter(b => b.type === constants.GeneralBandType).reduce((sum, b) => sum + b.tax, 0);
-    expect(generalTax).toBeCloseTo(4486, 0);
+    expect(generalTax).toBeCloseTo(3486, 0);
+    const rentalTax = result.taxByBand.filter(b => b.type === constants.PropertyBandType).reduce((sum, b) => sum + b.tax, 0);
+    expect(rentalTax).toBeCloseTo(800, 0);
     const savingsTax = result.taxByBand.filter(b => b.type === constants.SavingsBandType).reduce((sum, b) => sum + b.tax, 0);
     expect(savingsTax).toBe(0);
     const dividendTax = result.taxByBand.filter(b => b.type === constants.DividendsBandType).reduce((sum, b) => sum + b.tax, 0);
@@ -38,6 +42,7 @@ describe('TaxCalculationService', () => {
     const input: TaxCalculationInput = {
       salary: 110000,
       rentalIncome: 0,
+      propertyExpenses: 0,
       pensionIncome: 0,
       untaxedInterest: 0,
       dividends: 0,
@@ -54,6 +59,7 @@ describe('TaxCalculationService', () => {
     const input: TaxCalculationInput = {
       salary: 150000,
       rentalIncome: 0,
+      propertyExpenses: 0,
       pensionIncome: 0,
       untaxedInterest: 5000,
       dividends: 10000,
@@ -79,6 +85,7 @@ describe('TaxCalculationService', () => {
     const input: TaxCalculationInput = {
       salary: 110270,
       rentalIncome: 0,
+      propertyExpenses: 0,
       pensionIncome: 0,
       untaxedInterest: 0,
       dividends: 0,
@@ -99,22 +106,40 @@ describe('TaxCalculationService', () => {
     const input: TaxCalculationInput = {
       salary: 0,
       rentalIncome: 25000,
+      propertyExpenses: 0,
       pensionIncome: 0,
       untaxedInterest: 2000,
       dividends: 20000,
       directPensionContrib: 5000,
     };
     const result = service.calculateTax(input, CURRENT_TAX_YEAR);
-    expect(result.incomeBreakdown.generalIncome).toBe(25000);
+
+    // 1. Updated Income Breakdown
+    expect(result.incomeBreakdown.generalIncome).toBe(0); // Was 25000
+    expect(result.incomeBreakdown.rentalIncome).toBe(25000); // NEW
     expect(result.incomeBreakdown.savingsIncome).toBe(2000);
     expect(result.incomeBreakdown.dividendIncome).toBe(20000);
+
+    // 2. Extended BRB check remains exactly the same
     expect(result.brbExtended).toBe(constants.BasicRateBand + 5000);
+
+    // 3. General Tax is now exactly 0 because there is no salary/pension
     const generalTax = result.taxByBand.filter(b => b.type === constants.GeneralBandType).reduce((sum, b) => sum + b.tax, 0);
-    expect(generalTax).toBeGreaterThan(0);
+    expect(generalTax).toBe(0); // Was toBeGreaterThan(0)
+
+    // 4. Rental Tax takes over the previous "general" tax burden
+    const rentalTax = result.taxByBand.filter(b => b.type === constants.PropertyBandType).reduce((sum, b) => sum + b.tax, 0);
+    expect(rentalTax).toBeGreaterThan(0); // NEW
+
+    // 5. Savings and Dividends are still pushed into taxable territory
     const savingsTax = result.taxByBand.filter(b => b.type === constants.SavingsBandType).reduce((sum, b) => sum + b.tax, 0);
     expect(savingsTax).toBeGreaterThan(0);
+
     const dividendTax = result.taxByBand.filter(b => b.type === constants.DividendsBandType).reduce((sum, b) => sum + b.tax, 0);
     expect(dividendTax).toBeGreaterThan(0);
+
+    // 6. Optional: Verify the allowance logic worked on the £25,000!
+    expect(result.propertyAllowanceApplied).toBe(true);
   });
 
   it('uses the supplied tax year when calculating tax', () => {
@@ -125,6 +150,7 @@ describe('TaxCalculationService', () => {
     const commonInput: TaxCalculationInput = {
       salary: 0,
       rentalIncome: 0,
+      propertyExpenses: 0,
       pensionIncome: 0,
       untaxedInterest: 0,
       dividends: 2000,

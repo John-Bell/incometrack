@@ -1,6 +1,7 @@
 export interface TaxCalculationInput {
   salary: number;
   rentalIncome: number;
+  propertyExpenses: number,
   pensionIncome: number;
   untaxedInterest: number;
   dividends: number;

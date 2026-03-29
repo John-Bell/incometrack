@@ -7,12 +7,14 @@ import type { TaxBandResult } from '../models/TaxBandResult';
 import { GeneralTaxService } from './GeneralTaxService';
 import { SavingsTaxService } from './SavingsTaxService';
 import { DividendTaxService } from './DividendTaxService';
+import { PropertyTaxService } from './PropertyTaxService';
 
 export class TaxCalculationService {
   private taxRules: TaxRulesByYear;
   private generalTaxService: GeneralTaxService;
   private savingsTaxService: SavingsTaxService;
   private dividendTaxService: DividendTaxService;
+  private propertyTaxService: PropertyTaxService;
   private taxYear?: string;
 
   constructor(taxRules: TaxRulesByYear, taxYear?: string) {
@@ -21,6 +23,7 @@ export class TaxCalculationService {
     this.generalTaxService = new GeneralTaxService(taxRules, taxYear);
     this.savingsTaxService = new SavingsTaxService(taxRules, taxYear);
     this.dividendTaxService = new DividendTaxService(taxRules, taxYear);
+    this.propertyTaxService = new PropertyTaxService(taxRules, taxYear);
   }
 
   calculateTax(input: TaxCalculationInput, taxYear?: string): TaxCalculationResult {
@@ -46,6 +49,8 @@ export class TaxCalculationService {
     const generalIncome = incomeBreakdown.generalIncome;
     const savingsIncome = incomeBreakdown.savingsIncome;
     const dividendIncome = incomeBreakdown.dividendIncome;
+    const rentalIncome = incomeBreakdown.rentalIncome;
+
 
     // Apply personal allowance to general income first
     const generalIncomeAfterPA = paTracker.applyTo(generalIncome);
@@ -58,14 +63,30 @@ export class TaxCalculationService {
     );
     taxByBand.push(...generalBands);
 
+    // --- NEW PROPERTY WIRING ---
+    const propertyResult = this.propertyTaxService.calculatePropertyTax(
+      rentalIncome,
+      input.propertyExpenses ?? 0,
+      paTracker,  // Pass the PA tracker so it can use leftover allowance
+      brbTracker, // Pass the BRB tracker so it knows what band we are in
+      resolvedTaxYear
+    );
+    taxByBand.push(...propertyResult.taxBands);
+
+    // --- CRITICAL SAVINGS FIX ---
+    // Combine bands so Savings knows if Property pushed the user into a higher rate
+    const combinedNonSavingsBands = [...generalBands, ...propertyResult.taxBands];
+    // Combine income so the Savings Starting Rate threshold calculates correctly
+    const totalGrossNonSavingsIncome = generalIncome + propertyResult.taxablePropertyIncome;
+
     // Calculate savings tax (pass generalBands)
     taxByBand.push(
       ...this.savingsTaxService.calculateSavingsTax(
         savingsIncome,
-        generalIncome,
+        totalGrossNonSavingsIncome, // Use combined total here!
         personalAllowance,
         brbTracker,
-        generalBands,
+        combinedNonSavingsBands,    // Use combined bands here!
         resolvedTaxYear
       )
     );
@@ -94,16 +115,19 @@ export class TaxCalculationService {
       taxableIncome: Math.max(
         0,
         incomeBreakdown.generalIncome +
-          incomeBreakdown.savingsIncome +
-          incomeBreakdown.dividendIncome -
-          personalAllowance
+        incomeBreakdown.rentalIncome +
+        incomeBreakdown.savingsIncome +
+        incomeBreakdown.dividendIncome -
+        personalAllowance
       ),
+      propertyAllowanceApplied: propertyResult.propertyAllowanceApplied
     };
   }
 
   private calculateIncomeBreakdown(input: TaxCalculationInput): IncomeBreakdown {
     return {
-      generalIncome: input.salary + input.rentalIncome + input.pensionIncome,
+      generalIncome: input.salary + input.pensionIncome,
+      rentalIncome: input.rentalIncome,
       savingsIncome: input.untaxedInterest,
       dividendIncome: input.dividends,
     };

@@ -1,4 +1,4 @@
-import { db, dbHooks } from '@/lib/db';
+import { db, dbHooks, getSanitizedDbData } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 
 /**
@@ -231,7 +231,6 @@ export const remoteSyncService = {
             // 3. Extract full database and 4. Encrypt & Push (If Needed)
             if (hasLocalChanges || serverLastUpdated === 0) {
                 // 3. Extract full database, including numeric sanitization for strict clients
-                const { getSanitizedDbData } = await import('@/lib/db');
                 const allData = await getSanitizedDbData();
 
                 // 4. Encrypt & Push

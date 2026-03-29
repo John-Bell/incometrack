@@ -12,6 +12,28 @@ export class PropertyTaxService {
         this.taxYear = taxYear;
     }
 
+    calculateNetPropertyIncome(
+        rentalIncome: number,
+        propertyExpenses: number = 0,
+        taxYear?: string
+    ): { taxablePropertyIncome: number; propertyAllowanceApplied: boolean } {
+        const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
+        const taxConstants = this.taxRules[resolvedTaxYear];
+
+        let taxablePropertyIncome = 0;
+        let propertyAllowanceApplied = false;
+
+        if (rentalIncome > 0 && propertyExpenses < taxConstants.PropertyAllowance) {
+            const allowanceApplied = Math.min(rentalIncome, taxConstants.PropertyAllowance);
+            taxablePropertyIncome = rentalIncome - allowanceApplied;
+            propertyAllowanceApplied = true;
+        } else {
+            taxablePropertyIncome = Math.max(0, rentalIncome - propertyExpenses);
+        }
+
+        return { taxablePropertyIncome, propertyAllowanceApplied };
+    }
+
     calculatePropertyTax(
         rentalIncome: number,
         propertyExpenses: number = 0,
@@ -23,17 +45,11 @@ export class PropertyTaxService {
         const taxConstants = this.taxRules[resolvedTaxYear];
         const taxBands: TaxBandResult[] = [];
 
-        let taxablePropertyIncome = 0;
-        let propertyAllowanceApplied = false;
-
-        // 1. Determine Deductions (Allowance vs Actual Expenses)
-        if (rentalIncome > 0 && propertyExpenses < taxConstants.PropertyAllowance) {
-            const allowanceApplied = Math.min(rentalIncome, taxConstants.PropertyAllowance);
-            taxablePropertyIncome = rentalIncome - allowanceApplied;
-            propertyAllowanceApplied = true;
-        } else {
-            taxablePropertyIncome = Math.max(0, rentalIncome - propertyExpenses);
-        }
+        const { taxablePropertyIncome, propertyAllowanceApplied } = this.calculateNetPropertyIncome(
+            rentalIncome,
+            propertyExpenses,
+            taxYear
+        );
 
         if (taxablePropertyIncome <= 0) {
             return { taxBands, propertyAllowanceApplied, taxablePropertyIncome };

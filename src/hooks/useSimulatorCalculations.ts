@@ -193,12 +193,9 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
         p1Incomes.interest += actualP1Movable;
         p2Incomes.interest += actualP2Movable;
 
-        const p1NetPropertyIncome = Math.max(0, p1Incomes.propertyIncome - p1Incomes.propertyExpense);
-        const p2NetPropertyIncome = Math.max(0, p2Incomes.propertyIncome - p2Incomes.propertyExpense);
-
         const p1Input: TaxCalculationInput = {
             salary: p1Incomes.employment,
-            rentalIncome: p1NetPropertyIncome,
+            rentalIncome: p1Incomes.propertyIncome,
             propertyExpenses: p1Incomes.propertyExpense,
             pensionIncome: p1Incomes.pension,
             untaxedInterest: p1Incomes.interest,
@@ -209,7 +206,7 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
 
         const p2Input: TaxCalculationInput = {
             salary: p2Incomes.employment,
-            rentalIncome: p2NetPropertyIncome,
+            rentalIncome: p2Incomes.propertyIncome,
             propertyExpenses: p2Incomes.propertyExpense,
             pensionIncome: p2Incomes.pension,
             untaxedInterest: p2Incomes.interest,
@@ -226,8 +223,8 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
             p2TaxResult = taxService.calculateTax(p2Input, taxYear || undefined);
         }
 
-        const p1TotalIncome = p1Incomes.employment + p1Incomes.pension + p1NetPropertyIncome + p1Incomes.dividends + p1Incomes.interest;
-        const p2TotalIncome = p2Incomes.employment + p2Incomes.pension + p2NetPropertyIncome + p2Incomes.dividends + p2Incomes.interest;
+        const p1TotalIncome = p1Incomes.employment + p1Incomes.pension + p1Incomes.propertyIncome + p1Incomes.dividends + p1Incomes.interest;
+        const p2TotalIncome = p2Incomes.employment + p2Incomes.pension + p2Incomes.propertyIncome + p2Incomes.dividends + p2Incomes.interest;
 
         const p1Net = p1TotalIncome - (p1TaxResult?.totalTax || 0);
         const p2Net = p2TotalIncome - (p2TaxResult?.totalTax || 0);

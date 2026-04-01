@@ -122,7 +122,6 @@ export interface InterestAccrual {
     id: string; // UUID
     accountId: string; // FK to Account.id
     date: number; // timestamp
-    balance: number; // Recorded balance at the time of accrual
     interestAccrued: number;
     updatedAt?: number;
 }
@@ -358,6 +357,29 @@ db.version(10).stores({
     propertyOwnership: '&id, propertyId, startDate, updatedAt'
 });
 
+db.version(11).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt',
+    properties: '&id, name, updatedAt',
+    propertyExpenses: '&id, propertyId, date, updatedAt',
+    propertyIncomes: '&id, propertyId, date, updatedAt',
+    propertyOwnership: '&id, propertyId, startDate, updatedAt'
+}).upgrade(tx => {
+    return tx.table('interestAccruals').toCollection().modify(accrual => {
+        delete accrual.balance;
+    });
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -415,7 +437,6 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     if (rawData.interestAccruals) {
         rawData.interestAccruals = rawData.interestAccruals.map(a => ({
             ...a,
-            balance: Number(a.balance) || 0,
             interestAccrued: Number(a.interestAccrued) || 0,
             date: Number(a.date) || 0,
         }));

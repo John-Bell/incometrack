@@ -122,7 +122,6 @@ export interface InterestAccrual {
     id: string; // UUID
     accountId: string; // FK to Account.id
     date: number; // timestamp
-    balance: number; // Recorded balance at the time of accrual
     interestAccrued: number;
     updatedAt?: number;
 }
@@ -415,7 +414,6 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     if (rawData.interestAccruals) {
         rawData.interestAccruals = rawData.interestAccruals.map(a => ({
             ...a,
-            balance: Number(a.balance) || 0,
             interestAccrued: Number(a.interestAccrued) || 0,
             date: Number(a.date) || 0,
         }));

@@ -6,7 +6,6 @@ import { DateInput } from '@/components/ui/DateInput';
 
 interface InterestLedgerProps {
     accountId: string;
-    currentBalance: number;
 }
 
 export function InterestLedger({ accountId }: InterestLedgerProps) {
@@ -15,11 +14,10 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
     // For "MONTH & YEAR" we can use a string input of "YYYY-MM"
     const [editingId, setEditingId] = useState<string | null>(null);
     const [monthYear, setMonthYear] = useState('');
-    const [balance, setBalance] = useState('');
     const [interest, setInterest] = useState('');
 
     const handleAddOrEdit = async () => {
-        if (!monthYear || !interest || !balance || !accountId) return;
+        if (!monthYear || !interest || !accountId) return;
 
         // Convert "YYYY-MM" to a Date object. Use the 1st of the month, or the end of the month?
         // Let's use the 1st of the month
@@ -30,7 +28,6 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
             await updateInterestAccrual(editingId, {
                 accountId,
                 date,
-                balance: parseFloat(balance),
                 interestAccrued: parseFloat(interest),
             });
             setEditingId(null);
@@ -38,14 +35,12 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
             await addInterestAccrual({
                 accountId,
                 date,
-                balance: parseFloat(balance),
                 interestAccrued: parseFloat(interest),
             });
         }
 
         setInterest('');
         setMonthYear('');
-        setBalance('');
     };
 
     const handleEditClick = (accrual: InterestAccrual) => {
@@ -56,7 +51,6 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
 
         setMonthYear(`${year}-${month}`);
-        setBalance(accrual.balance.toString());
         setInterest(accrual.interestAccrued.toString());
     };
 
@@ -64,7 +58,6 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
         setEditingId(null);
         setInterest('');
         setMonthYear('');
-        setBalance('');
     };
 
     const formatMonthYear = (timestamp: number) => {
@@ -79,7 +72,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                     <h3 className="font-bold text-slate-900 dark:text-slate-100 text-lg">
                         Monthly Interest History
                     </h3>
-                    <p className="text-sm text-slate-400">Track accruals and balance growth over time</p>
+                    <p className="text-sm text-slate-400">Track accruals over time</p>
                 </div>
                 <span className="bg-[#bdf3d5] text-[#139454] px-3 py-1 rounded-full text-xs font-bold tracking-wider">
                     LEDGER
@@ -89,7 +82,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
             {/* Add New Entry Form */}
             <div className="p-5 border-b border-slate-100 dark:border-primary/10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div className="sm:col-span-2 min-w-0 w-full">
+                    <div className="min-w-0 w-full">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month & Year</label>
                         <DateInput
                             type="month"
@@ -97,20 +90,6 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                             value={monthYear}
                             onChange={(e) => setMonthYear(e.target.value)}
                         />
-                    </div>
-                    <div className="min-w-0 w-full">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month-End Balance</label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">£</span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                className="w-full h-11 pl-7 pr-3 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
-                                value={balance}
-                                onChange={(e) => setBalance(e.target.value)}
-                            />
-                        </div>
                     </div>
                     <div className="min-w-0 w-full">
                         <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Interest Amount</label>
@@ -130,7 +109,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                 <div className="flex gap-2">
                     <button
                         onClick={handleAddOrEdit}
-                        disabled={!interest || !monthYear || !balance}
+                        disabled={!interest || !monthYear}
                         className="flex-1 h-12 rounded-xl bg-[#1ce86f] text-slate-900 font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Icon name={editingId ? "save" : "add_circle"} className="text-[18px]" />
@@ -162,9 +141,6 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                                 <div>
                                     <div className="font-bold text-slate-900 dark:text-slate-100 text-base mb-1">
                                         {formatMonthYear(accrual.date)}
-                                    </div>
-                                    <div className="text-sm text-slate-400">
-                                        Statement Balance: £{accrual.balance.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6">

@@ -282,7 +282,7 @@ export function EditAccountPage() {
 
                 {formData.interestTrackingMethod === 'manual' && (
                     <aside className="w-full xl:w-[calc(60%-1rem)]">
-                        <InterestLedger accountId={activeAccountId} currentBalance={parseFloat(formData.balance) || 0} />
+                        <InterestLedger accountId={activeAccountId} />
                     </aside>
                 )}
             </div>

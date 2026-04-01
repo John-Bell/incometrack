@@ -30,9 +30,9 @@ describe('calculateProjectedAnnualInterest', () => {
             });
 
             const accruals: InterestAccrual[] = [
-                { id: '1', accountId: 'acc1', date: new Date(2024, 4, 6).getTime(), interestAccrued: 10, balance: 1000 }, // May 2024
-                { id: '2', accountId: 'acc1', date: new Date(2024, 5, 6).getTime(), interestAccrued: 10, balance: 1000 }, // June 2024
-                { id: '3', accountId: 'acc1', date: new Date(2024, 6, 6).getTime(), interestAccrued: 15, balance: 1000 }, // July 2024
+                { id: '1', accountId: 'acc1', date: new Date(2024, 4, 6).getTime(), interestAccrued: 10}, // May 2024
+                { id: '2', accountId: 'acc1', date: new Date(2024, 5, 6).getTime(), interestAccrued: 10}, // June 2024
+                { id: '3', accountId: 'acc1', date: new Date(2024, 6, 6).getTime(), interestAccrued: 15}, // July 2024
             ];
 
             const result = calculateProjectedAnnualInterest(account, accruals, taxYearStartTs, taxYearEndTs);
@@ -51,10 +51,10 @@ describe('calculateProjectedAnnualInterest', () => {
             });
 
             const accruals: InterestAccrual[] = [
-                { id: '1', accountId: 'acc1', date: new Date(2024, 4, 6).getTime(), interestAccrued: 10, balance: 1000 }, // May 2024
-                { id: '2', accountId: 'acc1', date: new Date(2024, 5, 6).getTime(), interestAccrued: 10, balance: 1000 }, // June 2024
-                { id: '3', accountId: 'acc1', date: new Date(2024, 6, 6).getTime(), interestAccrued: 10, balance: 1000 }, // July 2024
-                { id: '4', accountId: 'acc1', date: new Date(2024, 7, 6).getTime(), interestAccrued: 20, balance: 1000 }, // Aug 2024
+                { id: '1', accountId: 'acc1', date: new Date(2024, 4, 6).getTime(), interestAccrued: 10}, // May 2024
+                { id: '2', accountId: 'acc1', date: new Date(2024, 5, 6).getTime(), interestAccrued: 10}, // June 2024
+                { id: '3', accountId: 'acc1', date: new Date(2024, 6, 6).getTime(), interestAccrued: 10}, // July 2024
+                { id: '4', accountId: 'acc1', date: new Date(2024, 7, 6).getTime(), interestAccrued: 20}, // Aug 2024
             ];
 
             const result = calculateProjectedAnnualInterest(account, accruals, taxYearStartTs, taxYearEndTs);
@@ -90,7 +90,7 @@ describe('calculateProjectedAnnualInterest', () => {
             });
 
             const accruals: InterestAccrual[] = [
-                { id: '1', accountId: 'acc1', date: new Date(2024, 11, 1).getTime(), interestAccrued: 60, balance: 1000 }
+                { id: '1', accountId: 'acc1', date: new Date(2024, 11, 1).getTime(), interestAccrued: 60 }
             ];
 
             const result = calculateProjectedAnnualInterest(account, accruals, taxYearStartTs, taxYearEndTs);

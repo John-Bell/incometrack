@@ -1,1 +1,36 @@
-<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" stroke="green" stroke-width="4" fill="yellow" /></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c4260" />
+      <stop offset="100%" stop-color="#0d182b" />
+    </linearGradient>
+
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e1b2f" />
+      <stop offset="100%" stop-color="#1d2f47" />
+    </linearGradient>
+
+    <linearGradient id="copperGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EAA680" />
+      <stop offset="40%" stop-color="#B87654" />
+      <stop offset="50%" stop-color="#C58564" />
+      <stop offset="100%" stop-color="#80492E" />
+    </linearGradient>
+
+    <filter id="dropShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="6" stdDeviation="5" flood-color="#050a12" flood-opacity="0.7"/>
+    </filter>
+    
+    <filter id="innerShadow">
+      <feDropShadow dx="0" dy="-3" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="115" ry="115" fill="url(#bgGradient)" />
+
+  <circle cx="256" cy="256" r="220" fill="none" stroke="#253852" stroke-width="15" filter="url(#dropShadow)" />
+
+  <circle cx="256" cy="256" r="212" fill="url(#innerGradient)" filter="url(#innerShadow)" />
+
+  <text x="256" y="325" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="200" font-weight="800" text-anchor="middle" letter-spacing="-2" fill="url(#copperGradient)" filter="url(#dropShadow)">EB</text>
+</svg>

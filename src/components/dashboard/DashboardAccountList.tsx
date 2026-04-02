@@ -73,7 +73,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                     <div>ACCOUNT / BUDGET / TRANSACTION</div>
                     <div>DATE</div>
                     <div className="text-right">BUDGETED (£)</div>
-                    <div className="text-right">SPENT (£)</div>
+                    <div className="text-right">REMAINING (£)</div>
                     <div className="text-right">ACTIONS</div>
                 </div>
 
@@ -107,7 +107,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                         Allocated: {formatCurrency(accountTotalAllocated)}
                                     </div>
                                     <div className="text-right font-bold text-slate-900 text-lg">
-                                        Total Spent: {formatCurrency(totalSpent)}
+                                        Total Remaining: {formatCurrency(accountTotalAllocated - totalSpent)}
                                     </div>
                                     <div></div>
                                 </div>
@@ -129,8 +129,8 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 <div className="text-right text-slate-700 font-medium">
                                                     {budgetTarget.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                                <div className={`text-right font-bold ${budgetTotalSpent > budgetTarget ? 'text-red-500' : 'text-[#1DAF61]'}`}>
-                                                    {budgetTotalSpent.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div className={`text-right font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-[#1DAF61]'}`}>
+                                                    {(budgetTarget - budgetTotalSpent).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
                                                 <div className="flex items-center justify-end gap-2 text-slate-400">
                                                     <div

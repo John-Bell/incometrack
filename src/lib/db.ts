@@ -3,6 +3,12 @@ import Dexie, { type EntityTable } from 'dexie';
 // Assuming you export this type from your constants file
 import type { TaxYearConstants } from '../constants/taxConstants';
 
+export interface DeletedRow {
+    id: string;
+    tableName: string;
+    deletedAt: number;
+}
+
 export interface Profile {
     id: string; // usually 'default' but can be a UUID
     name: string;
@@ -198,6 +204,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     propertyExpenses: EntityTable<PropertyExpense, 'id'>;
     propertyIncomes: EntityTable<PropertyIncome, 'id'>;
     propertyOwnership: EntityTable<PropertyOwnership, 'id'>;
+    deletedRows: EntityTable<DeletedRow, 'id'>;
 };
 
 // Schema version 1
@@ -380,6 +387,26 @@ db.version(11).stores({
     });
 });
 
+db.version(12).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt',
+    properties: '&id, name, updatedAt',
+    propertyExpenses: '&id, propertyId, date, updatedAt',
+    propertyIncomes: '&id, propertyId, date, updatedAt',
+    propertyOwnership: '&id, propertyId, startDate, updatedAt',
+    deletedRows: '&id, tableName, deletedAt'
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -515,6 +542,17 @@ tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('deleting', function (_primKey: any, _obj: any, _transaction: any) {
         if (!dbHooks.isSyncing) {
             dbHooks.onLocalChange();
+
+            const idToUse = typeof _primKey === 'string' ? _primKey : _obj?.id;
+            if (idToUse) {
+                Promise.resolve().then(() => {
+                    (db as any).deletedRows.put({
+                        id: idToUse,
+                        tableName,
+                        deletedAt: Date.now()
+                    }).catch(console.error);
+                });
+            }
         }
     });
 });

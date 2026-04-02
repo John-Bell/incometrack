@@ -59,17 +59,17 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
     return (
         <div className="w-full max-w-7xl mx-auto pt-4 px-4 pb-24">
             {sortedAccounts.length === 0 && (
-                <div className="text-center text-slate-500 py-8">
-                    <Icon name="account_balance" className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <div className="text-center text-slate-500 dark:text-slate-400 py-8">
+                    <Icon name="account_balance" className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
                     <p>No accounts configured.</p>
                     <p className="text-sm">Add accounts to see your dashboard.</p>
                 </div>
             )}
 
             {/* Desktop / Tablet Landscape View */}
-            <div className="hidden md:block w-full bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="hidden md:block w-full bg-white dark:bg-slate-900/50 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                 {/* Header Row */}
-                <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 border-b border-slate-100 bg-[#F8FAFC] text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 border-b border-slate-100 dark:border-slate-800/50 bg-[#F8FAFC] dark:bg-slate-800/50 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <div>ACCOUNT / BUDGET / TRANSACTION</div>
                     <div>DATE</div>
                     <div className="text-right">BUDGETED (£)</div>
@@ -93,20 +93,20 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                         });
 
                         return (
-                            <div key={account.id} className="flex flex-col border-b border-slate-200 last:border-0">
+                            <div key={account.id} className="flex flex-col border-b border-slate-200 dark:border-slate-800 last:border-0">
                                 {/* Account Row */}
-                                <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 items-center bg-[#F8FAFC]">
+                                <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 items-center bg-[#F8FAFC] dark:bg-slate-800/50">
                                     <div
-                                        className="font-bold text-slate-900 text-lg cursor-pointer hover:text-primary transition-colors flex items-center gap-2"
+                                        className="font-bold text-slate-900 dark:text-white text-lg cursor-pointer hover:text-primary transition-colors flex items-center gap-2"
                                         onClick={() => navigate(`/accounts/edit/${account.id}`)}
                                     >
-                                        {account.nickname || account.name} {account.last4Digits && <span className="text-slate-500 font-normal">..{account.last4Digits}</span>}
+                                        {account.nickname || account.name} {account.last4Digits && <span className="text-slate-500 dark:text-slate-400 font-normal">..{account.last4Digits}</span>}
                                     </div>
                                     <div></div>
-                                    <div className="text-right text-slate-500 font-medium">
+                                    <div className="text-right text-slate-500 dark:text-slate-400 font-medium">
                                         Allocated: {formatCurrency(accountTotalAllocated)}
                                     </div>
-                                    <div className="text-right font-bold text-slate-900 text-lg">
+                                    <div className="text-right font-bold text-slate-900 dark:text-white text-lg">
                                         Total Remaining: {formatCurrency(accountTotalAllocated - totalSpent)}
                                     </div>
                                     <div></div>
@@ -119,22 +119,22 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                     const budgetTarget = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
 
                                     return (
-                                        <div key={budget.id} className="flex flex-col border-b border-slate-100 last:border-0">
+                                        <div key={budget.id} className="flex flex-col border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                                             {/* Budget Row */}
-                                            <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 items-center hover:bg-slate-50 transition-colors">
-                                                <div className="font-bold text-slate-800 text-[15px] pl-4">
+                                            <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                                <div className="font-bold text-slate-800 dark:text-slate-200 text-[15px] pl-4">
                                                     {budget.name}
                                                 </div>
                                                 <div></div>
-                                                <div className="text-right text-slate-700 font-medium">
+                                                <div className="text-right text-slate-700 dark:text-slate-300 font-medium">
                                                     {budgetTarget.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                                <div className={`text-right font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-[#1DAF61]'}`}>
+                                                <div className={`text-right font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-[#1DAF61] dark:text-emerald-400'}`}>
                                                     {(budgetTarget - budgetTotalSpent).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                                <div className="flex items-center justify-end gap-4 text-slate-400">
+                                                <div className="flex items-center justify-end gap-4 text-slate-400 dark:text-slate-500">
                                                     <div
-                                                        className="cursor-pointer hover:text-slate-700 transition-colors p-2 -m-2"
+                                                        className="cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-2 -m-2"
                                                         onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}&from=dashboard`)}
                                                     >
                                                         <Icon name="receipt_long" className="w-5 h-5" />
@@ -152,20 +152,20 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                             {budgetTransactions.map(transaction => (
                                                 <div
                                                     key={transaction.id}
-                                                    className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-3 items-center hover:bg-slate-50 transition-colors cursor-pointer group"
+                                                    className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-3 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer group"
                                                     onClick={() => navigate(`/transactions/edit/${transaction.id}?from=dashboard`)}
                                                 >
-                                                    <div className="flex items-center gap-2 pl-8 text-slate-500 text-sm font-medium group-hover:text-primary transition-colors">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                                                    <div className="flex items-center gap-2 pl-8 text-slate-500 dark:text-slate-400 text-sm font-medium group-hover:text-primary transition-colors">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                                                         {transaction.payee}
                                                     </div>
-                                                    <div className="text-slate-500 text-sm">
+                                                    <div className="text-slate-500 dark:text-slate-400 text-sm">
                                                         {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                     </div>
-                                                    <div className="text-right text-slate-400">
+                                                    <div className="text-right text-slate-400 dark:text-slate-500">
                                                         —
                                                     </div>
-                                                    <div className="text-right text-slate-600 text-sm">
+                                                    <div className="text-right text-slate-600 dark:text-slate-300 text-sm">
                                                         {transaction.amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                     </div>
                                                     <div></div>
@@ -197,21 +197,21 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                 onClick={() => navigate(`/accounts/edit/${account.id}`)}
                             >
                                 <div>
-                                    <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                                         {account.nickname || account.name}
                                     </h2>
                                     {account.last4Digits && (
-                                        <p className="text-base text-slate-400 font-normal">
+                                        <p className="text-base text-slate-400 dark:text-slate-500 font-normal">
                                             ..{account.last4Digits}
                                         </p>
                                     )}
                                 </div>
                                 <div className="flex flex-col items-end">
-                                    <span className="text-xl font-bold text-[#1DAF61]">
+                                    <span className="text-xl font-bold text-[#1DAF61] dark:text-emerald-400">
                                         {formatCurrency(accountTotalBalance)}
                                     </span>
                                     {accountTotalAllocated > 0 && (
-                                        <span className="text-sm font-medium text-slate-500">
+                                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
                                             Allocated: {formatCurrency(accountTotalAllocated)}
                                         </span>
                                     )}
@@ -231,25 +231,25 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                         return (
                                             <div key={budget.id} className="flex flex-col gap-3 py-2">
                                                 {/* Budget Header */}
-                                                <div className="flex items-center justify-between border-b border-green-100 pb-3">
+                                                <div className="flex items-center justify-between border-b border-green-100 dark:border-emerald-900/30 pb-3">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] flex items-center justify-center text-[#1DAF61]">
+                                                        <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] dark:bg-emerald-900/20 flex items-center justify-center text-[#1DAF61] dark:text-emerald-400">
                                                             <Icon name={budget.icon || getBudgetIcon(budget.name)} className="w-6 h-6" />
                                                         </div>
-                                                        <h3 className="text-[17px] font-bold text-slate-900">{budget.name}</h3>
+                                                        <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">{budget.name}</h3>
                                                     </div>
-                                                    <div className="flex items-center gap-6 text-slate-500">
+                                                    <div className="flex items-center gap-6 text-slate-500 dark:text-slate-400">
                                                         <div
                                                             className="cursor-pointer p-2 -m-2"
                                                             onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}&from=dashboard`)}
                                                         >
-                                                            <Icon name="receipt_long" className="w-6 h-6 hover:text-slate-800 transition-colors" />
+                                                            <Icon name="receipt_long" className="w-6 h-6 hover:text-slate-800 dark:hover:text-slate-200 transition-colors" />
                                                         </div>
                                                         <div
                                                             className="cursor-pointer p-2 -m-2"
                                                             onClick={() => navigate(`/budgets/edit/${budget.id}`)}
                                                         >
-                                                            <Icon name="edit" className="w-6 h-6 hover:text-slate-800 transition-colors" />
+                                                            <Icon name="edit" className="w-6 h-6 hover:text-slate-800 dark:hover:text-slate-200 transition-colors" />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -257,12 +257,12 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 {/* Budget Summary Row */}
                                                 <div className="flex items-center justify-between px-1">
                                                     <div className="flex flex-col">
-                                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Budgeted</span>
-                                                        <span className="text-sm font-bold text-slate-700">{formatCurrency(budgetTarget)}</span>
+                                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Budgeted</span>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatCurrency(budgetTarget)}</span>
                                                     </div>
                                                     <div className="flex flex-col items-end">
-                                                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Remaining</span>
-                                                        <span className={`text-sm font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Remaining</span>
+                                                        <span className={`text-sm font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
                                                             {formatCurrency(budgetTarget - budgetTotalSpent)}
                                                         </span>
                                                     </div>
@@ -278,14 +278,14 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                                 onClick={() => navigate(`/transactions/edit/${transaction.id}?from=dashboard`)}
                                                             >
                                                                 <div className="flex flex-col gap-0.5">
-                                                                    <span className="text-base font-medium text-slate-900 group-hover:text-primary transition-colors">
+                                                                    <span className="text-base font-medium text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                                                                         {transaction.payee}
                                                                     </span>
-                                                                    <span className="text-sm text-slate-500">
+                                                                    <span className="text-sm text-slate-500 dark:text-slate-400">
                                                                         {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}
                                                                     </span>
                                                                 </div>
-                                                                <span className="text-base font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                                                <span className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                                                                     -{formatCurrency(transaction.amount)}
                                                                 </span>
                                                             </div>
@@ -297,7 +297,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                     })}
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-400 italic pl-1 mb-4">No budgets in this account.</p>
+                                <p className="text-sm text-slate-400 dark:text-slate-500 italic pl-1 mb-4">No budgets in this account.</p>
                             )}
                         </div>
                     );

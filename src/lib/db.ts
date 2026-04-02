@@ -545,13 +545,13 @@ tablesToHook.forEach(tableName => {
 
             const idToUse = typeof _primKey === 'string' ? _primKey : _obj?.id;
             if (idToUse) {
-                Promise.resolve().then(() => {
+                setTimeout(() => {
                     (db as any).deletedRows.put({
                         id: idToUse,
                         tableName,
                         deletedAt: Date.now()
                     }).catch(console.error);
-                });
+                }, 0);
             }
         }
     });

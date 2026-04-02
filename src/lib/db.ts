@@ -425,6 +425,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         propertyExpenses: await db.propertyExpenses.toArray(),
         propertyIncomes: await db.propertyIncomes.toArray(),
         propertyOwnership: await db.propertyOwnership.toArray(),
+        deletedRows: await db.deletedRows.toArray(),
     };
 
     // Sanitize common numeric fields that might have accidentally been saved as strings,
@@ -491,6 +492,13 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             startDate: Number(o.startDate) || 0,
             person1Percent: Number(o.person1Percent) || 0,
             person2Percent: Number(o.person2Percent) || 0,
+        }));
+    }
+
+    if (rawData.deletedRows) {
+        rawData.deletedRows = rawData.deletedRows.map(r => ({
+            ...r,
+            deletedAt: Number(r.deletedAt) || 0,
         }));
     }
 

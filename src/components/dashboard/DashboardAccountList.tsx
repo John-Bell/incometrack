@@ -132,15 +132,15 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 <div className={`text-right font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-[#1DAF61]'}`}>
                                                     {(budgetTarget - budgetTotalSpent).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
-                                                <div className="flex items-center justify-end gap-2 text-slate-400">
+                                                <div className="flex items-center justify-end gap-4 text-slate-400">
                                                     <div
-                                                        className="cursor-pointer hover:text-slate-700 transition-colors"
+                                                        className="cursor-pointer hover:text-slate-700 transition-colors p-2 -m-2"
                                                         onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}&from=dashboard`)}
                                                     >
                                                         <Icon name="receipt_long" className="w-5 h-5" />
                                                     </div>
                                                     <div
-                                                        className="cursor-pointer hover:text-slate-700 transition-colors"
+                                                        className="cursor-pointer hover:text-slate-700 transition-colors p-2 -m-2"
                                                         onClick={() => navigate(`/budgets/edit/${budget.id}`)}
                                                     >
                                                         <Icon name="edit" className="w-5 h-5" />
@@ -238,15 +238,15 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                         </div>
                                                         <h3 className="text-[17px] font-bold text-slate-900">{budget.name}</h3>
                                                     </div>
-                                                    <div className="flex items-center gap-4 text-slate-500">
+                                                    <div className="flex items-center gap-6 text-slate-500">
                                                         <div
-                                                            className="cursor-pointer"
+                                                            className="cursor-pointer p-2 -m-2"
                                                             onClick={() => navigate(`/transactions/add?budgetId=${budget.id}&accountId=${account.id}&from=dashboard`)}
                                                         >
                                                             <Icon name="receipt_long" className="w-6 h-6 hover:text-slate-800 transition-colors" />
                                                         </div>
                                                         <div
-                                                            className="cursor-pointer"
+                                                            className="cursor-pointer p-2 -m-2"
                                                             onClick={() => navigate(`/budgets/edit/${budget.id}`)}
                                                         >
                                                             <Icon name="edit" className="w-6 h-6 hover:text-slate-800 transition-colors" />

@@ -34,9 +34,9 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 
 export async function mergeData(cloudData: Record<string, any[]>): Promise<boolean> {
     let hasLocalChanges = false;
-    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership'];
+    const tables = ['tombstones', 'profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership'];
 
-    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.paymentMappings, db.interestAccruals, db.properties, db.propertyExpenses, db.propertyIncomes, db.propertyOwnership];
+    const tableList = [db.tombstones, db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.paymentMappings, db.interestAccruals, db.properties, db.propertyExpenses, db.propertyIncomes, db.propertyOwnership];
 
     dbHooks.isSyncing = true;
     await db.transaction('rw', tableList, async () => {
@@ -51,13 +51,53 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
                 const cloudRecord = cloudRecords[i] as any;
                 const localRecord = localMap.get(cloudRecord.id);
 
+                if (table === 'tombstones') {
+                    if (!localRecord) {
+                        await dexieTable.put(cloudRecord);
+                        const targetTable = (db as any)[cloudRecord.tableName];
+                        if (targetTable) {
+                            const existingRecord = await targetTable.get(cloudRecord.deletedId);
+                            if (existingRecord && (existingRecord.updatedAt || 0) < cloudRecord.deletedAt) {
+                                await targetTable.delete(cloudRecord.deletedId);
+                            }
+                        }
+                    } else {
+                        const localTime = (localRecord as any).deletedAt || 0;
+                        const cloudTime = (cloudRecord as any).deletedAt || 0;
+                        if (cloudTime > localTime) {
+                            await dexieTable.put(cloudRecord);
+                        } else if (localTime > cloudTime) {
+                            hasLocalChanges = true;
+                        }
+                    }
+                    localMap.delete(cloudRecord.id);
+                    continue;
+                }
+
                 if (!localRecord) {
-                    // Record exists in cloud but not local -> Add it
-                    await dexieTable.put(cloudRecord);
+                    // Record exists in cloud but not local
+                    const tombstone = await db.tombstones.where('deletedId').equals(cloudRecord.id).first();
+                    if (tombstone) {
+                        if (tombstone.deletedAt > (cloudRecord.updatedAt || 0)) {
+                            hasLocalChanges = true;
+                        } else {
+                            await dexieTable.put(cloudRecord);
+                            await db.tombstones.delete(tombstone.id);
+                            hasLocalChanges = true;
+                        }
+                    } else {
+                        await dexieTable.put(cloudRecord);
+                    }
                 } else {
                     // Record exists in both -> Compare updatedAt
                     const localTime = (localRecord as any).updatedAt || 0;
                     const cloudTime = (cloudRecord as any).updatedAt || 0;
+
+                    const tombstone = await db.tombstones.where('deletedId').equals(cloudRecord.id).first();
+                    if (tombstone && tombstone.deletedAt < Math.max(localTime, cloudTime)) {
+                        await db.tombstones.delete(tombstone.id);
+                        hasLocalChanges = true;
+                    }
 
                     if (cloudTime > localTime) {
                         // Cloud is newer -> Update local

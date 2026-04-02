@@ -3,6 +3,13 @@ import Dexie, { type EntityTable } from 'dexie';
 // Assuming you export this type from your constants file
 import type { TaxYearConstants } from '../constants/taxConstants';
 
+export interface Tombstone {
+    id: string;
+    deletedId: string;
+    tableName: string;
+    deletedAt: number;
+}
+
 export interface Profile {
     id: string; // usually 'default' but can be a UUID
     name: string;
@@ -198,6 +205,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     propertyExpenses: EntityTable<PropertyExpense, 'id'>;
     propertyIncomes: EntityTable<PropertyIncome, 'id'>;
     propertyOwnership: EntityTable<PropertyOwnership, 'id'>;
+    tombstones: EntityTable<Tombstone, 'id'>;
 };
 
 // Schema version 1
@@ -380,6 +388,26 @@ db.version(11).stores({
     });
 });
 
+db.version(12).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt',
+    properties: '&id, name, updatedAt',
+    propertyExpenses: '&id, propertyId, date, updatedAt',
+    propertyIncomes: '&id, propertyId, date, updatedAt',
+    propertyOwnership: '&id, propertyId, startDate, updatedAt',
+    tombstones: '&id, deletedId, tableName, deletedAt'
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -398,6 +426,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         propertyExpenses: await db.propertyExpenses.toArray(),
         propertyIncomes: await db.propertyIncomes.toArray(),
         propertyOwnership: await db.propertyOwnership.toArray(),
+        tombstones: await db.tombstones.toArray(),
     };
 
     // Sanitize common numeric fields that might have accidentally been saved as strings,
@@ -467,6 +496,13 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         }));
     }
 
+        if (rawData.tombstones) {
+        rawData.tombstones = rawData.tombstones.map(t => ({
+            ...t,
+            deletedAt: Number(t.deletedAt) || 0,
+        }));
+    }
+
     return rawData;
 };
 
@@ -515,6 +551,18 @@ tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('deleting', function (_primKey: any, _obj: any, _transaction: any) {
         if (!dbHooks.isSyncing) {
             dbHooks.onLocalChange();
+
+            const deletedId = typeof _primKey === 'string' ? _primKey : _obj?.id;
+            if (deletedId) {
+                setTimeout(() => {
+                    db.tombstones.put({
+                        id: crypto.randomUUID(),
+                        deletedId,
+                        tableName,
+                        deletedAt: Date.now()
+                    }).catch(console.error);
+                }, 0);
+            }
         }
     });
 });

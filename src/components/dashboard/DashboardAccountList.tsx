@@ -28,11 +28,14 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
         return budgets.filter(b => b.accountId === accountId);
     };
 
-    const getTransactionsForBudget = (budgetId: string) => {
+    const getTransactionsForBudget = (budgetId: string, frequency?: string) => {
         return transactions.filter(t => {
             if (t.type !== 'expense') return false;
             if (t.budgetId !== budgetId) return false;
             const d = new Date(t.date);
+            if (frequency === 'annual') {
+                return d.getFullYear() === currentYear;
+            }
             return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
         }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     };
@@ -83,12 +86,12 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                         const accountBudgets = getBudgetsForAccount(account.id);
                         // const accountTotalBalance = account.balance; // Removed unused variable
                         const accountTotalAllocated = accountBudgets.reduce((sum, budget) => {
-                            return sum + (budget.frequency === 'annual' ? budget.amount / 12 : budget.amount);
+                            return sum + budget.amount;
                         }, 0);
 
                         let totalSpent = 0;
                         accountBudgets.forEach(budget => {
-                            const budgetTransactions = getTransactionsForBudget(budget.id);
+                            const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
                             totalSpent += budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
                         });
 
@@ -114,9 +117,9 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
                                 {/* Budgets & Transactions */}
                                 {accountBudgets.map(budget => {
-                                    const budgetTransactions = getTransactionsForBudget(budget.id);
+                                    const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
                                     const budgetTotalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-                                    const budgetTarget = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
+                                    const budgetTarget = budget.amount;
 
                                     return (
                                         <div key={budget.id} className="flex flex-col border-b border-slate-100 dark:border-slate-800/50 last:border-0">
@@ -186,7 +189,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                     const accountBudgets = getBudgetsForAccount(account.id);
                     const accountTotalBalance = account.balance;
                     const accountTotalAllocated = accountBudgets.reduce((sum, budget) => {
-                        return sum + (budget.frequency === 'annual' ? budget.amount / 12 : budget.amount);
+                        return sum + budget.amount;
                     }, 0);
 
                     return (
@@ -222,11 +225,10 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                             {accountBudgets.length > 0 ? (
                                 <div className="flex flex-col gap-2 mt-2">
                                     {accountBudgets.map(budget => {
-                                        const budgetTransactions = getTransactionsForBudget(budget.id);
+                                        const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
                                         const budgetTotalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-                                        // Assuming monthly budget for display
-                                        const budgetTarget = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
+                                        const budgetTarget = budget.amount;
 
                                         return (
                                             <div key={budget.id} className="flex flex-col gap-3 py-2">

@@ -94,10 +94,7 @@ describe('accountCalculations', () => {
             };
             const aerAccount = createMockAccount(1000, 5); // 1000 * 0.05 = 50
 
-            // To ensure 12 months remaining, we will set the latest date to exactly 12 months before tax year end.
-            // Let's explicitly pass a tax year to calculateBlendedRate so we know the end date.
-            // Using "2024-2025" tax year -> ends April 5, 2025.
-            const taxYearEnd = new Date(2025, 3, 5, 23, 59, 59, 999); // April 5, 2025
+            // Let's explicitly pass a tax year to calculateBlendedRate so we know the dates.
             // Tax year 2024-2025: starts 2024-04-06, ends 2025-04-05
             const taxYearStart = new Date(2024, 3, 6).getTime();
 

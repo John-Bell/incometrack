@@ -98,11 +98,12 @@ describe('accountCalculations', () => {
             // Let's explicitly pass a tax year to calculateBlendedRate so we know the end date.
             // Using "2024-2025" tax year -> ends April 5, 2025.
             const taxYearEnd = new Date(2025, 3, 5, 23, 59, 59, 999); // April 5, 2025
-            const twelveMonthsPrior = new Date(taxYearEnd.getFullYear() - 1, taxYearEnd.getMonth(), taxYearEnd.getDate());
+            // Tax year 2024-2025: starts 2024-04-06, ends 2025-04-05
+            const taxYearStart = new Date(2024, 3, 6).getTime();
 
             const accruals = [
-                { id: '1', accountId: 'acc1', date: twelveMonthsPrior.getTime() - 100000, balance: 2000, interestAccrued: 10 },
-                { id: '2', accountId: 'acc1', date: twelveMonthsPrior.getTime(), balance: 2000, interestAccrued: 15 } // latest
+                { id: '1', accountId: 'acc1', date: taxYearStart + 100000, balance: 2000, interestAccrued: 10 },
+                { id: '2', accountId: 'acc1', date: taxYearStart + 200000, balance: 2000, interestAccrued: 15 } // latest
             ];
             // manualAccount actual interest so far: 10 + 15 = 25
             // no projection for manual tracking, so total manual interest: 25

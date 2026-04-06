@@ -18,9 +18,11 @@ export const calculateProjectedAnnualInterest = (
 
     // --- MANUAL TRACKING ---
     if (account.interestTrackingMethod === 'manual') {
-        return currentYearAccruals.reduce(
-            (sum, accrual) => sum + (accrual.interestAccrued || 0), 0
-        );
+        return currentYearAccruals
+            .filter(a => a.date >= taxYearStartTs && a.date <= taxYearEndTs)
+            .reduce(
+                (sum, accrual) => sum + (accrual.interestAccrued || 0), 0
+            );
     }
 
     // --- AUTOMATIC AER TRACKING ---

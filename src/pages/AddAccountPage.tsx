@@ -189,11 +189,10 @@ export function AddAccountPage() {
                             </div>
                         </div>
 
-                        {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity' || formData.interestPayoutFrequency === 'monthly') && (
+                        {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && (
                             <div className="space-y-2 fade-in min-w-0 w-full">
                                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                                    {formData.interestPayoutFrequency === 'monthly' ? 'Maturity Date (Optional)' :
-                                     formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}
+                                    {formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}
                                 </label>
                                 <div className="relative min-w-0 w-full">
                                     <DateInput

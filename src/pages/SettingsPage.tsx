@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
+import { useStore } from '@/store/useStore';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -9,6 +10,7 @@ import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 
 export function SettingsPage() {
     const navigate = useNavigate();
+    const { setTaxYear } = useStore();
 
     const settings = useLiveQuery(() => db.settings.toArray());
     const taxRules = useLiveQuery(() => db.taxRules.toArray());
@@ -27,6 +29,7 @@ export function SettingsPage() {
     const handleTaxYearChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         if (currentSettings) {
             await db.settings.update(currentSettings.id, { taxYear: e.target.value });
+            setTaxYear(e.target.value);
         }
     };
 

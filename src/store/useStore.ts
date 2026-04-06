@@ -16,6 +16,7 @@ export interface AppState {
     initStore: () => Promise<void>;
     setProfile: (profile: Profile) => Promise<void>;
     setActiveAccountsTab: (tab: string) => void;
+    setTaxYear: (taxYear: string) => void;
     setSyncStatus: (status: 'disconnected' | 'connected' | 'permission_needed') => void;
     setLastSynced: (timestamp: number | null) => void;
 }
@@ -79,6 +80,7 @@ export const useStore = create<AppState>()((set) => ({
     },
 
     setActiveAccountsTab: (tab: string) => set({ activeAccountsTab: tab }),
+    setTaxYear: (taxYear: string) => set({ taxYear }),
     setSyncStatus: (status: 'disconnected' | 'connected' | 'permission_needed') => set({ syncStatus: status }),
     setLastSynced: (timestamp: number | null) => set({ lastSynced: timestamp })
 }));

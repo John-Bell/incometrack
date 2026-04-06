@@ -44,11 +44,6 @@ export const calculateProjectedAnnualInterest = (
         return fullYearInterest;
     }
 
-    // If there IS a payout date (maturity date) that is outside the tax year,
-    // the interest should be 0 because the monthly payout or maturity doesn't occur in this year.
-    if (payoutTs < taxYearStartTs || payoutTs > taxYearEndTs) {
-        return 0;
-    }
 
     // If there IS a payout date that cuts off during the tax year (e.g. a monthly fix maturing), pro-rate the AER.
     const start = new Date(taxYearStartTs);

@@ -46,6 +46,13 @@ export function EditBudgetPage() {
 
     const handleDelete = async () => {
         if (!id) return;
+
+        const transactionCount = await db.transactions.where('budgetId').equals(id).count();
+        if (transactionCount > 0) {
+            alert('Cannot delete budget item as it has associated payments.');
+            return;
+        }
+
         await db.budgets.delete(id);
         navigate('/budgets');
     };

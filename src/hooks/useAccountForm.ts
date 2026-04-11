@@ -102,9 +102,9 @@ export function useAccountForm(accountId?: string) {
 
     const handleSave = async () => {
         if (!formData.accountName || !formData.balance || !formData.category) return;
-        if (showAER && formData.interestTrackingMethod === 'aer' && !formData.interestRate) return;
+        if (showAER && !formData.interestRate) return;
 
-        const finalInterestRate = showAER && formData.interestTrackingMethod === 'aer'
+        const finalInterestRate = showAER
             ? parseFloat(formData.interestRate)
             : 0;
 

@@ -31,7 +31,7 @@ export function AddAccountPage() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col xl:flex-row gap-8">
-                <main className={`space-y-6 ${formData.interestTrackingMethod === 'manual' ? 'xl:w-[calc(40%-1rem)]' : 'flex-1'}`}>
+                <main className={`space-y-6 ${showAER ? 'xl:w-[calc(40%-1rem)]' : 'flex-1'}`}>
                     <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
                 {/* Account Name Field */}
                 <div className="space-y-2">
@@ -104,35 +104,6 @@ export function AddAccountPage() {
                 )}
 
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-8 mb-4">FINANCIAL SETTINGS</h2>
-
-                {/* Calculation Method Field */}
-                {showAER && (
-                    <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Calculation Method</label>
-                        <div className="flex bg-slate-100 dark:bg-primary/10 rounded-lg p-1">
-                            <button
-                                onClick={() => handleChange('interestTrackingMethod', 'aer')}
-                                className={`flex-1 py-3 text-sm font-semibold rounded-md transition-all ${
-                                    formData.interestTrackingMethod === 'aer'
-                                        ? 'bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-                                }`}
-                            >
-                                AER (%)
-                            </button>
-                            <button
-                                onClick={() => handleChange('interestTrackingMethod', 'manual')}
-                                className={`flex-1 py-3 text-sm font-semibold rounded-md transition-all ${
-                                    formData.interestTrackingMethod === 'manual'
-                                        ? 'bg-white dark:bg-background-dark text-slate-900 dark:text-slate-100 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-                                }`}
-                            >
-                                Manual Ledger
-                            </button>
-                        </div>
-                    </div>
-                )}
 
                 {/* Balance and Interest Rate Fields */}
                 <div className={showAER ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
@@ -294,7 +265,7 @@ export function AddAccountPage() {
                 </div>
                 </main>
 
-                {formData.interestTrackingMethod === 'manual' && (
+                {showAER && (
                     <aside className="w-full xl:w-[calc(60%-1rem)]">
                         <InterestLedger accountId={activeAccountId} currentBalance={parseFloat(formData.balance) || 0} />
                     </aside>

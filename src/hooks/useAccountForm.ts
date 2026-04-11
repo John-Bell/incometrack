@@ -85,12 +85,6 @@ export function useAccountForm(accountId?: string) {
     const showBonus = canShowBonus(formData.category as AccountCategory);
 
     useEffect(() => {
-        if (!showAER && formData.interestTrackingMethod !== 'manual') {
-            handleChange('interestTrackingMethod', 'manual');
-        }
-    }, [showAER, formData.interestTrackingMethod]);
-
-    useEffect(() => {
         if (formData.category !== 'Current Account' && formData.budgetOrder !== '') {
             handleChange('budgetOrder', '');
         }
@@ -116,7 +110,7 @@ export function useAccountForm(accountId?: string) {
             category: formData.category,
             balance: parseFloat(formData.balance),
             interestRate: finalInterestRate,
-            interestTrackingMethod: showAER ? formData.interestTrackingMethod : 'manual',
+            interestTrackingMethod: 'manual' as const,
             budgetOrder: formData.budgetOrder !== '' ? parseInt(formData.budgetOrder, 10) : undefined,
             bonusRateActive: showBonus ? formData.bonusRateActive : false,
             bonusEndDate: showBonus && formData.bonusRateActive && formData.bonusEndDate

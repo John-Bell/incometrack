@@ -21,6 +21,7 @@ export interface AccountFormData {
     bonusEndDate: string; // YYYY-MM-DD
     interestPayoutFrequency: 'monthly' | 'annually' | 'at_maturity' | '';
     interestPayoutDate: string; // YYYY-MM-DD
+    isCompound: boolean;
 }
 
 const defaultFormData: AccountFormData = {
@@ -37,6 +38,7 @@ const defaultFormData: AccountFormData = {
     bonusEndDate: '',
     interestPayoutFrequency: '',
     interestPayoutDate: '',
+    isCompound: true,
 };
 
 export function useAccountForm(accountId?: string) {
@@ -72,6 +74,7 @@ export function useAccountForm(accountId?: string) {
                 interestPayoutDate: account.interestPayoutDate
                     ? new Date(account.interestPayoutDate).toISOString().split('T')[0]
                     : '',
+                isCompound: account.isCompound === undefined ? true : account.isCompound,
             });
         } else if (!accountId) {
             setFormData(defaultFormData);
@@ -123,6 +126,7 @@ export function useAccountForm(accountId?: string) {
             interestPayoutDate: (formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && formData.interestPayoutDate
                 ? new Date(formData.interestPayoutDate).getTime()
                 : undefined,
+            isCompound: formData.isCompound,
             updatedAt: Date.now(),
         };
 

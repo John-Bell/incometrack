@@ -14,6 +14,7 @@ import { Icon } from '../components/ui/Icon';
 import { PortfolioOverview } from '../components/accounts/PortfolioOverview';
 import { AccountCard } from '../components/accounts/AccountCard';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
+import { ForecastWidget } from '../components/accounts/ForecastWidget';
 
 export function AccountsPage() {
     const navigate = useNavigate();
@@ -122,6 +123,10 @@ export function AccountsPage() {
         >
             <div className="px-4 pb-4">
                 <PortfolioOverview totalSavings={formattedTotalSavings} nonPensionSavings={formattedNonPensionSavings} taxableSavings={formattedTaxableSavings} />
+
+                <div className="my-6">
+                    <ForecastWidget />
+                </div>
 
                 <button
                     onClick={() => navigate('/accounts/add')}

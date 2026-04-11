@@ -12,18 +12,16 @@ interface InterestLedgerProps {
 export function InterestLedger({ accountId }: InterestLedgerProps) {
     const { accruals, isLoading } = useInterestAccruals(accountId);
 
-    // For "MONTH & YEAR" we can use a string input of "YYYY-MM"
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [monthYear, setMonthYear] = useState('');
+    const [entryDate, setEntryDate] = useState('');
     const [interest, setInterest] = useState('');
 
     const handleAddOrEdit = async () => {
-        if (!monthYear || !interest || !accountId) return;
+        if (!entryDate || !interest || !accountId) return;
 
-        // Convert "YYYY-MM" to a Date object. Use the 1st of the month, or the end of the month?
-        // Let's use the 1st of the month
-        const [year, month] = monthYear.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1, 1).getTime();
+        // Convert "YYYY-MM-DD" to a Date object.
+        const [year, month, day] = entryDate.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).getTime();
 
         if (editingId) {
             await updateInterestAccrual(editingId, {
@@ -41,7 +39,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
         }
 
         setInterest('');
-        setMonthYear('');
+        setEntryDate('');
     };
 
     const handleEditClick = (accrual: InterestAccrual) => {
@@ -50,20 +48,21 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
         const dateObj = new Date(accrual.date);
         const year = dateObj.getFullYear();
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
 
-        setMonthYear(`${year}-${month}`);
+        setEntryDate(`${year}-${month}-${day}`);
         setInterest(accrual.interestAccrued.toString());
     };
 
     const handleCancelEdit = () => {
         setEditingId(null);
         setInterest('');
-        setMonthYear('');
+        setEntryDate('');
     };
 
-    const formatMonthYear = (timestamp: number) => {
+    const formatDate = (timestamp: number) => {
         const date = new Date(timestamp);
-        return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     };
 
     return (
@@ -84,12 +83,12 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
             <div className="p-5 border-b border-slate-100 dark:border-primary/10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div className="min-w-0 w-full">
-                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Month & Year</label>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Date</label>
                         <DateInput
-                            type="month"
+                            type="date"
                             className="w-full h-11 px-3 rounded-xl bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400"
-                            value={monthYear}
-                            onChange={(e) => setMonthYear(e.target.value)}
+                            value={entryDate}
+                            onChange={(e) => setEntryDate(e.target.value)}
                         />
                     </div>
                     <div className="min-w-0 w-full">
@@ -110,7 +109,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                 <div className="flex gap-2">
                     <button
                         onClick={handleAddOrEdit}
-                        disabled={!interest || !monthYear}
+                        disabled={!interest || !entryDate}
                         className="flex-1 h-12 rounded-xl bg-[#1ce86f] text-slate-900 font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Icon name={editingId ? "save" : "add_circle"} className="text-[18px]" />
@@ -141,7 +140,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                             <div key={accrual.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                                 <div>
                                     <div className="font-bold text-slate-900 dark:text-slate-100 text-base mb-1">
-                                        {formatMonthYear(accrual.date)}
+                                        {formatDate(accrual.date)}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6">

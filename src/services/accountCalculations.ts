@@ -1,5 +1,5 @@
 import { type Account, type InterestAccrual } from '@/lib/db';
-import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { calculateHybridForecast } from '@/utils/forecastUtils';
 import { getTaxYearDates } from '@/constants/taxConstants';
 
 export function calculateTotalSavings(accounts: Account[]): number {
@@ -24,13 +24,9 @@ export function calculateTaxableInterest(accounts: Account[], allAccruals: Inter
     const excludedCategories = ['DC Pension', 'Premium Bonds', 'Cash ISA', 'Shares ISA'];
     const { startTs, endTs } = getTaxYearDates(taxYear);
 
-    return accounts.reduce((sum, acc) => {
-        if (acc.category && excludedCategories.includes(acc.category)) {
-            return sum;
-        }
-        const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-        return sum + calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
-    }, 0);
+    const filteredAccounts = accounts.filter(acc => !acc.category || !excludedCategories.includes(acc.category));
+
+    return calculateHybridForecast(filteredAccounts, allAccruals, startTs, endTs);
 }
 
 export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {
@@ -38,10 +34,7 @@ export function calculateBlendedRate(accounts: Account[], allAccruals: InterestA
 
     const { startTs, endTs } = getTaxYearDates(taxYear);
 
-    const totalInterestValue = accounts.reduce((sum, acc) => {
-        const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-        return sum + calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
-    }, 0);
+    const totalInterestValue = calculateHybridForecast(accounts, allAccruals, startTs, endTs);
 
     const blendedRateValue = totalSavingsValueForRate > 0 ? (totalInterestValue / totalSavingsValueForRate) * 100 : 0;
 

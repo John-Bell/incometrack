@@ -36,10 +36,13 @@ export function calculateHybridForecast(
         let projectionEndDate = taxYearEnd;
         if (
             account.interestPayoutFrequency === 'at_maturity' &&
-            account.interestPayoutDate &&
-            account.interestPayoutDate <= taxYearEnd
+            account.interestPayoutDate
         ) {
-            projectionEndDate = account.interestPayoutDate;
+            if (account.interestPayoutDate <= taxYearEnd) {
+                projectionEndDate = account.interestPayoutDate;
+            } else {
+                projectionEndDate = projectionStartDate;
+            }
         }
 
         // Step 5: "Future Projection"

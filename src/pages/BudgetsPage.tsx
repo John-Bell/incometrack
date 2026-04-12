@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
@@ -9,7 +8,6 @@ import { Icon } from '../components/ui/Icon';
 
 export function BudgetsPage() {
     const navigate = useNavigate();
-    const [viewMode, setViewMode] = useState<'monthly' | 'annual'>('monthly');
 
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
@@ -24,7 +22,7 @@ export function BudgetsPage() {
                 <div className="flex flex-col w-full">
                     <Header
                         title="The Chaser"
-                        subtitle="Monthly Budget"
+                        subtitle="Budgets"
                         leftElement={
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                                 <Icon name="pie_chart" className="text-2xl" />
@@ -34,28 +32,6 @@ export function BudgetsPage() {
                             <MainHeaderActions showSaveButton />
                         }
                     />
-                    <div className="w-full max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 pb-4">
-                        <div className="flex h-11 items-center justify-center rounded-xl bg-slate-200 dark:bg-border-dark p-1">
-                            <button
-                                onClick={() => setViewMode('monthly')}
-                                className={`flex-1 flex items-center justify-center rounded-lg py-1.5 text-sm transition-colors ${viewMode === 'monthly'
-                                    ? 'bg-white dark:bg-background-dark shadow-sm text-slate-900 dark:text-white font-semibold'
-                                    : 'text-slate-500 dark:text-slate-400 font-medium'
-                                    }`}
-                            >
-                                Monthly View
-                            </button>
-                            <button
-                                onClick={() => setViewMode('annual')}
-                                className={`flex-1 flex items-center justify-center rounded-lg py-1.5 text-sm transition-colors ${viewMode === 'annual'
-                                    ? 'bg-white dark:bg-background-dark shadow-sm text-slate-900 dark:text-white font-semibold'
-                                    : 'text-slate-500 dark:text-slate-400 font-medium'
-                                    }`}
-                            >
-                                Annual View
-                            </button>
-                        </div>
-                    </div>
                 </div>
             }
         >
@@ -88,7 +64,7 @@ export function BudgetsPage() {
                                 const budgetTransactions = transactions.filter(t => t.budgetId === budget.id && t.type === 'expense');
 
                                 let actualAmount = 0;
-                                if (viewMode === 'monthly') {
+                                if (!isAnnual) {
                                     const now = new Date();
                                     const currentMonth = now.getMonth();
                                     const currentYear = now.getFullYear();
@@ -105,7 +81,7 @@ export function BudgetsPage() {
                                         .reduce((sum, t) => sum + t.amount, 0);
                                 }
 
-                                const targetNum = viewMode === 'annual' ? annualAmount : monthlyAmount;
+                                const targetNum = budget.amount;
                                 const ratio = targetNum > 0 ? actualAmount / targetNum : 0;
                                 const percent = Math.min(ratio * 100, 100);
 
@@ -166,7 +142,7 @@ export function BudgetsPage() {
                                         <div>
                                             <div className="flex justify-between items-end mb-2">
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">{viewMode === 'annual' ? 'Annualised Actual' : 'Monthly Actual'}</span>
+                                                    <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">{isAnnual ? 'Annual Actual' : 'Monthly Actual'}</span>
                                                     <span className="text-lg font-bold text-slate-900 dark:text-slate-100">£{actualAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                                 </div>
                                                 <span className="text-xs text-slate-500 dark:text-slate-400">

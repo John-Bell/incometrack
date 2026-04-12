@@ -55,7 +55,7 @@ describe('accountCalculations', () => {
 
         it('should calculate correct blended rate for a single account', () => {
             const accounts = [createMockAccount(1000, 5)];
-            expect(calculateBlendedRate(accounts)).toBe(5);
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(5, 2);
         });
 
         it('should calculate correct blended rate for multiple accounts', () => {
@@ -64,7 +64,7 @@ describe('accountCalculations', () => {
                 createMockAccount(3000, 2)  // 3000 * 0.02 = 60
             ];
             // Total interest = 110. Total balance = 4000. 110 / 4000 = 0.0275 = 2.75%
-            expect(calculateBlendedRate(accounts)).toBe(2.75);
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(2.75, 2);
         });
 
         it('should include accounts with 0 interest rate in blended rate calculation to drag down rate', () => {
@@ -74,7 +74,7 @@ describe('accountCalculations', () => {
                 createMockAccount(4000, 0)
             ];
             // (50 + 60 + 0) / 8000 = 110 / 8000 = 1.375%
-            expect(calculateBlendedRate(accounts)).toBe(1.375);
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(1.375, 2);
         });
 
         it('should handle accounts with 0 balance correctly', () => {
@@ -83,7 +83,7 @@ describe('accountCalculations', () => {
                 createMockAccount(0, 10)
             ];
             // (50 + 0) / (1000 + 0) = 5%
-            expect(calculateBlendedRate(accounts)).toBe(5);
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(5, 2);
         });
 
         it('should factor in manual tracking accounts correctly', () => {

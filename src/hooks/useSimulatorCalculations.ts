@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
-import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { calculateHybridForecast } from '@/utils/forecastUtils';
 import { getTaxYearDates } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 
@@ -142,43 +142,43 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
         }
 
         if (dbAccounts) {
-            dbAccounts.forEach(acc => {
-                const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
-                if (acc.category && taxFreeCategories.includes(acc.category as string)) {
-                    return;
-                }
+            const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
+            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !taxFreeCategories.includes(acc.category as string));
 
-                const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-                const amount = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
-
-                // Check for movable interest
-                let isMovable = false;
-                const movableTaxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds', 'DC Pension'];
-                if (!acc.category || !movableTaxFreeCategories.includes(acc.category as string)) {
-                    const frequency = acc.interestPayoutFrequency || 'monthly';
-                    const payoutTs = acc.interestPayoutDate;
-
-                    if (frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs) {
-                        isMovable = true;
-                    }
-                }
-
-                if (isMovable) {
-                    if (acc.ownerId === 'person1') p1MovableInterest += amount;
-                    else if (acc.ownerId === 'person2') p2MovableInterest += amount;
-                    else if (acc.ownerId === 'joint') {
-                        p1MovableInterest += amount / 2;
-                        p2MovableInterest += amount / 2;
-                    }
-                } else {
-                    if (acc.ownerId === 'person1') p1Incomes.interest += amount;
-                    else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
-                    else if (acc.ownerId === 'joint') {
-                        p1Incomes.interest += amount / 2;
-                        p2Incomes.interest += amount / 2;
-                    }
-                }
+            const movableAccounts = taxableAccounts.filter(acc => {
+                const frequency = acc.interestPayoutFrequency || 'monthly';
+                const payoutTs = acc.interestPayoutDate;
+                return acc.category !== 'DC Pension' && frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs;
             });
+            const nonMovableAccounts = taxableAccounts.filter(acc => {
+                const frequency = acc.interestPayoutFrequency || 'monthly';
+                const payoutTs = acc.interestPayoutDate;
+                return acc.category === 'DC Pension' || !(frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs);
+            });
+
+            // Movable
+            const p1Movable = movableAccounts.filter(acc => acc.ownerId === 'person1');
+            const p2Movable = movableAccounts.filter(acc => acc.ownerId === 'person2');
+            const jointMovable = movableAccounts.filter(acc => acc.ownerId === 'joint');
+
+            p1MovableInterest += calculateHybridForecast(p1Movable, allAccruals, startTs, endTs);
+            p2MovableInterest += calculateHybridForecast(p2Movable, allAccruals, startTs, endTs);
+
+            const jointMovableInterest = calculateHybridForecast(jointMovable, allAccruals, startTs, endTs);
+            p1MovableInterest += jointMovableInterest / 2;
+            p2MovableInterest += jointMovableInterest / 2;
+
+            // Non-movable
+            const p1NonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'person1');
+            const p2NonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'person2');
+            const jointNonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'joint');
+
+            p1Incomes.interest += calculateHybridForecast(p1NonMovable, allAccruals, startTs, endTs);
+            p2Incomes.interest += calculateHybridForecast(p2NonMovable, allAccruals, startTs, endTs);
+
+            const jointNonMovableInterest = calculateHybridForecast(jointNonMovable, allAccruals, startTs, endTs);
+            p1Incomes.interest += jointNonMovableInterest / 2;
+            p2Incomes.interest += jointNonMovableInterest / 2;
         }
 
         const totalMovableInterest = p1MovableInterest + p2MovableInterest;

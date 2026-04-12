@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
-import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { calculateHybridForecast } from '@/utils/forecastUtils';
 import { getTaxYearDates } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 
@@ -76,23 +76,19 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
         }
 
         if (dbAccounts) {
+            const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
+            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !taxFreeCategories.includes(acc.category as string));
 
-            dbAccounts.forEach(acc => {
-                const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
-                if (acc.category && taxFreeCategories.includes(acc.category as string)) {
-                    return;
-                }
+            const p1Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person1');
+            const p2Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person2');
+            const jointAccounts = taxableAccounts.filter(acc => acc.ownerId === 'joint');
 
-                const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-                const amount = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
+            p1Incomes.interest += calculateHybridForecast(p1Accounts, allAccruals, startTs, endTs);
+            p2Incomes.interest += calculateHybridForecast(p2Accounts, allAccruals, startTs, endTs);
 
-                if (acc.ownerId === 'person1') p1Incomes.interest += amount;
-                else if (acc.ownerId === 'person2') p2Incomes.interest += amount;
-                else if (acc.ownerId === 'joint') {
-                    p1Incomes.interest += amount / 2;
-                    p2Incomes.interest += amount / 2;
-                }
-            });
+            const jointInterest = calculateHybridForecast(jointAccounts, allAccruals, startTs, endTs);
+            p1Incomes.interest += jointInterest / 2;
+            p2Incomes.interest += jointInterest / 2;
         }
 
         const p1Input: TaxCalculationInput = {

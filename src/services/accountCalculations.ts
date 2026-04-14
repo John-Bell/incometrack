@@ -19,9 +19,7 @@ export function calculateTaxableSavings(accounts: Account[]): number {
     }, 0);
 }
 
-export function calculateTaxableInterest(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {
-    const { startTs, endTs } = getTaxYearDates(taxYear);
-
+export function calculateProjectedTaxableInterest(accounts: Account[], allAccruals: InterestAccrual[] = [], startTs: number, endTs: number): number {
     const filteredAccounts = accounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
 
     return calculateHybridForecast(filteredAccounts, allAccruals, startTs, endTs);

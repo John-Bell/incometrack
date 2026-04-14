@@ -1,8 +1,10 @@
 import { useHybridForecast } from '@/hooks/useHybridForecast';
 import { getTaxYearDates } from '@/constants/taxConstants';
+import { useStore } from '@/store/useStore';
 
 export function ForecastWidget() {
-    const { startTs, endTs } = getTaxYearDates();
+    const { taxYear } = useStore();
+    const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
     const { forecastedTotal, isLoading } = useHybridForecast(startTs, endTs);
 
     if (isLoading) {

@@ -6,11 +6,7 @@ import { TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 export function useHybridForecast(taxYearStart: number, taxYearEnd: number) {
     const accounts = useLiveQuery(
         () => db.accounts
-            .filter(a =>
-                a.balance > 0 &&
-                a.interestRate > 0 &&
-                (!a.category || !TAX_FREE_CATEGORIES.includes(a.category as any))
-            )
+            .filter(a => !a.category || !TAX_FREE_CATEGORIES.includes(a.category as any))
             .toArray(),
         []
     );

@@ -165,6 +165,16 @@ describe('calculateTaxableSavings', () => {
 describe('calculateProjectedTaxableInterest', () => {
     const { startTs, endTs } = getTaxYearDates();
 
+    beforeAll(() => {
+        // Mock Date.now to startTs so daysRemaining is exactly (endTs - startTs) / msPerDay, which is ~365 days
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(startTs));
+    });
+
+    afterAll(() => {
+        vi.useRealTimers();
+    });
+
     it('returns 0 when accounts is empty', () => {
         expect(calculateProjectedTaxableInterest([], [], startTs, endTs)).toBe(0);
     });

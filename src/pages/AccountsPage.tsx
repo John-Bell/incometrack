@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateTaxableInterest } from '@/services/accountCalculations';
+import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest } from '@/services/accountCalculations';
 import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
 import { getTaxYearDates } from '@/constants/taxConstants';
 import { AppLayout } from '../components/layout/AppLayout';
@@ -125,7 +125,7 @@ export function AccountsPage() {
                 <PortfolioOverview totalSavings={formattedTotalSavings} nonPensionSavings={formattedNonPensionSavings} taxableSavings={formattedTaxableSavings} />
 
                 <div className="my-6">
-                    <ForecastWidget />
+                    <ForecastWidget startTs={startTs} endTs={endTs} />
                 </div>
 
                 <button
@@ -139,7 +139,7 @@ export function AccountsPage() {
                 <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
                     {['person1', 'person2', 'joint'].map((tab) => {
                         const tabAccounts = rawAccounts.filter(acc => acc.ownerId === tab);
-                        const tabTaxableInterest = calculateTaxableInterest(tabAccounts, allAccruals, taxYear || undefined);
+                        const tabTaxableInterest = calculateProjectedTaxableInterest(tabAccounts, allAccruals, startTs, endTs);
                         const formattedTabTaxableInterest = new Intl.NumberFormat('en-GB', {
                             style: 'currency',
                             currency: 'GBP',

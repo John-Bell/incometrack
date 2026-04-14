@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTotalSavings, calculateBlendedRate, calculateTaxableSavings, calculateTaxableInterest } from './accountCalculations';
+import { calculateTotalSavings, calculateBlendedRate, calculateTaxableSavings, calculateProjectedTaxableInterest } from './accountCalculations';
+import { getTaxYearDates } from '@/constants/taxConstants';
 import { type Account } from '@/lib/db';
 
 describe('accountCalculations', () => {
@@ -161,9 +162,11 @@ describe('calculateTaxableSavings', () => {
     });
 });
 
-describe('calculateTaxableInterest', () => {
+describe('calculateProjectedTaxableInterest', () => {
+    const { startTs, endTs } = getTaxYearDates();
+
     it('returns 0 when accounts is empty', () => {
-        expect(calculateTaxableInterest([])).toBe(0);
+        expect(calculateProjectedTaxableInterest([], [], startTs, endTs)).toBe(0);
     });
 
     it('calculates interest for non-excluded categories', () => {
@@ -174,7 +177,7 @@ describe('calculateTaxableInterest', () => {
         // 1000 * 0.05 = 50
         // 2000 * 0.02 = 40
         // Total = 90
-        expect(calculateTaxableInterest(accounts)).toBeCloseTo(90, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(90, 4);
     });
 
     it('excludes DC Pension accounts from interest calculation', () => {
@@ -182,7 +185,7 @@ describe('calculateTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
         ];
-        expect(calculateTaxableInterest(accounts)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
     });
 
     it('excludes Premium Bonds accounts from interest calculation', () => {
@@ -190,7 +193,7 @@ describe('calculateTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 10 },
         ];
-        expect(calculateTaxableInterest(accounts)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
     });
 
     it('excludes Cash ISA accounts from interest calculation', () => {
@@ -198,7 +201,7 @@ describe('calculateTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 10 },
         ];
-        expect(calculateTaxableInterest(accounts)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
     });
 
     it('excludes Shares ISA accounts from interest calculation', () => {
@@ -206,7 +209,7 @@ describe('calculateTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
         ];
-        expect(calculateTaxableInterest(accounts)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
     });
 
     it('excludes a mix of excluded categories and includes valid ones', () => {
@@ -221,6 +224,6 @@ describe('calculateTaxableInterest', () => {
         // 1000 * 0.05 = 50
         // 3000 * 0.02 = 60
         // Total = 110
-        expect(calculateTaxableInterest(accounts)).toBeCloseTo(110, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(110, 4);
     });
 });

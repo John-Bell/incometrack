@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
-import { calculateHybridForecast } from '@/utils/forecastUtils';
+import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
 import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 
@@ -27,9 +27,11 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
     const { taxYear } = useStore();
     const taxService = useTaxService();
 
+    const { startTs, endTs } = useMemo(() => getTaxYearDates(taxYear || undefined), [taxYear]);
+
     const dbAccounts = useLiveQuery(() => db.accounts.toArray());
     const dbIncomes = useLiveQuery(() => db.incomes.toArray());
-    const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.toArray());
+    const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.where('date').between(startTs, endTs, true, true).toArray(), [startTs, endTs]);
     const dbProperties = useLiveQuery(() => db.properties.toArray());
     const dbPropertyIncomes = useLiveQuery(() => db.propertyIncomes.toArray());
     const dbPropertyExpenses = useLiveQuery(() => db.propertyExpenses.toArray());
@@ -50,8 +52,6 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
                 else if (inc.type === 'dividends') target.dividends += amount;
             });
         }
-
-        const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 
         if (dbProperties && dbPropertyIncomes && dbPropertyOwnerships) {
             const { p1Rental, p2Rental } = calculatePropertyIncomeForTaxYear(
@@ -82,10 +82,10 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             const p2Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person2');
             const jointAccounts = taxableAccounts.filter(acc => acc.ownerId === 'joint');
 
-            p1Incomes.interest += calculateHybridForecast(p1Accounts, allAccruals, startTs, endTs);
-            p2Incomes.interest += calculateHybridForecast(p2Accounts, allAccruals, startTs, endTs);
+            p1Incomes.interest += calculateProjectedTaxableInterest(p1Accounts, allAccruals, startTs, endTs);
+            p2Incomes.interest += calculateProjectedTaxableInterest(p2Accounts, allAccruals, startTs, endTs);
 
-            const jointInterest = calculateHybridForecast(jointAccounts, allAccruals, startTs, endTs);
+            const jointInterest = calculateProjectedTaxableInterest(jointAccounts, allAccruals, startTs, endTs);
             p1Incomes.interest += jointInterest / 2;
             p2Incomes.interest += jointInterest / 2;
         }
@@ -146,5 +146,5 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyExpenses && !!dbPropertyOwnerships
         };
 
-    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear, startTs, endTs]);
 }

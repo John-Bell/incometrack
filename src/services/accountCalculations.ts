@@ -19,10 +19,45 @@ export function calculateTaxableSavings(accounts: Account[]): number {
     }, 0);
 }
 
-export function calculateProjectedTaxableInterest(accounts: Account[], allAccruals: InterestAccrual[] = [], startTs: number, endTs: number): number {
-    const filteredAccounts = accounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
+export function calculateProjectedTaxableInterest(
+    accounts: Account[],
+    accruals: InterestAccrual[],
+    startTs: number,
+    endTs: number
+): number {
+    const now = Date.now();
+    let total = 0;
 
-    return calculateHybridForecast(filteredAccounts, allAccruals, startTs, endTs);
+    for (const account of accounts) {
+        if (
+            account.category === 'Cash ISA' ||
+            account.category === 'Shares ISA' ||
+            account.category === 'Premium Bonds' ||
+            account.category === 'DC Pension'
+        ) {
+            continue;
+        }
+
+        const accountAccruals = accruals.filter(a => a.accountId === account.id);
+        const actuals = accountAccruals.reduce((sum, a) => sum + (a.interestAccrued || 0), 0);
+
+        let daysRemaining = 0;
+        if (now > endTs) {
+            daysRemaining = 0;
+        } else if (now < startTs) {
+            daysRemaining = 365;
+        } else {
+            daysRemaining = (endTs - now) / (1000 * 60 * 60 * 24);
+        }
+
+        const balance = account.balance || 0;
+        const rate = account.interestRate || 0;
+        const forecastAmount = balance * (rate / 100) * (daysRemaining / 365);
+
+        total += actuals + forecastAmount;
+    }
+
+    return total;
 }
 
 export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {

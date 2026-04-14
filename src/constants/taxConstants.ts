@@ -69,6 +69,13 @@ export const ACCOUNT_CATEGORIES: AccountCategory[] = [
   'DC Pension'
 ];
 
+export const TAX_FREE_CATEGORIES: AccountCategory[] = [
+  'Cash ISA',
+  'Shares ISA',
+  'Premium Bonds',
+  'DC Pension'
+];
+
 const DEFAULT_TAX_YEAR = '2025-2026';
 
 export type TaxRulesByYear = Record<string, TaxYearConstants>;

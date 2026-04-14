@@ -6,7 +6,7 @@ import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateHybridForecast } from '@/utils/forecastUtils';
-import { getTaxYearDates } from '@/constants/taxConstants';
+import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 
 export interface PropertyBreakdown {
@@ -142,18 +142,17 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
         }
 
         if (dbAccounts) {
-            const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
-            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !taxFreeCategories.includes(acc.category as string));
+            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
 
             const movableAccounts = taxableAccounts.filter(acc => {
                 const frequency = acc.interestPayoutFrequency || 'monthly';
                 const payoutTs = acc.interestPayoutDate;
-                return acc.category !== 'DC Pension' && frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs;
+                return frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs;
             });
             const nonMovableAccounts = taxableAccounts.filter(acc => {
                 const frequency = acc.interestPayoutFrequency || 'monthly';
                 const payoutTs = acc.interestPayoutDate;
-                return acc.category === 'DC Pension' || !(frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs);
+                return !(frequency !== 'annually' && frequency !== 'at_maturity' && !payoutTs);
             });
 
             // Movable

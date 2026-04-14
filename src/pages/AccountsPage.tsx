@@ -24,8 +24,16 @@ export function AccountsPage() {
 
     const [sortBy, setSortBy] = useState<'rate' | 'name'>('rate');
 
+    const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
+
     const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
-    const allAccruals = useLiveQuery(() => db.interestAccruals.toArray()) || [];
+    const allAccruals = useLiveQuery(
+        () => db.interestAccruals
+            .where('date')
+            .between(startTs, endTs, true, true)
+            .toArray(),
+        [startTs, endTs]
+    ) || [];
 
     const sortedRawAccounts = [...rawAccounts].sort((a, b) => {
         if (sortBy === 'rate') {
@@ -34,8 +42,6 @@ export function AccountsPage() {
             return (a.name || '').localeCompare(b.name || '');
         }
     });
-
-    const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 
     const mappedAccounts = sortedRawAccounts.map(acc => {
         let ownerTagColor: 'blue' | 'pink' | 'purple' = 'purple';

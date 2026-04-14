@@ -3,15 +3,7 @@ import { db } from '@/lib/db';
 import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
 
 export function useHybridForecast(taxYearStart: number, taxYearEnd: number) {
-    const accounts = useLiveQuery(
-        () => db.accounts
-            .filter(a =>
-                a.balance > 0 &&
-                a.interestRate > 0
-            )
-            .toArray(),
-        []
-    );
+    const accounts = useLiveQuery(() => db.accounts.toArray(), []);
 
     const accruals = useLiveQuery(
         () => db.interestAccruals.where('date').between(taxYearStart, taxYearEnd, true, true).toArray(),

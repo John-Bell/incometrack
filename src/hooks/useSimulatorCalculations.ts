@@ -5,7 +5,7 @@ import { useStore } from '@/store/useStore';
 import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
-import { calculateHybridForecast } from '@/utils/forecastUtils';
+import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
 import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 
@@ -39,9 +39,11 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
     const { taxYear } = useStore();
     const taxService = useTaxService();
 
+    const { startTs, endTs } = useMemo(() => getTaxYearDates(taxYear || undefined), [taxYear]);
+
     const dbAccounts = useLiveQuery(() => db.accounts.toArray());
     const dbIncomes = useLiveQuery(() => db.incomes.toArray());
-    const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.toArray());
+    const dbInterestAccruals = useLiveQuery(() => db.interestAccruals.where('date').between(startTs, endTs, true, true).toArray(), [startTs, endTs]);
     const dbProperties = useLiveQuery(() => db.properties.toArray());
     const dbPropertyIncomes = useLiveQuery(() => db.propertyIncomes.toArray());
     const dbPropertyExpenses = useLiveQuery(() => db.propertyExpenses.toArray());
@@ -65,8 +67,6 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
                 else if (inc.type === 'dividends') target.dividends += amount;
             });
         }
-
-        const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 
         const propertyBreakdowns: PropertyBreakdown[] = [];
 
@@ -160,10 +160,10 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
             const p2Movable = movableAccounts.filter(acc => acc.ownerId === 'person2');
             const jointMovable = movableAccounts.filter(acc => acc.ownerId === 'joint');
 
-            p1MovableInterest += calculateHybridForecast(p1Movable, allAccruals, startTs, endTs);
-            p2MovableInterest += calculateHybridForecast(p2Movable, allAccruals, startTs, endTs);
+            p1MovableInterest += calculateProjectedTaxableInterest(p1Movable, allAccruals, startTs, endTs);
+            p2MovableInterest += calculateProjectedTaxableInterest(p2Movable, allAccruals, startTs, endTs);
 
-            const jointMovableInterest = calculateHybridForecast(jointMovable, allAccruals, startTs, endTs);
+            const jointMovableInterest = calculateProjectedTaxableInterest(jointMovable, allAccruals, startTs, endTs);
             p1MovableInterest += jointMovableInterest / 2;
             p2MovableInterest += jointMovableInterest / 2;
 
@@ -172,10 +172,10 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
             const p2NonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'person2');
             const jointNonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'joint');
 
-            p1Incomes.interest += calculateHybridForecast(p1NonMovable, allAccruals, startTs, endTs);
-            p2Incomes.interest += calculateHybridForecast(p2NonMovable, allAccruals, startTs, endTs);
+            p1Incomes.interest += calculateProjectedTaxableInterest(p1NonMovable, allAccruals, startTs, endTs);
+            p2Incomes.interest += calculateProjectedTaxableInterest(p2NonMovable, allAccruals, startTs, endTs);
 
-            const jointNonMovableInterest = calculateHybridForecast(jointNonMovable, allAccruals, startTs, endTs);
+            const jointNonMovableInterest = calculateProjectedTaxableInterest(jointNonMovable, allAccruals, startTs, endTs);
             p1Incomes.interest += jointNonMovableInterest / 2;
             p2Incomes.interest += jointNonMovableInterest / 2;
         }
@@ -252,5 +252,5 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
             isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyExpenses && !!dbPropertyOwnerships
         };
 
-    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, taxYear, movableInterestP1Percent, propertySplits]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, startTs, endTs, movableInterestP1Percent, propertySplits]);
 }

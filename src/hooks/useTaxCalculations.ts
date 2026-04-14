@@ -6,7 +6,7 @@ import { useTaxService } from '@/hooks/useTaxService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateHybridForecast } from '@/utils/forecastUtils';
-import { getTaxYearDates } from '@/constants/taxConstants';
+import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 
 
@@ -76,8 +76,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
         }
 
         if (dbAccounts) {
-            const taxFreeCategories = ['Cash ISA', 'Shares ISA', 'Premium Bonds'];
-            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !taxFreeCategories.includes(acc.category as string));
+            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
 
             const p1Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person1');
             const p2Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person2');

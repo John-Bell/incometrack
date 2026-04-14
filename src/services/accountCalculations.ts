@@ -1,6 +1,6 @@
 import { type Account, type InterestAccrual } from '@/lib/db';
 import { calculateHybridForecast } from '@/utils/forecastUtils';
-import { getTaxYearDates } from '@/constants/taxConstants';
+import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 
 export function calculateTotalSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -11,9 +11,8 @@ export function calculateNonPensionSavings(accounts: Account[]): number {
 }
 
 export function calculateTaxableSavings(accounts: Account[]): number {
-    const excludedCategories = ['DC Pension', 'Premium Bonds', 'Cash ISA'];
     return accounts.reduce((sum, acc) => {
-        if (acc.category && excludedCategories.includes(acc.category)) {
+        if (acc.category && TAX_FREE_CATEGORIES.includes(acc.category as any)) {
             return sum;
         }
         return sum + (acc.balance || 0);
@@ -21,10 +20,9 @@ export function calculateTaxableSavings(accounts: Account[]): number {
 }
 
 export function calculateTaxableInterest(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {
-    const excludedCategories = ['DC Pension', 'Premium Bonds', 'Cash ISA', 'Shares ISA'];
     const { startTs, endTs } = getTaxYearDates(taxYear);
 
-    const filteredAccounts = accounts.filter(acc => !acc.category || !excludedCategories.includes(acc.category));
+    const filteredAccounts = accounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
 
     return calculateHybridForecast(filteredAccounts, allAccruals, startTs, endTs);
 }

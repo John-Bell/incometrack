@@ -59,6 +59,23 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
     };
 
 
+    const accountsData = sortedAccounts.map(account => {
+        const accountBudgets = getBudgetsForAccount(account.id);
+        const accountTotalAllocated = accountBudgets.reduce((sum, budget) => sum + budget.amount, 0);
+        let totalSpent = 0;
+        accountBudgets.forEach(budget => {
+            const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
+            totalSpent += budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
+        });
+
+        return {
+            account,
+            accountBudgets,
+            accountTotalAllocated,
+            totalSpent
+        };
+    });
+
     return (
         <div className="w-full max-w-7xl mx-auto pt-4 px-4 pb-24">
             {sortedAccounts.length === 0 && (
@@ -82,19 +99,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
                 {/* Rows */}
                 <div className="flex flex-col">
-                    {sortedAccounts.map(account => {
-                        const accountBudgets = getBudgetsForAccount(account.id);
-                        // const accountTotalBalance = account.balance; // Removed unused variable
-                        const accountTotalAllocated = accountBudgets.reduce((sum, budget) => {
-                            return sum + budget.amount;
-                        }, 0);
-
-                        let totalSpent = 0;
-                        accountBudgets.forEach(budget => {
-                            const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
-                            totalSpent += budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-                        });
-
+                    {accountsData.map(({ account, accountBudgets, accountTotalAllocated, totalSpent }) => {
                         return (
                             <div key={account.id} className="flex flex-col border-b border-slate-200 dark:border-slate-800 last:border-0">
                                 {/* Account Row */}
@@ -185,13 +190,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
             {/* Mobile View */}
             <div className="md:hidden flex flex-col gap-6">
-                {sortedAccounts.map(account => {
-                    const accountBudgets = getBudgetsForAccount(account.id);
-                    const accountTotalBalance = account.balance;
-                    const accountTotalAllocated = accountBudgets.reduce((sum, budget) => {
-                        return sum + budget.amount;
-                    }, 0);
-
+                {accountsData.map(({ account, accountBudgets, accountTotalAllocated, totalSpent }) => {
                     return (
                         <div key={account.id} className="flex flex-col gap-2">
                             {/* Account Header */}
@@ -211,7 +210,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-xl font-bold text-[#1DAF61] dark:text-emerald-400">
-                                        {formatCurrency(accountTotalBalance)}
+                                        {formatCurrency(accountTotalAllocated - totalSpent)}
                                     </span>
                                     {accountTotalAllocated > 0 && (
                                         <span className="text-sm font-medium text-slate-500 dark:text-slate-400">

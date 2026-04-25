@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../lib/db';
@@ -9,12 +10,20 @@ import { Icon } from '../components/ui/Icon';
 export function BudgetsPage() {
     const navigate = useNavigate();
 
+    const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+
     const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
     const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
+    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+
+    // Filter budgets based on selected account
+    const filteredBudgets = selectedAccountId
+        ? budgets.filter(b => b.accountId === selectedAccountId)
+        : budgets;
 
     // Removed budget category grouping, all budgets displayed in one list
     // You could sort them alphabetically if you want, but for now just use the array.
-    const sortedBudgets = [...budgets].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedBudgets = [...filteredBudgets].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
         <AppLayout
@@ -44,17 +53,45 @@ export function BudgetsPage() {
                     <span>Add Budget</span>
                 </button>
 
-                {sortedBudgets.length > 0 && (
+                {(sortedBudgets.length > 0 || selectedAccountId) && (
                     <section className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-bold text-primary flex items-center gap-2 capitalize">
-                                <Icon name="label" className="text-xl" />
-                                All Budgets
-                            </h2>
-                            <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full">
-                                {sortedBudgets.length} {sortedBudgets.length === 1 ? 'Item' : 'Items'}
-                            </span>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                                <h2 className="text-lg font-bold text-primary flex items-center gap-2 capitalize">
+                                    <Icon name="label" className="text-xl" />
+                                    {selectedAccountId ? 'Filtered Budgets' : 'All Budgets'}
+                                </h2>
+                                <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full sm:hidden">
+                                    {sortedBudgets.length} {sortedBudgets.length === 1 ? 'Item' : 'Items'}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-3 justify-between w-full sm:w-auto">
+                                <select
+                                    value={selectedAccountId}
+                                    onChange={(e) => setSelectedAccountId(e.target.value)}
+                                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary/50 flex-grow sm:flex-grow-0"
+                                >
+                                    <option value="">All Accounts</option>
+                                    {accounts.map(acc => (
+                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
+                                    ))}
+                                </select>
+                                <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full hidden sm:inline-flex">
+                                    {sortedBudgets.length} {sortedBudgets.length === 1 ? 'Item' : 'Items'}
+                                </span>
+                            </div>
                         </div>
+
+                        {sortedBudgets.length === 0 && selectedAccountId && (
+                            <div className="text-center py-12">
+                                <div className="w-16 h-16 bg-slate-100 dark:bg-surface-dark rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Icon name="filter_list_off" className="text-3xl text-slate-400 dark:text-slate-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">No Budgets Found</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">There are no budgets linked to this account.</p>
+                            </div>
+                        )}
                         <div className="space-y-3">
                             {sortedBudgets.map(budget => {
                                 const isAnnual = budget.frequency === 'annual';
@@ -163,7 +200,7 @@ export function BudgetsPage() {
                     </section>
                 )}
 
-                {budgets.length === 0 && (
+                {budgets.length === 0 && !selectedAccountId && (
                     <div className="text-center py-12">
                         <div className="w-16 h-16 bg-slate-100 dark:bg-surface-dark rounded-full flex items-center justify-center mx-auto mb-4">
                             <Icon name="account_balance_wallet" className="text-3xl text-slate-400 dark:text-slate-500" />

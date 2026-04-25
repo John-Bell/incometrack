@@ -73,9 +73,14 @@ export function BudgetsPage() {
                                     className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary/50 flex-grow sm:flex-grow-0"
                                 >
                                     <option value="">All Accounts</option>
-                                    {accounts.map(acc => (
-                                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                                    ))}
+                                    {accounts
+                                        .filter(acc => acc.budgetOrder !== undefined && acc.budgetOrder !== null)
+                                        .sort((a, b) => a.name.localeCompare(b.name))
+                                        .map(acc => (
+                                            <option key={acc.id} value={acc.id}>
+                                                {acc.nickname || acc.name}{acc.last4Digits ? ` (x${acc.last4Digits})` : ''}
+                                            </option>
+                                        ))}
                                 </select>
                                 <span className="text-xs font-semibold px-2 py-1 bg-primary/10 text-primary rounded-full hidden sm:inline-flex">
                                     {sortedBudgets.length} {sortedBudgets.length === 1 ? 'Item' : 'Items'}

@@ -22,7 +22,7 @@ export function AccountsPage() {
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
 
-    const [sortBy, setSortBy] = useState<'rate' | 'name'>('rate');
+    const [sortBy, setSortBy] = useState<'rate' | 'name'>('name');
 
     const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 

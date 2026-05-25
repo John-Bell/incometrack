@@ -1,5 +1,5 @@
 import { type Account, type InterestAccrual } from '@/lib/db';
-import { calculateHybridForecast } from '@/utils/forecastUtils';
+import { calculateHybridForecast, calculateHybridForecastForAccount } from '@/utils/forecastUtils';
 import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 
 export function calculateTotalSavings(accounts: Account[]): number {
@@ -19,45 +19,39 @@ export function calculateTaxableSavings(accounts: Account[]): number {
     }, 0);
 }
 
+export function calculateProjectedInterestForAccount(
+    account: Account,
+    accruals: InterestAccrual[],
+    startTs: number,
+    endTs: number
+): number {
+    const accountAccruals = accruals.filter(
+        a => a.accountId === account.id && a.date >= startTs && a.date <= endTs
+    );
+    return calculateHybridForecastForAccount(account, accountAccruals, startTs, endTs);
+}
+
+export function calculateProjectedTaxableInterestForAccount(
+    account: Account,
+    accruals: InterestAccrual[],
+    startTs: number,
+    endTs: number
+): number {
+    if (account.category && TAX_FREE_CATEGORIES.includes(account.category as any)) {
+        return 0;
+    }
+    return calculateProjectedInterestForAccount(account, accruals, startTs, endTs);
+}
+
 export function calculateProjectedTaxableInterest(
     accounts: Account[],
     accruals: InterestAccrual[],
     startTs: number,
     endTs: number
 ): number {
-    const now = Date.now();
-    let total = 0;
-
-    for (const account of accounts) {
-        if (
-            account.category === 'Cash ISA' ||
-            account.category === 'Shares ISA' ||
-            account.category === 'Premium Bonds' ||
-            account.category === 'DC Pension'
-        ) {
-            continue;
-        }
-
-        const accountAccruals = accruals.filter(a => a.accountId === account.id);
-        const actuals = accountAccruals.reduce((sum, a) => sum + (a.interestAccrued || 0), 0);
-
-        let daysRemaining = 0;
-        if (now > endTs) {
-            daysRemaining = 0;
-        } else if (now < startTs) {
-            daysRemaining = 365;
-        } else {
-            daysRemaining = (endTs - now) / (1000 * 60 * 60 * 24);
-        }
-
-        const balance = account.balance || 0;
-        const rate = account.interestRate || 0;
-        const forecastAmount = balance * (rate / 100) * (daysRemaining / 365);
-
-        total += actuals + forecastAmount;
-    }
-
-    return total;
+    return accounts.reduce((total, account) => {
+        return total + calculateProjectedTaxableInterestForAccount(account, accruals, startTs, endTs);
+    }, 0);
 }
 
 export function calculateBlendedRate(accounts: Account[], allAccruals: InterestAccrual[] = [], taxYear?: string): number {

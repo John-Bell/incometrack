@@ -144,7 +144,7 @@ export function AccountCard({
                     <span className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">{balance}</span>
                     {projectedInterest && (
                         <span className="text-xs text-slate-500 dark:text-[#9db9b0] mt-0.5">
-                            + {projectedInterest} interest this year
+                            + {projectedInterest}
                         </span>
                     )}
                 </div>

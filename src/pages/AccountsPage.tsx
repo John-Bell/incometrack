@@ -5,8 +5,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest, calculateProjectedTaxableInterestForAccount } from '@/services/accountCalculations';
-import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
+import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterestForAccount } from '@/services/accountCalculations';
+import { calculateHybridForecastForAccount } from '@/utils/forecastUtils';
 import { getTaxYearDates } from '@/constants/taxConstants';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
@@ -59,11 +59,18 @@ export function AccountsPage() {
         else if (accountIcon === 'L') iconColor = 'green';
 
         const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-        const projectedInterestValue = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
-        const projectedInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(projectedInterestValue);
-
+        const totalInterestValue = calculateHybridForecastForAccount(acc, accountAccruals, startTs, endTs);
         const taxableInterestValue = calculateProjectedTaxableInterestForAccount(acc, allAccruals, startTs, endTs);
-        const taxableInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(taxableInterestValue);
+
+        const formattedTotalInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalInterestValue);
+        const formattedTaxableInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(taxableInterestValue);
+
+        let projectedInterestLabel = undefined;
+        if (taxableInterestValue > 0) {
+            projectedInterestLabel = `+ ${formattedTaxableInterest} taxable interest this year`;
+        } else if (totalInterestValue > 0) {
+            projectedInterestLabel = `+ ${formattedTotalInterest} interest this year`;
+        }
 
         return {
             id: acc.id,
@@ -77,8 +84,7 @@ export function AccountsPage() {
             ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
             ownerTagColor,
             balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
-            projectedInterest: projectedInterestValue > 0 ? projectedInterest : undefined,
-            taxableInterest: taxableInterestValue > 0 ? taxableInterest : undefined,
+            projectedInterest: projectedInterestLabel,
             rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
             interestPayoutFrequency: acc.interestPayoutFrequency,
             interestPayoutDate: acc.interestPayoutDate,
@@ -147,30 +153,18 @@ export function AccountsPage() {
                 </button>
 
                 <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
-                    {['person1', 'person2', 'joint'].map((tab) => {
-                        const tabAccounts = rawAccounts.filter(acc => acc.ownerId === tab);
-                        const tabTaxableInterest = calculateProjectedTaxableInterest(tabAccounts, allAccruals, startTs, endTs);
-                        const formattedTabTaxableInterest = new Intl.NumberFormat('en-GB', {
-                            style: 'currency',
-                            currency: 'GBP',
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        }).format(tabTaxableInterest);
-
-                        return (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveAccountsTab(tab)}
-                                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${activeAccountsTab === tab
-                                    ? 'bg-white dark:bg-[#1a2b25] text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
-                                    : 'text-slate-500 dark:text-[#7d998f] hover:text-slate-700 dark:hover:text-[#9db9b0]'
-                                    }`}
-                            >
-                                <div className="font-semibold">{tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}</div>
-                                <div className="text-xs font-normal opacity-80 mt-0.5">{formattedTabTaxableInterest}</div>
-                            </button>
-                        );
-                    })}
+                    {['person1', 'person2', 'joint'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveAccountsTab(tab)}
+                            className={`flex-1 py-2.5 rounded-lg text-center transition-all ${activeAccountsTab === tab
+                                ? 'bg-white dark:bg-[#1a2b25] text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                : 'text-slate-500 dark:text-[#7d998f] hover:text-slate-700 dark:hover:text-[#9db9b0]'
+                                }`}
+                        >
+                            <div className="font-semibold">{tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}</div>
+                        </button>
+                    ))}
                 </div>
             </div>
 

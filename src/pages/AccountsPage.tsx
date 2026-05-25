@@ -61,7 +61,6 @@ export function AccountsPage() {
         const projectedInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(projectedInterestValue);
 
         const isTaxFree = acc.category && TAX_FREE_CATEGORIES.includes(acc.category as any);
-        const interestLabel = isTaxFree ? 'interest this year' : 'taxable interest this year';
 
         return {
             id: acc.id,
@@ -75,7 +74,8 @@ export function AccountsPage() {
             ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
             ownerTagColor,
             balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
-            projectedInterest: projectedInterestValue > 0 ? `${projectedInterest} ${interestLabel}` : undefined,
+            projectedInterest: projectedInterestValue > 0 ? projectedInterest : undefined,
+            isTaxable: !isTaxFree,
             rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
             interestPayoutFrequency: acc.interestPayoutFrequency,
             interestPayoutDate: acc.interestPayoutDate,

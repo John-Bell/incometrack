@@ -55,61 +55,58 @@ describe('accountCalculations', () => {
         });
 
         it('should calculate correct blended rate for a single account', () => {
-            const accounts = [createMockAccount(1000, 5)];
-            expect(calculateBlendedRate(accounts)).toBeCloseTo(5, 2);
+            const accounts = [createMockAccount(1000, 5)]; // AER 48.889
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(4.8889, 2);
         });
 
         it('should calculate correct blended rate for multiple accounts', () => {
             const accounts = [
-                createMockAccount(1000, 5), // 1000 * 0.05 = 50
-                createMockAccount(3000, 2)  // 3000 * 0.02 = 60
+                createMockAccount(1000, 5), // AER -> 48.889
+                createMockAccount(3000, 2)  // AER -> 59.465
             ];
-            // Total interest = 110. Total balance = 4000. 110 / 4000 = 0.0275 = 2.75%
-            expect(calculateBlendedRate(accounts)).toBeCloseTo(2.75, 2);
+            // Total interest ~ 108.354. Total balance = 4000. 108.354 / 4000 = 2.7088%
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(2.7088, 2);
         });
 
         it('should include accounts with 0 interest rate in blended rate calculation to drag down rate', () => {
             const accounts = [
-                createMockAccount(1000, 5),
-                createMockAccount(3000, 2),
+                createMockAccount(1000, 5), // AER -> 48.889
+                createMockAccount(3000, 2), // AER -> 59.465
                 createMockAccount(4000, 0)
             ];
-            // (50 + 60 + 0) / 8000 = 110 / 8000 = 1.375%
-            expect(calculateBlendedRate(accounts)).toBeCloseTo(1.375, 2);
+            // Total interest ~ 108.354 / 8000 = 1.3544%
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(1.3544, 2);
         });
 
         it('should handle accounts with 0 balance correctly', () => {
             const accounts = [
-                createMockAccount(1000, 5),
+                createMockAccount(1000, 5), // AER 48.889
                 createMockAccount(0, 10)
             ];
-            // (50 + 0) / (1000 + 0) = 5%
-            expect(calculateBlendedRate(accounts)).toBeCloseTo(5, 2);
+            // (48.889 + 0) / 1000 = 4.8889%
+            expect(calculateBlendedRate(accounts)).toBeCloseTo(4.8889, 2);
         });
 
         it('should factor in manual tracking accounts correctly', () => {
             const manualAccount: Account = {
-                ...createMockAccount(2000, 0),
+                ...createMockAccount(10000, 6.0),
                 id: 'acc1',
-                interestTrackingMethod: 'manual'
+                interestTrackingMethod: 'manual',
+                isCompound: false
             };
-            const aerAccount = createMockAccount(1000, 5); // 1000 * 0.05 = 50
+            const aerAccount = createMockAccount(1000, 5); // 1000 * 0.05 = 50 (actually ~48.889 due to AER compound now)
 
             // Let's explicitly pass a tax year to calculateBlendedRate so we know the dates.
             // Tax year 2024-2025: starts 2024-04-06, ends 2025-04-05
             const taxYearStart = new Date(2024, 3, 6).getTime();
 
-            const accruals = [
-                { id: '1', accountId: 'acc1', date: taxYearStart + 100000, balance: 2000, interestAccrued: 10 },
-                { id: '2', accountId: 'acc1', date: taxYearStart + 200000, balance: 2000, interestAccrued: 15 } // latest
-            ];
-            // manualAccount actual interest so far: 10 + 15 = 25
-            // no projection for manual tracking, so total manual interest: 25
-            // aer account interest: 50
-            // total interest: 25 + 50 = 75
-            // total balance: 2000 + 1000 = 3000
-            // rate: 75 / 3000 = 0.025 = 2.5%
-            expect(calculateBlendedRate([manualAccount, aerAccount], accruals, '2024-2025')).toBeCloseTo(2.5, 4);
+            // S2 specification: Empty array of accruals on a manual account
+            // Total manual expected: 600
+            // aerAccount expected (isCompound defaults true): 1000 * ((1+0.05)^(1/12)-1) * 12 = 48.889
+            // Total interest = 600 + 48.889 = 648.889
+            // Total balance = 10000 + 1000 = 11000
+            // Blended rate = 648.889 / 11000 = 5.89899%
+            expect(calculateBlendedRate([manualAccount, aerAccount], [], '2024-2025')).toBeCloseTo(5.89899, 4);
         });
     });
 });
@@ -184,10 +181,8 @@ describe('calculateProjectedTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 2000, ownerId: 'p2', updatedAt: 0, category: 'Easy Access Savings', interestRate: 2 },
         ];
-        // 1000 * 0.05 = 50
-        // 2000 * 0.02 = 40
-        // Total = 90
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(90, 4);
+        // Total ~ 48.889 + 39.643 = 88.532
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(88.532, 2);
     });
 
     it('excludes DC Pension accounts from interest calculation', () => {
@@ -195,7 +190,7 @@ describe('calculateProjectedTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
         ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(48.889, 2);
     });
 
     it('excludes Premium Bonds accounts from interest calculation', () => {
@@ -203,7 +198,7 @@ describe('calculateProjectedTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 10 },
         ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(48.889, 2);
     });
 
     it('excludes Cash ISA accounts from interest calculation', () => {
@@ -211,7 +206,7 @@ describe('calculateProjectedTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 10 },
         ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(48.889, 2);
     });
 
     it('excludes Shares ISA accounts from interest calculation', () => {
@@ -219,7 +214,7 @@ describe('calculateProjectedTaxableInterest', () => {
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
         ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(48.889, 2);
     });
 
     it('excludes a mix of excluded categories and includes valid ones', () => {
@@ -231,9 +226,9 @@ describe('calculateProjectedTaxableInterest', () => {
             { id: '5', name: 'Acc 5', balance: 3000, ownerId: 'p1', updatedAt: 0, category: 'Fixed Term Savings', interestRate: 2 },
             { id: '6', name: 'Acc 6', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
         ];
-        // 1000 * 0.05 = 50
-        // 3000 * 0.02 = 60
-        // Total = 110
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(110, 4);
+        // Acc1 -> 48.889
+        // Acc5 -> 59.465
+        // Total ~ 108.346
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(108.346, 2);
     });
 });

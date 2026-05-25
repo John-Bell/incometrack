@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { calculateTotalSavings, calculateBlendedRate, calculateTaxableSavings, calculateProjectedTaxableInterest } from './accountCalculations';
+import { calculateTotalSavings, calculateBlendedRate, calculateTaxableSavings, calculateProjectedTaxableInterest, calculateProjectedTaxableInterestForAccount } from './accountCalculations';
 import { getTaxYearDates } from '@/constants/taxConstants';
 import { type Account } from '@/lib/db';
 
@@ -162,7 +162,7 @@ describe('calculateTaxableSavings', () => {
     });
 });
 
-describe('calculateProjectedTaxableInterest', () => {
+describe('Taxable Interest Calculations', () => {
     const { startTs, endTs } = getTaxYearDates();
 
     beforeAll(() => {
@@ -175,65 +175,89 @@ describe('calculateProjectedTaxableInterest', () => {
         vi.useRealTimers();
     });
 
-    it('returns 0 when accounts is empty', () => {
-        expect(calculateProjectedTaxableInterest([], [], startTs, endTs)).toBe(0);
+    describe('calculateProjectedTaxableInterestForAccount', () => {
+        it('calculates interest for a taxable account', () => {
+            const account: Account = { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 };
+            // 1000 * 0.05 = 50
+            expect(calculateProjectedTaxableInterestForAccount(account, [], startTs, endTs)).toBeCloseTo(50, 4);
+        });
+
+        it('returns 0 for tax-free categories', () => {
+            const account: Account = { id: '2', name: 'ISA', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Cash ISA', interestRate: 5 };
+            expect(calculateProjectedTaxableInterestForAccount(account, [], startTs, endTs)).toBe(0);
+        });
+
+        it('includes actual accruals', () => {
+            const account: Account = { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 };
+            const accruals = [
+                { id: 'a1', accountId: '1', date: startTs + 1000, interestAccrued: 10, balance: 1000 }
+            ];
+            // Actual (10) + Forecast (50) = 60
+            expect(calculateProjectedTaxableInterestForAccount(account, accruals, startTs, endTs)).toBeCloseTo(60, 4);
+        });
     });
 
-    it('calculates interest for non-excluded categories', () => {
-        const accounts: Account[] = [
-            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
-            { id: '2', name: 'Acc 2', balance: 2000, ownerId: 'p2', updatedAt: 0, category: 'Easy Access Savings', interestRate: 2 },
-        ];
-        // 1000 * 0.05 = 50
-        // 2000 * 0.02 = 40
-        // Total = 90
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(90, 4);
-    });
+    describe('calculateProjectedTaxableInterest', () => {
+        it('returns 0 when accounts is empty', () => {
+            expect(calculateProjectedTaxableInterest([], [], startTs, endTs)).toBe(0);
+        });
 
-    it('excludes DC Pension accounts from interest calculation', () => {
-        const accounts: Account[] = [
-            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
-            { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
-        ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
-    });
+        it('calculates interest for non-excluded categories', () => {
+            const accounts: Account[] = [
+                { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+                { id: '2', name: 'Acc 2', balance: 2000, ownerId: 'p2', updatedAt: 0, category: 'Easy Access Savings', interestRate: 2 },
+            ];
+            // 1000 * 0.05 = 50
+            // 2000 * 0.02 = 40
+            // Total = 90
+            expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(90, 4);
+        });
 
-    it('excludes Premium Bonds accounts from interest calculation', () => {
-        const accounts: Account[] = [
-            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
-            { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 10 },
-        ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
-    });
+        it('excludes DC Pension accounts from interest calculation', () => {
+            const accounts: Account[] = [
+                { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+                { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
+            ];
+            expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        });
 
-    it('excludes Cash ISA accounts from interest calculation', () => {
-        const accounts: Account[] = [
-            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
-            { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 10 },
-        ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
-    });
+        it('excludes Premium Bonds accounts from interest calculation', () => {
+            const accounts: Account[] = [
+                { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+                { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 10 },
+            ];
+            expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        });
 
-    it('excludes Shares ISA accounts from interest calculation', () => {
-        const accounts: Account[] = [
-            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
-            { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
-        ];
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
-    });
+        it('excludes Cash ISA accounts from interest calculation', () => {
+            const accounts: Account[] = [
+                { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+                { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 10 },
+            ];
+            expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        });
 
-    it('excludes a mix of excluded categories and includes valid ones', () => {
-        const accounts: Account[] = [
-            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
-            { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
-            { id: '3', name: 'Acc 3', balance: 1000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 10 },
-            { id: '4', name: 'Acc 4', balance: 2000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 10 },
-            { id: '5', name: 'Acc 5', balance: 3000, ownerId: 'p1', updatedAt: 0, category: 'Fixed Term Savings', interestRate: 2 },
-            { id: '6', name: 'Acc 6', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
-        ];
-        // 1000 * 0.05 = 50
-        // 3000 * 0.02 = 60
-        // Total = 110
-        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(110, 4);
+        it('excludes Shares ISA accounts from interest calculation', () => {
+            const accounts: Account[] = [
+                { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+                { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
+            ];
+            expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+        });
+
+        it('excludes a mix of excluded categories and includes valid ones', () => {
+            const accounts: Account[] = [
+                { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+                { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
+                { id: '3', name: 'Acc 3', balance: 1000, ownerId: 'p2', updatedAt: 0, category: 'Premium Bonds', interestRate: 10 },
+                { id: '4', name: 'Acc 4', balance: 2000, ownerId: 'p2', updatedAt: 0, category: 'Cash ISA', interestRate: 10 },
+                { id: '5', name: 'Acc 5', balance: 3000, ownerId: 'p1', updatedAt: 0, category: 'Fixed Term Savings', interestRate: 2 },
+                { id: '6', name: 'Acc 6', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Shares ISA', interestRate: 10 },
+            ];
+            // 1000 * 0.05 = 50
+            // 3000 * 0.02 = 60
+            // Total = 110
+            expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(110, 4);
+        });
     });
 });

@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest } from '@/services/accountCalculations';
+import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest, calculateProjectedTaxableInterestForAccount } from '@/services/accountCalculations';
 import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
 import { getTaxYearDates } from '@/constants/taxConstants';
 import { AppLayout } from '../components/layout/AppLayout';
@@ -62,6 +62,9 @@ export function AccountsPage() {
         const projectedInterestValue = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
         const projectedInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(projectedInterestValue);
 
+        const taxableInterestValue = calculateProjectedTaxableInterestForAccount(acc, allAccruals, startTs, endTs);
+        const taxableInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(taxableInterestValue);
+
         return {
             id: acc.id,
             ownerId: acc.ownerId, // used for filtering
@@ -75,6 +78,7 @@ export function AccountsPage() {
             ownerTagColor,
             balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
             projectedInterest: projectedInterestValue > 0 ? projectedInterest : undefined,
+            taxableInterest: taxableInterestValue > 0 ? taxableInterest : undefined,
             rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
             interestPayoutFrequency: acc.interestPayoutFrequency,
             interestPayoutDate: acc.interestPayoutDate,

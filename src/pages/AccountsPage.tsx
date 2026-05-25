@@ -5,9 +5,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest } from '@/services/accountCalculations';
-import { calculateProjectedAnnualInterest } from '@/utils/interestCalculations';
-import { getTaxYearDates } from '@/constants/taxConstants';
+import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest, calculateProjectedInterestForAccount } from '@/services/accountCalculations';
+import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -58,9 +57,10 @@ export function AccountsPage() {
         else if (accountIcon === 'B') iconColor = 'blue';
         else if (accountIcon === 'L') iconColor = 'green';
 
-        const accountAccruals = allAccruals.filter(a => a.accountId === acc.id);
-        const projectedInterestValue = calculateProjectedAnnualInterest(acc, accountAccruals, startTs, endTs);
+        const projectedInterestValue = calculateProjectedInterestForAccount(acc, allAccruals, startTs, endTs);
         const projectedInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(projectedInterestValue);
+
+        const isTaxFree = acc.category && TAX_FREE_CATEGORIES.includes(acc.category as any);
 
         return {
             id: acc.id,
@@ -75,6 +75,7 @@ export function AccountsPage() {
             ownerTagColor,
             balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
             projectedInterest: projectedInterestValue > 0 ? projectedInterest : undefined,
+            isTaxable: !isTaxFree,
             rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
             interestPayoutFrequency: acc.interestPayoutFrequency,
             interestPayoutDate: acc.interestPayoutDate,

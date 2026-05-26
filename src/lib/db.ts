@@ -37,6 +37,7 @@ export interface Account {
     bonusRateActive?: boolean;
     bonusEndDate?: number; // timestamp
     interestPayoutFrequency?: 'monthly' | 'annually' | 'at_maturity';
+    bondTermYears?: number;
     interestPayoutDate?: number; // timestamp for next expected payout or maturity payout
     isCompound?: boolean;
     // --- Import Fields ---
@@ -473,6 +474,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             interestRate: Number(a.interestRate) || 0,
             budgetOrder: a.budgetOrder !== undefined ? Number(a.budgetOrder) : undefined,
             interestPayoutDate: a.interestPayoutDate !== undefined ? Number(a.interestPayoutDate) : undefined,
+            bondTermYears: a.bondTermYears !== undefined ? Number(a.bondTermYears) : undefined,
         }));
     }
 

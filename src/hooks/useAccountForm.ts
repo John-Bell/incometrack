@@ -22,6 +22,7 @@ export interface AccountFormData {
     interestPayoutFrequency: 'monthly' | 'annually' | 'at_maturity' | '';
     interestPayoutDate: string; // YYYY-MM-DD
     isCompound: boolean;
+    bondTermYears: string;
 }
 
 const defaultFormData: AccountFormData = {
@@ -39,6 +40,7 @@ const defaultFormData: AccountFormData = {
     interestPayoutFrequency: '',
     interestPayoutDate: '',
     isCompound: true,
+    bondTermYears: '',
 };
 
 export function useAccountForm(accountId?: string) {
@@ -75,6 +77,7 @@ export function useAccountForm(accountId?: string) {
                     ? new Date(account.interestPayoutDate).toISOString().split('T')[0]
                     : '',
                 isCompound: account.isCompound === undefined ? true : account.isCompound,
+                bondTermYears: account.bondTermYears !== undefined ? account.bondTermYears.toString() : '',
             });
         } else if (!accountId) {
             setFormData(defaultFormData);
@@ -121,6 +124,9 @@ export function useAccountForm(accountId?: string) {
                 ? new Date(formData.interestPayoutDate).getTime()
                 : undefined,
             isCompound: formData.isCompound,
+            bondTermYears: formData.category === 'Fixed Term Savings' && formData.bondTermYears !== ''
+                ? parseFloat(formData.bondTermYears)
+                : undefined,
             updatedAt: Date.now(),
         };
 

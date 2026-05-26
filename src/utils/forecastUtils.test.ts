@@ -143,4 +143,35 @@ describe('calculateHybridForecast', () => {
 
         expect(result).toBeCloseTo(expected, 2);
     });
+
+    it('Scenario 7: Bond Matures in the Current Tax Year (Full Lump Sum Realized)', () => {
+        // Scenario 1: Bond Matures in the Current Tax Year (Full Lump Sum Realized)
+        //  Account Setup:
+        //  Category: Fixed Term Savings
+        //  Current Balance: £11,000
+        //  Interest Rate: 4.11% (Compounding Annually)
+        //  Payout Frequency: At Maturity
+        //  Bond Term: 2 Years
+        //  Maturity Date: August 19, 2026
+        //  Target Tax Year Evaluation: 2026–2027 (Current Year)
+
+        const testTaxYearStart = new Date('2026-04-06T00:00:00Z').getTime();
+        const testTaxYearEnd = new Date('2027-04-05T23:59:59Z').getTime();
+        const maturityDate = new Date('2026-08-19T00:00:00Z').getTime();
+
+        const bondAccount = createMockAccount({
+            category: 'Fixed Term Savings',
+            balance: 11000,
+            interestRate: 4.11,
+            isCompound: true,
+            interestPayoutFrequency: 'at_maturity',
+            bondTermYears: 2,
+            interestPayoutDate: maturityDate,
+        });
+
+        const result = calculateHybridForecast([bondAccount], [], testTaxYearStart, testTaxYearEnd);
+
+        // Expected Total Interest for This Year: £922.78
+        expect(result).toBeCloseTo(922.78, 2);
+    });
 });

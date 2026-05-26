@@ -42,12 +42,28 @@ export function calculateHybridForecastForAccount(
         const balance = account.balance || 0;
         const isCompound = account.isCompound === undefined ? true : account.isCompound;
 
-        if (isCompound) {
-            // AER daily extraction formula
-            futureProjection = balance * (Math.pow(1 + rate, daysRemaining / 365) - 1);
+        if (
+            account.interestPayoutFrequency === 'at_maturity' &&
+            account.interestPayoutDate &&
+            account.interestPayoutDate <= taxYearEnd &&
+            account.interestPayoutDate >= taxYearStart &&
+            account.bondTermYears &&
+            account.bondTermYears > 0
+        ) {
+            // Full Lump Sum Realized
+            if (isCompound) {
+                futureProjection = balance * (Math.pow(1 + rate, account.bondTermYears) - 1);
+            } else {
+                futureProjection = balance * rate * account.bondTermYears;
+            }
         } else {
-            // Simple Interest formula
-            futureProjection = balance * rate * (daysRemaining / 365);
+            if (isCompound) {
+                // AER daily extraction formula
+                futureProjection = balance * (Math.pow(1 + rate, daysRemaining / 365) - 1);
+            } else {
+                // Simple Interest formula
+                futureProjection = balance * rate * (daysRemaining / 365);
+            }
         }
     }
 

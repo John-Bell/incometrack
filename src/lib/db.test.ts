@@ -75,6 +75,44 @@ describe('Database Schema', () => {
         expect(savedIncome?.taxCategory).toBe('Earned');
     });
 
+    it('should support time-bounded Income fields', async () => {
+        const start = Date.now();
+        const end = start + 1000000;
+        const income: Income = {
+            id: 'inc2',
+            ownerId: 'user1',
+            name: 'Contract',
+            amount: 1000,
+            frequency: 'monthly',
+            type: 'employment',
+            taxCategory: 'Earned',
+            startDate: start,
+            endDate: end
+        };
+
+        await db.incomes.add(income);
+        const savedIncome = await db.incomes.get('inc2');
+
+        expect(savedIncome?.startDate).toBe(start);
+        expect(savedIncome?.endDate).toBe(end);
+    });
+
+    it('should support new Property fields', async () => {
+        const property = {
+            id: 'prop1',
+            name: 'Rental Property',
+            expectedMonthlyIncome: 1200,
+            annualGrowthRate: 3.5,
+            updatedAt: Date.now()
+        };
+
+        await db.properties.add(property);
+        const savedProperty = await db.properties.get('prop1');
+
+        expect(savedProperty?.expectedMonthlyIncome).toBe(1200);
+        expect(savedProperty?.annualGrowthRate).toBe(3.5);
+    });
+
     it('should support Settings table', async () => {
         const settings = {
             id: 'default',

@@ -55,6 +55,9 @@ export interface Income {
     type: string; // e.g., 'salary', 'rental', 'other'
     taxCategory: string; // e.g., 'Pension', 'State Pension', 'Dividend', 'Tax-Free', 'Earned'
     updatedAt?: number;
+    // --- Time-bounded fields ---
+    startDate?: number; // Timestamp (ms)
+    endDate?: number;   // Timestamp (ms)
     // --- Import Fields ---
     importId?: string;
     externalRef?: string;
@@ -159,6 +162,8 @@ export interface Property {
     id: string;
     name: string;
     updatedAt?: number;
+    expectedMonthlyIncome?: number;
+    annualGrowthRate?: number;
 }
 
 export interface PropertyExpense {
@@ -409,6 +414,26 @@ db.version(13).stores({
     deletedRows: '&id, tableName, deletedAt'
 });
 
+db.version(14).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt',
+    properties: '&id, name, updatedAt',
+    propertyExpenses: '&id, propertyId, date, updatedAt',
+    propertyIncomes: '&id, propertyId, date, updatedAt',
+    propertyOwnership: '&id, propertyId, startDate, updatedAt',
+    deletedRows: '&id, tableName, deletedAt'
+});
+
 db.version(12).stores({
     profile: '&id',
     accounts: '&id, ownerId, name, category, importId, updatedAt',
@@ -482,6 +507,8 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         rawData.incomes = rawData.incomes.map(i => ({
             ...i,
             amount: Number(i.amount) || 0,
+            startDate: i.startDate !== undefined ? Number(i.startDate) : undefined,
+            endDate: i.endDate !== undefined ? Number(i.endDate) : undefined,
         }));
     }
 
@@ -515,6 +542,14 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             startDate: Number(o.startDate) || 0,
             person1Percent: Number(o.person1Percent) || 0,
             person2Percent: Number(o.person2Percent) || 0,
+        }));
+    }
+
+    if (rawData.properties) {
+        rawData.properties = rawData.properties.map(p => ({
+            ...p,
+            expectedMonthlyIncome: p.expectedMonthlyIncome !== undefined ? Number(p.expectedMonthlyIncome) : undefined,
+            annualGrowthRate: p.annualGrowthRate !== undefined ? Number(p.annualGrowthRate) : undefined,
         }));
     }
 

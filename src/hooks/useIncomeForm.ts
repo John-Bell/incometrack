@@ -53,6 +53,8 @@ export function useIncomeForm(ownerId: string) {
             await db.incomes.update(editingId, {
                 ...formData,
                 amount: numericAmount,
+                startDate: formData.startDate ? Number(formData.startDate) : undefined,
+                endDate: formData.endDate ? Number(formData.endDate) : undefined,
                 updatedAt: Date.now()
             });
         } else {
@@ -64,6 +66,8 @@ export function useIncomeForm(ownerId: string) {
                 frequency: formData.frequency as any,
                 type: formData.type,
                 taxCategory: formData.taxCategory,
+                startDate: formData.startDate ? Number(formData.startDate) : undefined,
+                endDate: formData.endDate ? Number(formData.endDate) : undefined,
                 updatedAt: Date.now()
             } as Income);
         }

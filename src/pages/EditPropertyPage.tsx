@@ -49,10 +49,11 @@ export function EditPropertyPage() {
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            <label htmlFor="propertyName" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                 Property Name <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="propertyName"
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
@@ -60,6 +61,37 @@ export function EditPropertyPage() {
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                                 required
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="expectedMonthlyIncome" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Expected Monthly Income (£)
+                                </label>
+                                <input
+                                    id="expectedMonthlyIncome"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.expectedMonthlyIncome || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, expectedMonthlyIncome: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                                    placeholder="0.00"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="annualGrowthRate" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Annual Growth Rate (%)
+                                </label>
+                                <input
+                                    id="annualGrowthRate"
+                                    type="number"
+                                    step="0.1"
+                                    value={formData.annualGrowthRate || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, annualGrowthRate: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                                    placeholder="3.5"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                />
+                            </div>
                         </div>
                     </div>
 

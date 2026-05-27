@@ -5,6 +5,8 @@ import { db } from '@/lib/db';
 export function usePropertyForm(id?: string) {
     const [formData, setFormData] = useState<{
         name: string;
+        expectedMonthlyIncome?: number;
+        annualGrowthRate?: number;
     }>({
         name: '',
     });
@@ -23,6 +25,8 @@ export function usePropertyForm(id?: string) {
         if (property) {
             setFormData({
                 name: property.name,
+                expectedMonthlyIncome: property.expectedMonthlyIncome,
+                annualGrowthRate: property.annualGrowthRate,
             });
         }
     }, [property]);
@@ -34,6 +38,8 @@ export function usePropertyForm(id?: string) {
 
         const propertyData = {
             name: formData.name,
+            expectedMonthlyIncome: formData.expectedMonthlyIncome ? Number(formData.expectedMonthlyIncome) : undefined,
+            annualGrowthRate: formData.annualGrowthRate ? Number(formData.annualGrowthRate) : undefined,
             updatedAt: Date.now(),
         };
 

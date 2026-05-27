@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { type Income } from '@/lib/db';
 import { Icon } from '../ui/Icon';
 import { cn } from '@/lib/utils';
+import { DateInput } from '../ui/DateInput';
 
 interface IncomeEntryFormProps {
     formData: Partial<Income>;
@@ -127,6 +128,34 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                     </div>
                 </div>
 
+                {/* Time-bounded Fields */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                        <label htmlFor="startDate" className="text-xs font-bold text-slate-600 dark:text-slate-400 pl-1">Starts (Optional)</label>
+                        <DateInput
+                            id="startDate"
+                            value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => onChange('startDate', e.target.value ? new Date(e.target.value).getTime() : undefined)}
+                            className={cn(
+                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5",
+                                "text-slate-900 dark:text-white font-medium block"
+                            )}
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label htmlFor="endDate" className="text-xs font-bold text-slate-600 dark:text-slate-400 pl-1">Ends (Optional)</label>
+                        <DateInput
+                            id="endDate"
+                            value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
+                            onChange={(e) => onChange('endDate', e.target.value ? new Date(e.target.value).getTime() : undefined)}
+                            className={cn(
+                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5",
+                                "text-slate-900 dark:text-white font-medium block"
+                            )}
+                        />
+                    </div>
+                </div>
+
                 {/* Custom Name */}
                 {showCustomName && (
                     <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -146,10 +175,11 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
 
                 {/* Amount Input */}
                 <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 pl-1">Amount</label>
+                    <label htmlFor="incomeAmount" className="text-xs font-bold text-slate-600 dark:text-slate-400 pl-1">Amount</label>
                     <div className="relative">
                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">£</div>
                         <input
+                            id="incomeAmount"
                             type="number"
                             value={displayAmount}
                             onChange={(e) => onChange('amount', e.target.value)}

@@ -8,6 +8,7 @@ import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
 import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
+import { isIncomeValidInTaxYear } from '@/utils/incomeCalculations';
 
 
 export interface UseTaxCalculationsResult {
@@ -43,14 +44,16 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
         const p2Incomes = { employment: 0, pension: 0, propertyIncome: 0, propertyExpense: 0, dividends: 0, interest: 0 };
 
         if (dbIncomes) {
-            dbIncomes.forEach(inc => {
-                const amount = inc.frequency === 'monthly' ? inc.amount * 12 : inc.amount;
-                const target = inc.ownerId === 'person1' ? p1Incomes : p2Incomes;
+            dbIncomes
+                .filter(inc => isIncomeValidInTaxYear(inc, startTs, endTs))
+                .forEach(inc => {
+                    const amount = inc.frequency === 'monthly' ? inc.amount * 12 : inc.amount;
+                    const target = inc.ownerId === 'person1' ? p1Incomes : p2Incomes;
 
-                if (inc.type === 'employment') target.employment += amount;
-                else if (inc.type === 'pension') target.pension += amount;
-                else if (inc.type === 'dividends') target.dividends += amount;
-            });
+                    if (inc.type === 'employment') target.employment += amount;
+                    else if (inc.type === 'pension') target.pension += amount;
+                    else if (inc.type === 'dividends') target.dividends += amount;
+                });
         }
 
         if (dbProperties && dbPropertyIncomes && dbPropertyOwnerships) {

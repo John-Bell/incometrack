@@ -77,8 +77,6 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       totalRegularIncomeForYear += baseAnnual * fraction;
     }
 
-    trackingLiquidAssets += totalRegularIncomeForYear;
-
     let p1RentalGrossForYear = 0;
     let p2RentalGrossForYear = 0;
 
@@ -103,7 +101,26 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       p2RentalGrossForYear += escalatedGrossRent * (activeSplit.person2Percent / 100);
     }
 
-    trackingLiquidAssets += (p1RentalGrossForYear + p2RentalGrossForYear);
+    let totalBudgetsForYear = 0;
+    for (const budget of input.budgets) {
+      const baseBudgetAnnual = budget.frequency === 'monthly' ? budget.amount * 12 : budget.amount;
+      totalBudgetsForYear += baseBudgetAnnual;
+    }
+
+    const totalInflows = totalRegularIncomeForYear + p1RentalGrossForYear + p2RentalGrossForYear;
+    const netCashFlow = totalInflows - totalBudgetsForYear;
+
+    if (trackingLiquidAssets > 0) {
+      trackingLiquidAssets = (trackingLiquidAssets + netCashFlow) * (1 + input.realGrowthRate / 100);
+    } else {
+      trackingLiquidAssets = 0;
+    }
+
+    let isRunwayBroken = false;
+    if (trackingLiquidAssets <= 0) {
+      trackingLiquidAssets = 0;
+      isRunwayBroken = true;
+    }
 
     results.push({
       yearIndex,
@@ -111,7 +128,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       ageP1: currentAgeP1,
       ageP2: currentAgeP2,
       liquidAssets: trackingLiquidAssets,
-      isRunwayBroken: false,
+      isRunwayBroken: isRunwayBroken,
       milestones: []
     });
 

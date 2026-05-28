@@ -45,7 +45,9 @@ describe('Database Schema', () => {
             id: 'default',
             name: 'Smith Family',
             partner1Name: 'John',
+            partner1Dob: new Date('1980-01-01').getTime(),
             partner2Name: 'Jane',
+            partner2Dob: new Date('1982-05-15').getTime(),
             createdAt: Date.now()
         };
 
@@ -54,6 +56,8 @@ describe('Database Schema', () => {
 
         expect(savedProfile).toEqual(profile);
         expect(savedProfile?.partner1Name).toBe('John');
+        expect(savedProfile?.partner1Dob).toBe(new Date('1980-01-01').getTime());
+        expect(savedProfile?.partner2Dob).toBe(new Date('1982-05-15').getTime());
     });
 
     it('should support new Income fields', async () => {

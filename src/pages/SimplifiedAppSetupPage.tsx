@@ -1,6 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
+import { DateInput } from '@/components/ui/DateInput';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
@@ -12,7 +13,9 @@ export function SimplifiedAppSetupPage() {
     const navigate = useNavigate();
     const { setProfile, initStore } = useStore();
     const [partner1Name, setPartner1Name] = useState('');
+    const [partner1Dob, setPartner1Dob] = useState('');
     const [partner2Name, setPartner2Name] = useState('');
+    const [partner2Dob, setPartner2Dob] = useState('');
     const [syncServerUrl, setSyncServerUrl] = useState('');
     const [syncPassphrase, setSyncPassphrase] = useState('');
     const [syncHeaderKey, setSyncHeaderKey] = useState('');
@@ -31,7 +34,9 @@ export function SimplifiedAppSetupPage() {
             id: 'default',
             name: `${partner1Name.trim()} & ${partner2Name.trim() || 'Partner'}`,
             partner1Name: partner1Name.trim(),
+            partner1Dob: partner1Dob ? new Date(partner1Dob).getTime() : undefined,
             partner2Name: partner2Name.trim() || undefined,
+            partner2Dob: partner2Dob ? new Date(partner2Dob).getTime() : undefined,
             createdAt: Date.now()
         });
 
@@ -135,7 +140,7 @@ export function SimplifiedAppSetupPage() {
                         <div className="space-y-5">
                             {/* Partner 1 */}
                             <div className="space-y-3">
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                <label htmlFor="partner1Name" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                     Partner 1 Name{' '}
                                     <Icon
                                         name="info"
@@ -144,6 +149,7 @@ export function SimplifiedAppSetupPage() {
                                     />
                                 </label>
                                 <input
+                                    id="partner1Name"
                                     type="text"
                                     placeholder="e.g. Alex"
                                     value={partner1Name}
@@ -152,9 +158,22 @@ export function SimplifiedAppSetupPage() {
                                 />
                             </div>
 
-                            {/* Partner 2 */}
+                            {/* Partner 1 DOB */}
                             <div className="space-y-3 pt-2">
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                <label htmlFor="partner1Dob" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    Partner 1 Date of Birth (Optional)
+                                </label>
+                                <DateInput
+                                    id="partner1Dob"
+                                    value={partner1Dob}
+                                    onChange={(e) => setPartner1Dob(e.target.value)}
+                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                />
+                            </div>
+
+                            {/* Partner 2 */}
+                            <div className="space-y-3 pt-2 border-t border-primary/10">
+                                <label htmlFor="partner2Name" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                     Partner 2 Name{' '}
                                     <Icon
                                         name="info"
@@ -163,10 +182,24 @@ export function SimplifiedAppSetupPage() {
                                     />
                                 </label>
                                 <input
+                                    id="partner2Name"
                                     type="text"
                                     placeholder="e.g. Sam"
                                     value={partner2Name}
                                     onChange={(e) => setPartner2Name(e.target.value)}
+                                    className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                />
+                            </div>
+
+                            {/* Partner 2 DOB */}
+                            <div className="space-y-3 pt-2">
+                                <label htmlFor="partner2Dob" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    Partner 2 Date of Birth (Optional)
+                                </label>
+                                <DateInput
+                                    id="partner2Dob"
+                                    value={partner2Dob}
+                                    onChange={(e) => setPartner2Dob(e.target.value)}
                                     className="w-full bg-white dark:bg-background-dark border border-primary/20 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
                                 />
                             </div>

@@ -7,6 +7,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
+import { DateInput } from '@/components/ui/DateInput';
 
 export function SettingsPage() {
     const navigate = useNavigate();
@@ -14,17 +15,33 @@ export function SettingsPage() {
 
     const settings = useLiveQuery(() => db.settings.toArray());
     const taxRules = useLiveQuery(() => db.taxRules.toArray());
+    const profiles = useLiveQuery(() => db.profile.toArray());
 
     const currentSettings = settings?.[0];
+    const currentProfile = profiles?.[0];
 
     const [isSaving, setIsSaving] = useState(false);
     const [remoteSync, setRemoteSync] = useState(false);
+
+    const [partner1Name, setPartner1Name] = useState('');
+    const [partner1Dob, setPartner1Dob] = useState('');
+    const [partner2Name, setPartner2Name] = useState('');
+    const [partner2Dob, setPartner2Dob] = useState('');
 
     useEffect(() => {
         if (currentSettings) {
             setRemoteSync(currentSettings.icloudSync || false);
         }
     }, [currentSettings]);
+
+    useEffect(() => {
+        if (currentProfile) {
+            setPartner1Name(currentProfile.partner1Name || '');
+            setPartner1Dob(currentProfile.partner1Dob ? new Date(currentProfile.partner1Dob).toISOString().split('T')[0] : '');
+            setPartner2Name(currentProfile.partner2Name || '');
+            setPartner2Dob(currentProfile.partner2Dob ? new Date(currentProfile.partner2Dob).toISOString().split('T')[0] : '');
+        }
+    }, [currentProfile]);
 
     const handleTaxYearChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         if (currentSettings) {
@@ -34,12 +51,24 @@ export function SettingsPage() {
     };
 
     const handleSave = async () => {
-        if (currentSettings) {
+        if (currentSettings || currentProfile) {
             setIsSaving(true);
             try {
-                await db.settings.update(currentSettings.id, {
-                    icloudSync: remoteSync,
-                });
+                if (currentSettings) {
+                    await db.settings.update(currentSettings.id, {
+                        icloudSync: remoteSync,
+                    });
+                }
+
+                if (currentProfile) {
+                    await db.profile.update(currentProfile.id, {
+                        name: `${partner1Name.trim()} & ${partner2Name.trim() || 'Partner'}`,
+                        partner1Name: partner1Name.trim(),
+                        partner1Dob: partner1Dob ? new Date(partner1Dob).getTime() : undefined,
+                        partner2Name: partner2Name.trim() || undefined,
+                        partner2Dob: partner2Dob ? new Date(partner2Dob).getTime() : undefined,
+                    });
+                }
                 await new Promise(resolve => setTimeout(resolve, 500));
             } finally {
                 setIsSaving(false);
@@ -106,6 +135,57 @@ export function SettingsPage() {
                                     className="invisible absolute"
                                 />
                             </label>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mt-8 px-4">
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-primary/60 mb-3 px-1">Profile</h2>
+                    <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl divide-y divide-slate-100 dark:divide-primary/5 p-4 space-y-4">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="partner1Name" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 1 Name</label>
+                                    <input
+                                        id="partner1Name"
+                                        type="text"
+                                        value={partner1Name}
+                                        onChange={(e) => setPartner1Name(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="partner1Dob" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 1 DOB</label>
+                                    <DateInput
+                                        id="partner1Dob"
+                                        value={partner1Dob}
+                                        onChange={(e) => setPartner1Dob(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label htmlFor="partner2Name" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 2 Name</label>
+                                    <input
+                                        id="partner2Name"
+                                        type="text"
+                                        value={partner2Name}
+                                        onChange={(e) => setPartner2Name(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label htmlFor="partner2Dob" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 2 DOB</label>
+                                    <DateInput
+                                        id="partner2Dob"
+                                        value={partner2Dob}
+                                        onChange={(e) => setPartner2Dob(e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>

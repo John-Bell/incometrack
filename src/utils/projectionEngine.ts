@@ -1,3 +1,5 @@
+import type { Income } from '../lib/db';
+
 export interface ProjectionEngineInput {
   currentBalances: number; // Sum of active balances across liquid pots
   realGrowthRate: number;  // App global growth asset rate (e.g., 2.38)
@@ -5,7 +7,7 @@ export interface ProjectionEngineInput {
     partner1Dob: number;   // Epoch timestamp ms
     partner2Dob?: number;  // Epoch timestamp ms
   };
-  incomes: any[];          // Kept as any[] for this task
+  incomes: Income[];
   budgets: any[];          // Kept as any[] for this task
   properties: any[];       // Kept as any[] for this task
   propertyOwnership: any[]; // Kept as any[] for this task
@@ -48,6 +50,35 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
   let runningCalendarYear = startYear;
 
   while (true) {
+    // 1. Calculate boundaries for this specific calendar year
+    const yearStartTs = new Date(runningCalendarYear, 0, 1, 0, 0, 0, 0).getTime();
+    const yearEndTs = new Date(runningCalendarYear, 11, 31, 23, 59, 59, 999).getTime();
+    const yearTotalMs = yearEndTs - yearStartTs;
+
+    let totalRegularIncomeForYear = 0;
+
+    for (const income of input.incomes) {
+      if (income.type === 'rental') {
+        continue;
+      }
+
+      const effectiveStart = Math.max(yearStartTs, income.startDate ?? yearStartTs);
+      const effectiveEnd = Math.min(yearEndTs, income.endDate ?? yearEndTs);
+
+      if (effectiveStart > effectiveEnd) {
+        continue;
+      }
+
+      const activeMs = effectiveEnd - effectiveStart;
+      const fraction = activeMs / yearTotalMs;
+
+      const baseAnnual = income.frequency === 'monthly' ? income.amount * 12 : income.amount;
+
+      totalRegularIncomeForYear += baseAnnual * fraction;
+    }
+
+    trackingLiquidAssets += totalRegularIncomeForYear;
+
     results.push({
       yearIndex,
       calendarYear: runningCalendarYear,

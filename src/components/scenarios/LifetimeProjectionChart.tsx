@@ -86,12 +86,12 @@ const LifetimeProjectionChart: React.FC = () => {
           <AreaChart
             data={data}
             margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
-            onMouseMove={(e) => {
+            onMouseMove={(e: any) => {
               if (e.activePayload) {
                 setActivePoint(e.activePayload[0].payload);
               }
             }}
-            onTouchMove={(e) => {
+            onTouchMove={(e: any) => {
               if (e.activePayload) {
                 setActivePoint(e.activePayload[0].payload);
               }

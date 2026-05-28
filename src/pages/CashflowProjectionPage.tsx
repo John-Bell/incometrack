@@ -1,4 +1,3 @@
-import React from 'react';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';

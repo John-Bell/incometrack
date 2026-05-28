@@ -79,6 +79,32 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
     trackingLiquidAssets += totalRegularIncomeForYear;
 
+    let p1RentalGrossForYear = 0;
+    let p2RentalGrossForYear = 0;
+
+    for (const property of input.properties) {
+      // Step A: Escalate Expected Rent
+      const baseMonthly = property.expectedMonthlyIncome ?? 0;
+      const annualBaseRent = baseMonthly * 12;
+      const growthRate = property.annualGrowthRate ?? 0;
+      const escalatedGrossRent = annualBaseRent * Math.pow(1 + growthRate / 100, yearIndex);
+
+      // Step B: Find active ownership split
+      const relevantOwnerships = input.propertyOwnership
+        .filter(o => o.propertyId === property.id && o.startDate <= yearEndTs)
+        .sort((a, b) => b.startDate - a.startDate);
+
+      const activeSplit = relevantOwnerships.length > 0
+        ? relevantOwnerships[0]
+        : { person1Percent: 50, person2Percent: 50 };
+
+      // Step C: Apportion to loop tracking variables
+      p1RentalGrossForYear += escalatedGrossRent * (activeSplit.person1Percent / 100);
+      p2RentalGrossForYear += escalatedGrossRent * (activeSplit.person2Percent / 100);
+    }
+
+    trackingLiquidAssets += (p1RentalGrossForYear + p2RentalGrossForYear);
+
     results.push({
       yearIndex,
       calendarYear: runningCalendarYear,

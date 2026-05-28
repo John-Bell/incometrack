@@ -1,14 +1,4 @@
-export interface IncomeInput {
-  id: string;
-  ownerId: string;
-  name: string;
-  amount: number;
-  frequency: string; // 'monthly' | 'annually'
-  type: string;      // 'employment' | 'pension' | 'rental' | 'other'
-  taxCategory: string;
-  startDate?: number; // Timestamp ms
-  endDate?: number;   // Timestamp ms
-}
+import type { Income } from '../lib/db';
 
 export interface ProjectionEngineInput {
   currentBalances: number; // Sum of active balances across liquid pots
@@ -17,7 +7,7 @@ export interface ProjectionEngineInput {
     partner1Dob: number;   // Epoch timestamp ms
     partner2Dob?: number;  // Epoch timestamp ms
   };
-  incomes: IncomeInput[];
+  incomes: Income[];
   budgets: any[];          // Kept as any[] for this task
   properties: any[];       // Kept as any[] for this task
   propertyOwnership: any[]; // Kept as any[] for this task

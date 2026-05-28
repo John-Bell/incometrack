@@ -1,4 +1,6 @@
 import type { Income, Budget, Property, PropertyOwnership } from '../lib/db';
+import { TaxCalculationService } from '../services/TaxCalculationService';
+import type { TaxRulesByYear } from '../constants/taxConstants';
 
 export interface ProjectionEngineInput {
   currentBalances: number; // Sum of active balances across liquid pots
@@ -11,6 +13,7 @@ export interface ProjectionEngineInput {
   budgets: Budget[];
   properties: Property[];
   propertyOwnership: PropertyOwnership[];
+  taxRules: TaxRulesByYear;
 }
 
 export interface ProjectionYearResult {
@@ -55,7 +58,13 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const yearEndTs = new Date(runningCalendarYear, 11, 31, 23, 59, 59, 999).getTime();
     const yearTotalMs = yearEndTs - yearStartTs;
 
-    let totalRegularIncomeForYear = 0;
+    let p1Salary = 0;
+    let p1Pension = 0;
+    let p1Dividends = 0;
+
+    let p2Salary = 0;
+    let p2Pension = 0;
+    let p2Dividends = 0;
 
     for (const income of input.incomes) {
       if (income.type === 'rental') {
@@ -73,8 +82,17 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       const fraction = activeMs / yearTotalMs;
 
       const baseAnnual = income.frequency === 'monthly' ? income.amount * 12 : income.amount;
+      const amountForYear = baseAnnual * fraction;
 
-      totalRegularIncomeForYear += baseAnnual * fraction;
+      if (income.ownerId === 'person1') {
+        if (income.type === 'employment') p1Salary += amountForYear;
+        else if (income.type === 'pension') p1Pension += amountForYear;
+        else if (income.type === 'dividends') p1Dividends += amountForYear;
+      } else if (income.ownerId === 'person2') {
+        if (income.type === 'employment') p2Salary += amountForYear;
+        else if (income.type === 'pension') p2Pension += amountForYear;
+        else if (income.type === 'dividends') p2Dividends += amountForYear;
+      }
     }
 
     let p1RentalGrossForYear = 0;
@@ -107,8 +125,35 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       totalBudgetsForYear += baseBudgetAnnual;
     }
 
-    const totalInflows = totalRegularIncomeForYear + p1RentalGrossForYear + p2RentalGrossForYear;
-    const netCashFlow = totalInflows - totalBudgetsForYear;
+    const taxYearString = `${runningCalendarYear}-${runningCalendarYear + 1}`;
+    const taxService = new TaxCalculationService(input.taxRules, taxYearString);
+
+    const p1TaxInput = {
+      salary: p1Salary,
+      rentalIncome: p1RentalGrossForYear,
+      propertyExpenses: 0,
+      pensionIncome: p1Pension,
+      untaxedInterest: 0,
+      dividends: p1Dividends,
+      directPensionContrib: 0,
+    };
+
+    const p2TaxInput = {
+      salary: p2Salary,
+      rentalIncome: p2RentalGrossForYear,
+      propertyExpenses: 0,
+      pensionIncome: p2Pension,
+      untaxedInterest: 0,
+      dividends: p2Dividends,
+      directPensionContrib: 0,
+    };
+
+    const p1TaxResult = taxService.calculateTax(p1TaxInput, taxYearString);
+    const p2TaxResult = taxService.calculateTax(p2TaxInput, taxYearString);
+    const totalTaxForYear = p1TaxResult.totalTax + p2TaxResult.totalTax;
+
+    const totalInflows = (p1Salary + p1Pension + p1Dividends + p2Salary + p2Pension + p2Dividends) + p1RentalGrossForYear + p2RentalGrossForYear;
+    const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
     if (trackingLiquidAssets > 0) {
       trackingLiquidAssets = (trackingLiquidAssets + netCashFlow) * (1 + input.realGrowthRate / 100);

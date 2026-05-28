@@ -73,6 +73,19 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
                             Simulator
                         </span>
                     </button>
+                    <div className="px-3 pt-4 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cashflow Projection</div>
+                    <button
+                        type="button"
+                        onClick={() => handleNavigate('/cashflow-projection')}
+                        className="flex items-center gap-4 w-full p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-surface-dark transition-colors text-left cursor-pointer group"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-black/30 flex items-center justify-center text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">
+                            <Icon name="trending_up" className="text-xl" />
+                        </div>
+                        <span className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                            Cashflow Projection
+                        </span>
+                    </button>
                     <button
                         type="button"
                         onClick={() => handleNavigate('/settings')}

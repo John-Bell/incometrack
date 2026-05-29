@@ -24,6 +24,8 @@ export interface ProjectionYearResult {
   liquidAssets: number;
   isRunwayBroken: boolean;
   milestones: string[];
+  annualBudget: number;
+  netCashFlow: number;
 }
 
 function calculateAge(dobTimestamp: number, currentDate: Date): number {
@@ -174,7 +176,9 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       ageP2: currentAgeP2,
       liquidAssets: trackingLiquidAssets,
       isRunwayBroken: isRunwayBroken,
-      milestones: []
+      milestones: [],
+      annualBudget: totalBudgetsForYear,
+      netCashFlow: netCashFlow
     });
 
     if (currentAgeP1 >= 100) {

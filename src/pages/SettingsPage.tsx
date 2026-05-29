@@ -22,6 +22,7 @@ export function SettingsPage() {
 
     const [isSaving, setIsSaving] = useState(false);
     const [remoteSync, setRemoteSync] = useState(false);
+    const [defaultGrowthRate, setDefaultGrowthRate] = useState<number>(1.75);
 
     const [partner1Name, setPartner1Name] = useState('');
     const [partner1Dob, setPartner1Dob] = useState('');
@@ -31,6 +32,7 @@ export function SettingsPage() {
     useEffect(() => {
         if (currentSettings) {
             setRemoteSync(currentSettings.icloudSync || false);
+            setDefaultGrowthRate(currentSettings.defaultGrowthRate ?? 1.75);
         }
     }, [currentSettings]);
 
@@ -57,6 +59,7 @@ export function SettingsPage() {
                 if (currentSettings) {
                     await db.settings.update(currentSettings.id, {
                         icloudSync: remoteSync,
+                        defaultGrowthRate: defaultGrowthRate,
                     });
                 }
 
@@ -203,6 +206,24 @@ export function SettingsPage() {
                             <div className="flex items-center gap-2 text-primary font-semibold">
                                 <span>GBP (£)</span>
                                 <Icon name="chevron_right" className="text-sm" />
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-primary/5 text-slate-600 dark:text-primary/80">
+                                    <Icon name="trending_up" />
+                                </div>
+                                <p className="font-medium">Default Real Growth Rate (%)</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={defaultGrowthRate}
+                                    onChange={(e) => setDefaultGrowthRate(parseFloat(e.target.value) || 0)}
+                                    className="w-20 bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30 text-right"
+                                />
                             </div>
                         </div>
 

@@ -37,7 +37,9 @@ export function useLifetimeProjection() {
       'Notice Savings',
       'Cash ISA',
       'Shares ISA',
-      'DC Pension'
+      'DC Pension',
+      'Stocks & Shares',
+      'Premium Bonds'
     ];
 
     const totalLiquidBalances = dbAccounts

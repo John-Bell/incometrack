@@ -1,8 +1,10 @@
 import { Icon } from '@/components/ui/Icon';
 import { useStore } from '@/store/useStore';
+import { useSelectableAccounts } from '@/hooks/useSelectableAccounts';
 
 export function ScenarioSetup() {
     const { profile } = useStore();
+    const { options, isReady } = useSelectableAccounts();
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
 
@@ -19,9 +21,15 @@ export function ScenarioSetup() {
                 </label>
                 <div className="relative">
                     <select className="w-full appearance-none bg-gray-50 dark:bg-[#2a3833] border border-gray-200 dark:border-[#3b4b45] text-slate-900 dark:text-white rounded-lg py-3 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow font-medium text-base">
-                        <option>Chase Saver (£85,000)</option>
-                        <option>Marcus Easy Access (£20,000)</option>
-                        <option>Premium Bonds (£50,000)</option>
+                        {!isReady ? (
+                            <option disabled>Loading...</option>
+                        ) : options.length === 0 ? (
+                            <option disabled>No liquid accounts found</option>
+                        ) : (
+                            options.map(opt => (
+                                <option key={opt.id} value={opt.id}>{opt.label}</option>
+                            ))
+                        )}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500 dark:text-slate-400">
                         <Icon name="expand_more" />

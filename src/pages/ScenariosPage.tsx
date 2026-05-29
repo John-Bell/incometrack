@@ -2,7 +2,6 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
-import { ScenarioSetup } from '../components/scenarios/ScenarioSetup';
 import { FinancialImpactCard } from '../components/scenarios/FinancialImpactCard';
 import { useStore } from '@/store/useStore';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
@@ -24,8 +23,6 @@ export function ScenariosPage() {
             }
         >
             <div className="p-4 flex flex-col gap-6">
-                <ScenarioSetup />
-
                 <section className="flex flex-col gap-4">
                     <div className="flex items-center gap-2 mb-1">
                         <Icon name="insights" className="text-primary text-xl" />

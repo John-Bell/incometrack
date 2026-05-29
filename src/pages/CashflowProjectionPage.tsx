@@ -3,7 +3,6 @@ import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import LifetimeProjectionChart from '../components/scenarios/LifetimeProjectionChart';
 import { FinancialImpactCard } from '../components/scenarios/FinancialImpactCard';
-import { ScenarioSetup } from '../components/scenarios/ScenarioSetup';
 import { useLifetimeProjection } from '../hooks/useLifetimeProjection';
 
 export function CashflowProjectionPage() {
@@ -43,8 +42,6 @@ export function CashflowProjectionPage() {
                     </div>
 
                     <div className="space-y-6">
-                        <ScenarioSetup />
-
                         <FinancialImpactCard
                             title="Terminal Liquid Wealth"
                             icon="account_balance_wallet"

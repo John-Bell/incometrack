@@ -64,20 +64,20 @@ const LifetimeProjectionChart: React.FC = () => {
 
   return (
     <div className="w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm touch-pan-y select-none relative">
-      {/* A. STATIC ASSUMPTIONS OVERLAY BADGE */}
-      <div className="absolute top-4 right-4 z-10 p-2 text-[10px] text-gray-500 max-w-[200px] rounded-lg bg-gray-50 border border-slate-100 leading-relaxed pointer-events-none">
-        <span className="font-bold block mb-0.5">Assumptions</span>
-        Real Investment Growth: 2.38% (net of fees). We use conservative growth assumptions given the unpredictability of stock/bond returns and inflation.
-      </div>
-
       {/* B. TOUCH READOUT DATA HEADER PANEL */}
-      <div className="mb-6 pt-2">
+      <div className="md:mb-6 pt-2">
         <div className="text-2xl font-bold text-gray-900 tracking-tight">
           {formatCurrency(displayPoint.liquidAssets)}
         </div>
         <div className="text-xs font-medium text-gray-500 mt-0.5">
           Year: {displayPoint.calendarYear} | {p1Name}: Age {displayPoint.ageP1} • {p2Name}: Age {displayPoint.ageP2}
         </div>
+      </div>
+
+      {/* A. STATIC ASSUMPTIONS OVERLAY BADGE */}
+      <div className="mt-4 mb-6 md:mt-0 md:mb-0 relative block w-full md:absolute md:top-4 md:right-4 z-10 p-2 text-[10px] text-gray-500 md:max-w-[200px] rounded-lg bg-gray-50 border border-slate-100 leading-relaxed pointer-events-none">
+        <span className="font-bold block mb-0.5">Assumptions</span>
+        Real Investment Growth: 2.38% (net of fees). We use conservative growth assumptions given the unpredictability of stock/bond returns and inflation.
       </div>
 
       {/* C. THE RECHARTS GRAPH CANVAS */}

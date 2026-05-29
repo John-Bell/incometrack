@@ -17,14 +17,16 @@ export function useLifetimeProjection() {
   return useMemo(() => {
     // Fallback Boundary
     if (!dbProfile || dbProfile.length === 0 || !dbProfile[0].partner1Dob) {
-      return { data: [] as ProjectionYearResult[], isReady: false };
+      return { data: [] as ProjectionYearResult[], isReady: false, p1Name: 'Partner 1', p2Name: 'Partner 2' };
     }
 
     const activeProfile = dbProfile[0];
+    const p1Name = activeProfile.partner1Name || 'Partner 1';
+    const p2Name = activeProfile.partner2Name || 'Partner 2';
 
     // Ensure dependent data are loaded
     if (!dbAccounts || !dbIncomes || !dbBudgets || !dbProperties || !dbPropertyOwnership || !dbTaxRules) {
-      return { data: [] as ProjectionYearResult[], isReady: false };
+      return { data: [] as ProjectionYearResult[], isReady: false, p1Name, p2Name };
     }
 
     // Calculate Initial Capital Pool
@@ -100,7 +102,9 @@ export function useLifetimeProjection() {
 
     return {
       data: projectionData,
-      isReady: true
+      isReady: true,
+      p1Name,
+      p2Name
     };
   }, [
     dbProfile,

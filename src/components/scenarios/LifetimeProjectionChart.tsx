@@ -16,7 +16,7 @@ import { useLifetimeProjection } from '@/hooks/useLifetimeProjection';
  * Designed to prevent scroll hijacking and provide a clear readout header on scrub.
  */
 const LifetimeProjectionChart: React.FC = () => {
-  const { data, isReady } = useLifetimeProjection();
+  const { data, isReady, p1Name, p2Name } = useLifetimeProjection();
   const [activePoint, setActivePoint] = useState<any>(null);
 
   // Loading State
@@ -76,7 +76,7 @@ const LifetimeProjectionChart: React.FC = () => {
           {formatCurrency(displayPoint.liquidAssets)}
         </div>
         <div className="text-xs font-medium text-gray-500 mt-0.5">
-          Year: {displayPoint.calendarYear} | Dan: Age {displayPoint.ageP1} • Freya: Age {displayPoint.ageP2}
+          Year: {displayPoint.calendarYear} | {p1Name}: Age {displayPoint.ageP1} • {p2Name}: Age {displayPoint.ageP2}
         </div>
       </div>
 
@@ -148,8 +148,8 @@ const LifetimeProjectionChart: React.FC = () => {
 
       {/* Optional: Legend for Age Rows */}
       <div className="flex flex-col gap-1 mt-2 text-[10px] text-gray-400 absolute bottom-6 left-4">
-        <span>Dan</span>
-        <span>Freya</span>
+        <span>{p1Name}</span>
+        <span>{p2Name}</span>
       </div>
     </div>
   );

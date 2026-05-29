@@ -50,6 +50,7 @@ export function SimplifiedAppSetupPage() {
             syncServerUrl: syncServerUrl.trim() || undefined,
             syncPassphrase: syncPassphrase.trim() || undefined,
             syncHeaderKey: syncHeaderKey.trim() || undefined,
+            defaultGrowthRate: existingSettings?.defaultGrowthRate ?? 1.75,
             updatedAt: Date.now()
         });
 
@@ -89,6 +90,7 @@ export function SimplifiedAppSetupPage() {
                 syncServerUrl: restoreSyncServerUrl.trim() || undefined,
                 syncPassphrase: restoreSyncPassphrase.trim() || undefined,
                 syncHeaderKey: restoreSyncHeaderKey.trim() || undefined,
+                defaultGrowthRate: existingSettings?.defaultGrowthRate ?? 1.75,
                 lastSynced: Date.now(),
                 updatedAt: Date.now()
             });

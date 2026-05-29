@@ -13,11 +13,12 @@ export function useLifetimeProjection() {
   const dbProperties = useLiveQuery(() => db.properties.toArray());
   const dbPropertyOwnership = useLiveQuery(() => db.propertyOwnership.toArray());
   const dbTaxRules = useLiveQuery(() => db.taxRules.toArray());
+  const dbSettings = useLiveQuery(() => db.settings.toArray());
 
   return useMemo(() => {
     // Fallback Boundary
     if (!dbProfile || dbProfile.length === 0 || !dbProfile[0].partner1Dob) {
-      return { data: [] as ProjectionYearResult[], isReady: false, p1Name: 'Partner 1', p2Name: 'Partner 2' };
+      return { data: [] as ProjectionYearResult[], isReady: false, p1Name: 'Partner 1', p2Name: 'Partner 2', growthRate: 1.75 };
     }
 
     const activeProfile = dbProfile[0];
@@ -25,9 +26,11 @@ export function useLifetimeProjection() {
     const p2Name = activeProfile.partner2Name || 'Partner 2';
 
     // Ensure dependent data are loaded
-    if (!dbAccounts || !dbIncomes || !dbBudgets || !dbProperties || !dbPropertyOwnership || !dbTaxRules) {
-      return { data: [] as ProjectionYearResult[], isReady: false, p1Name, p2Name };
+    if (!dbAccounts || !dbIncomes || !dbBudgets || !dbProperties || !dbPropertyOwnership || !dbTaxRules || !dbSettings) {
+      return { data: [] as ProjectionYearResult[], isReady: false, p1Name, p2Name, growthRate: 1.75 };
     }
+
+    const growthRate = dbSettings[0]?.defaultGrowthRate ?? 1.75;
 
     // Calculate Initial Capital Pool
     const liquidCategories = [
@@ -90,7 +93,7 @@ export function useLifetimeProjection() {
     // Execute Engine Matrix
     const projectionData = calculateLifetimeProjection({
       currentBalances: totalLiquidBalances,
-      realGrowthRate: 2.38,
+      realGrowthRate: growthRate,
       profile: {
         partner1Dob: activeProfile.partner1Dob as number,
         partner2Dob: activeProfile.partner2Dob
@@ -106,7 +109,8 @@ export function useLifetimeProjection() {
       data: projectionData,
       isReady: true,
       p1Name,
-      p2Name
+      p2Name,
+      growthRate
     };
   }, [
     dbProfile,
@@ -115,6 +119,7 @@ export function useLifetimeProjection() {
     dbBudgets,
     dbProperties,
     dbPropertyOwnership,
-    dbTaxRules
+    dbTaxRules,
+    dbSettings
   ]);
 }

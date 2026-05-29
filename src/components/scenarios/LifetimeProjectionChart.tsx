@@ -16,7 +16,7 @@ import { useLifetimeProjection } from '@/hooks/useLifetimeProjection';
  * Designed to prevent scroll hijacking and provide a clear readout header on scrub.
  */
 const LifetimeProjectionChart: React.FC = () => {
-  const { data, isReady, p1Name, p2Name } = useLifetimeProjection();
+  const { data, isReady, p1Name, p2Name, growthRate } = useLifetimeProjection();
   const [activePoint, setActivePoint] = useState<any>(null);
 
   // Loading State
@@ -77,7 +77,7 @@ const LifetimeProjectionChart: React.FC = () => {
       {/* A. STATIC ASSUMPTIONS OVERLAY BADGE */}
       <div className="mt-4 mb-6 md:mt-0 md:mb-0 relative block w-full md:absolute md:top-4 md:right-4 z-10 p-2 text-[10px] text-gray-500 md:max-w-[200px] rounded-lg bg-gray-50 border border-slate-100 leading-relaxed pointer-events-none">
         <span className="font-bold block mb-0.5">Assumptions</span>
-        Real Investment Growth: 2.38% (net of fees). We use conservative growth assumptions given the unpredictability of stock/bond returns and inflation.
+        Real Investment Growth: {growthRate}% (net of fees). We use conservative growth assumptions given the unpredictability of stock/bond returns and inflation.
       </div>
 
       {/* C. THE RECHARTS GRAPH CANVAS */}

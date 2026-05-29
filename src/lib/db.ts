@@ -83,6 +83,7 @@ export interface Settings {
     syncServerUrl?: string;
     syncPassphrase?: string;
     syncHeaderKey?: string;
+    defaultGrowthRate?: number;
 }
 
 export interface MonthlyArchive {

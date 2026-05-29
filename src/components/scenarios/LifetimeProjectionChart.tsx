@@ -65,12 +65,36 @@ const LifetimeProjectionChart: React.FC = () => {
   return (
     <div className="w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm touch-pan-y select-none relative">
       {/* B. TOUCH READOUT DATA HEADER PANEL */}
-      <div className="md:mb-6 pt-2">
-        <div className="text-2xl font-bold text-gray-900 tracking-tight">
-          {formatCurrency(displayPoint.liquidAssets)}
+      <div className="mb-4 pt-2">
+        {/* Main Asset Row */}
+        <div className="flex items-baseline justify-between">
+          <div className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            {formatCurrency(displayPoint.liquidAssets)}
+          </div>
+          <div className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            {displayPoint.calendarYear}
+          </div>
         </div>
-        <div className="text-xs font-medium text-gray-500 mt-0.5">
-          Year: {displayPoint.calendarYear} | {p1Name}: Age {displayPoint.ageP1} • {p2Name}: Age {displayPoint.ageP2}
+
+        {/* Age Descriptions Row */}
+        <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
+          {p1Name}: Age {displayPoint.ageP1} {p2Name ? `• ${p2Name}: Age ${displayPoint.ageP2}` : ''}
+        </div>
+
+        {/* Secondary Financial Metrics Sub-Grid */}
+        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-dashed border-gray-100 dark:border-slate-800">
+          <div>
+            <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Annual Outgoings</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {formatCurrency(displayPoint.annualBudget)}
+            </span>
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Net Cashflow</span>
+            <span className={`text-sm font-bold ${displayPoint.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {displayPoint.netCashFlow >= 0 ? '+' : ''}{formatCurrency(displayPoint.netCashFlow)}
+            </span>
+          </div>
         </div>
       </div>
 

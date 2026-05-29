@@ -110,17 +110,26 @@ const LifetimeProjectionChart: React.FC = () => {
           <AreaChart
             data={data}
             margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
+            onClick={(e: any) => {
+              if (e && e.activePayload && e.activePayload.length > 0) {
+                setActivePoint(e.activePayload[0].payload);
+              }
+            }}
+            onTouchStart={(e: any) => {
+              if (e && e.activePayload && e.activePayload.length > 0) {
+                setActivePoint(e.activePayload[0].payload);
+              }
+            }}
             onMouseMove={(e: any) => {
-              if (e.activePayload) {
+              if (e && e.activePayload && e.activePayload.length > 0) {
                 setActivePoint(e.activePayload[0].payload);
               }
             }}
             onTouchMove={(e: any) => {
-              if (e.activePayload) {
+              if (e && e.activePayload && e.activePayload.length > 0) {
                 setActivePoint(e.activePayload[0].payload);
               }
             }}
-            onMouseLeave={() => setActivePoint(null)}
           >
             <defs>
               <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">

@@ -293,6 +293,21 @@ export const getDefaultTaxYear = (taxYear?: string): string => {
   return requestedYear ?? (TAX_YEAR_CONSTANTS[currentYear] ? currentYear : DEFAULT_TAX_YEAR);
 };
 
+export const getTaxYearOrLatest = (taxYear?: string): string => {
+  if (taxYear && TAX_YEAR_CONSTANTS[taxYear]) {
+    return taxYear;
+  }
+  if (taxYear) {
+    // If a tax year was requested but doesn't exist, find the latest available
+    const availableYears = Object.keys(TAX_YEAR_CONSTANTS).sort();
+    if (availableYears.length > 0) {
+      return availableYears[availableYears.length - 1];
+    }
+  }
+  const currentYear = getCurrentTaxYearKey();
+  return TAX_YEAR_CONSTANTS[currentYear] ? currentYear : DEFAULT_TAX_YEAR;
+};
+
 export const getTaxYearDates = (taxYear?: string): { startTs: number; endTs: number } => {
   const resolvedYear = getDefaultTaxYear(taxYear);
   const startYearStr = resolvedYear.split('-')[0];

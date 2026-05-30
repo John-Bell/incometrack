@@ -287,12 +287,6 @@ export const getTaxConstants = (taxYear?: string): TaxYearConstants => {
   return TAX_YEAR_CONSTANTS[resolvedYear];
 };
 
-export const getDefaultTaxYear = (taxYear?: string): string => {
-  const requestedYear = taxYear && TAX_YEAR_CONSTANTS[taxYear] ? taxYear : undefined;
-  const currentYear = getCurrentTaxYearKey();
-  return requestedYear ?? (TAX_YEAR_CONSTANTS[currentYear] ? currentYear : DEFAULT_TAX_YEAR);
-};
-
 export const getTaxYearOrLatest = (taxYear?: string): string => {
   if (taxYear && TAX_YEAR_CONSTANTS[taxYear]) {
     return taxYear;
@@ -309,7 +303,7 @@ export const getTaxYearOrLatest = (taxYear?: string): string => {
 };
 
 export const getTaxYearDates = (taxYear?: string): { startTs: number; endTs: number } => {
-  const resolvedYear = getDefaultTaxYear(taxYear);
+  const resolvedYear = getTaxYearOrLatest(taxYear);
   const startYearStr = resolvedYear.split('-')[0];
   const startYear = parseInt(startYearStr, 10);
 

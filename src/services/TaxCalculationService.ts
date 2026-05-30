@@ -1,4 +1,4 @@
-import { getDefaultTaxYear, getTaxConstants, type TaxRulesByYear } from '../constants/taxConstants';
+import { getTaxYearOrLatest, getTaxConstants, type TaxRulesByYear } from '../constants/taxConstants';
 import { BrbTracker } from '../models/BrbTracker';
 import { PersonalAllowanceTracker } from '../models/PersonalAllowanceTracker';
 import type { TaxCalculationInput } from '../models/TaxCalculationInput';
@@ -27,7 +27,7 @@ export class TaxCalculationService {
   }
 
   calculateTax(input: TaxCalculationInput, taxYear?: string): TaxCalculationResult {
-    const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
+    const resolvedTaxYear = getTaxYearOrLatest(taxYear ?? this.taxYear);
     const taxConstants = this.taxRules[resolvedTaxYear];
     const incomeBreakdown: IncomeBreakdown = this.calculateIncomeBreakdown(input);
     const taxByBand: TaxBandResult[] = [];

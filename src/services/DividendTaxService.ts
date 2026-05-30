@@ -1,4 +1,4 @@
-import { getDefaultTaxYear, type TaxRulesByYear } from '../constants/taxConstants';
+import { getTaxYearOrLatest, type TaxRulesByYear } from '../constants/taxConstants';
 import { BrbTracker } from '../models/BrbTracker';
 import type { TaxBandResult } from '../models/TaxBandResult';
 
@@ -12,7 +12,7 @@ export class DividendTaxService {
   }
 
   calculateDividendTax(dividendIncome: number, brbTracker: BrbTracker, taxYear?: string): TaxBandResult[] {
-    const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
+    const resolvedTaxYear = getTaxYearOrLatest(taxYear ?? this.taxYear);
     const taxConstants = this.taxRules[resolvedTaxYear];
     const taxBands: TaxBandResult[] = [];
     if (dividendIncome <= 0) return taxBands;

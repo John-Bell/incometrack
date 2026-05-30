@@ -1,4 +1,4 @@
-import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
+import { getTaxYearOrLatest, type TaxRulesByYear } from '@/constants/taxConstants';
 import { BrbTracker } from '@/models/BrbTracker';
 import { PersonalAllowanceTracker } from '@/models/PersonalAllowanceTracker';
 import type { TaxBandResult } from '@/models/TaxBandResult';
@@ -17,7 +17,7 @@ export class PropertyTaxService {
         propertyExpenses: number = 0,
         taxYear?: string
     ): { taxablePropertyIncome: number; propertyAllowanceApplied: boolean } {
-        const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
+        const resolvedTaxYear = getTaxYearOrLatest(taxYear ?? this.taxYear);
         const taxConstants = this.taxRules[resolvedTaxYear];
 
         let taxablePropertyIncome = 0;
@@ -41,7 +41,7 @@ export class PropertyTaxService {
         brbTracker: BrbTracker,
         taxYear?: string
     ): { taxBands: TaxBandResult[]; propertyAllowanceApplied: boolean; taxablePropertyIncome: number } {
-        const resolvedTaxYear = getDefaultTaxYear(taxYear ?? this.taxYear);
+        const resolvedTaxYear = getTaxYearOrLatest(taxYear ?? this.taxYear);
         const taxConstants = this.taxRules[resolvedTaxYear];
         const taxBands: TaxBandResult[] = [];
 

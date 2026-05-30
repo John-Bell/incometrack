@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { db } from '@/lib/db';
-import { getDefaultTaxYear } from '@/constants/taxConstants';
+import { getTaxYearOrLatest } from '@/constants/taxConstants';
 import { decryptData, mergeData } from '@/services/remoteSyncService';
 
 export function SimplifiedAppSetupPage() {
@@ -45,7 +45,7 @@ export function SimplifiedAppSetupPage() {
         await db.settings.put({
             id: 'default',
             currency: existingSettings?.currency || 'GBP',
-            taxYear: existingSettings?.taxYear || getDefaultTaxYear(),
+            taxYear: existingSettings?.taxYear || getTaxYearOrLatest(),
             icloudSync: existingSettings?.icloudSync || false,
             syncServerUrl: syncServerUrl.trim() || undefined,
             syncPassphrase: syncPassphrase.trim() || undefined,
@@ -85,7 +85,7 @@ export function SimplifiedAppSetupPage() {
             await db.settings.put({
                 id: 'default',
                 currency: existingSettings?.currency || 'GBP',
-                taxYear: existingSettings?.taxYear || getDefaultTaxYear(),
+                taxYear: existingSettings?.taxYear || getTaxYearOrLatest(),
                 icloudSync: existingSettings?.icloudSync || false,
                 syncServerUrl: restoreSyncServerUrl.trim() || undefined,
                 syncPassphrase: restoreSyncPassphrase.trim() || undefined,

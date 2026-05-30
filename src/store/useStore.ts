@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { db, initDb, type Profile } from '@/lib/db';
 import { syncTaxRules } from '@/lib/seed';
-import { getDefaultTaxYear, type TaxRulesByYear } from '@/constants/taxConstants';
+import { getTaxYearOrLatest, type TaxRulesByYear } from '@/constants/taxConstants';
 
 export interface AppState {
     isHydrated: boolean;
@@ -56,7 +56,7 @@ export const useStore = create<AppState>()((set) => ({
 
             // Get the current settings to find the tax year
             const settings = await db.settings.get('default');
-            const currentTaxYear = settings?.taxYear || getDefaultTaxYear();
+            const currentTaxYear = settings?.taxYear || getTaxYearOrLatest();
 
             set({
                 isHydrated: true,

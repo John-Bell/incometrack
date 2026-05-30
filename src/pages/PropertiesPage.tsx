@@ -4,11 +4,11 @@ import { db } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
-import { getDefaultTaxYear, getTaxYearDates } from '@/constants/taxConstants';
+import { getTaxYearOrLatest, getTaxYearDates } from '@/constants/taxConstants';
 
 export function PropertiesPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const defaultTaxYear = getDefaultTaxYear();
+    const defaultTaxYear = getTaxYearOrLatest();
     const taxYearFilter = searchParams.get('taxYear') || defaultTaxYear;
 
     const properties = useLiveQuery(() => db.properties.toArray(), []);

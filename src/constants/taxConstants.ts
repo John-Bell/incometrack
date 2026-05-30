@@ -303,8 +303,10 @@ export const getTaxYearOrLatest = (taxYear?: string): string => {
 };
 
 export const getTaxYearDates = (taxYear?: string): { startTs: number; endTs: number } => {
-  const resolvedYear = getTaxYearOrLatest(taxYear);
-  const startYearStr = resolvedYear.split('-')[0];
+  // CRITICAL FIX: Do NOT use getTaxYearOrLatest here.
+  // Parse exactly the string requested, or fallback to the current real-world year.
+  const resolvedYearStr = taxYear ?? getCurrentTaxYearKey();
+  const startYearStr = resolvedYearStr.split('-')[0];
   const startYear = parseInt(startYearStr, 10);
 
   // UK tax year: 6th April to 5th April

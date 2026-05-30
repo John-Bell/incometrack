@@ -15,6 +15,22 @@ import { useLifetimeProjection } from '@/hooks/useLifetimeProjection';
  * A touch-first mobile chart module for lifetime cash flow projection.
  * Designed to prevent scroll hijacking and provide a clear readout header on scrub.
  */
+interface TouchTooltipBridgeProps {
+  active?: boolean;
+  payload?: any[];
+  onPointUpdate: (point: any) => void;
+}
+
+const TouchTooltipBridge: React.FC<TouchTooltipBridgeProps> = ({ active, payload, onPointUpdate }) => {
+  React.useEffect(() => {
+    if (active && payload && payload.length > 0) {
+      onPointUpdate(payload[0].payload);
+    }
+  }, [active, payload, onPointUpdate]);
+
+  return null;
+};
+
 const LifetimeProjectionChart: React.FC = () => {
   const { data, isReady, p1Name, p2Name, growthRate } = useLifetimeProjection();
   const [activePoint, setActivePoint] = useState<any>(null);
@@ -86,13 +102,13 @@ const LifetimeProjectionChart: React.FC = () => {
           <div>
             <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Annual Outgoings</span>
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {formatCurrency(displayPoint.annualBudget)}
+              {formatCurrency(displayPoint.annualBudget || 0)}
             </span>
           </div>
           <div>
             <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Net Cashflow</span>
-            <span className={`text-sm font-bold ${displayPoint.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-              {displayPoint.netCashFlow >= 0 ? '+' : ''}{formatCurrency(displayPoint.netCashFlow)}
+            <span className={`text-sm font-bold ${(displayPoint.netCashFlow || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {(displayPoint.netCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayPoint.netCashFlow || 0)}
             </span>
           </div>
         </div>
@@ -110,26 +126,6 @@ const LifetimeProjectionChart: React.FC = () => {
           <AreaChart
             data={data}
             margin={{ top: 10, right: 10, left: -20, bottom: 20 }}
-            onClick={(e: any) => {
-              if (e && e.activePayload && e.activePayload.length > 0) {
-                setActivePoint(e.activePayload[0].payload);
-              }
-            }}
-            onTouchStart={(e: any) => {
-              if (e && e.activePayload && e.activePayload.length > 0) {
-                setActivePoint(e.activePayload[0].payload);
-              }
-            }}
-            onMouseMove={(e: any) => {
-              if (e && e.activePayload && e.activePayload.length > 0) {
-                setActivePoint(e.activePayload[0].payload);
-              }
-            }}
-            onTouchMove={(e: any) => {
-              if (e && e.activePayload && e.activePayload.length > 0) {
-                setActivePoint(e.activePayload[0].payload);
-              }
-            }}
           >
             <defs>
               <linearGradient id="colorAssets" x1="0" y1="0" x2="0" y2="1">
@@ -162,8 +158,8 @@ const LifetimeProjectionChart: React.FC = () => {
             />
 
             <Tooltip
-              content={() => null} // Hidden tooltip frame as per requirements
               cursor={{ stroke: '#4B0082', strokeWidth: 1, strokeDasharray: '4 4' }}
+              content={<TouchTooltipBridge onPointUpdate={setActivePoint} />}
             />
 
             <Area

@@ -24,7 +24,7 @@ export function calculateHybridForecastForAccount(
     // Step 4: "Projection End Date"
     let projectionEndDate = taxYearEnd;
     if (
-        account.interestPayoutFrequency === 'at_maturity' &&
+        (account.interestPayoutFrequency === 'at_maturity' || account.interestPayoutFrequency === 'annually') &&
         account.interestPayoutDate
     ) {
         if (account.interestPayoutDate <= taxYearEnd) {
@@ -42,19 +42,23 @@ export function calculateHybridForecastForAccount(
         const balance = account.balance || 0;
         const isCompound = account.isCompound === undefined ? true : account.isCompound;
 
+        const isLumpSumFrequency = account.interestPayoutFrequency === 'at_maturity' || account.interestPayoutFrequency === 'annually';
+        const lumpSumYears = account.interestPayoutFrequency === 'annually'
+            ? 1 // Annual payout is always 1 year of interest
+            : (account.bondTermYears || 0);
+
         if (
-            account.interestPayoutFrequency === 'at_maturity' &&
+            isLumpSumFrequency &&
             account.interestPayoutDate &&
             account.interestPayoutDate <= taxYearEnd &&
             account.interestPayoutDate >= taxYearStart &&
-            account.bondTermYears &&
-            account.bondTermYears > 0
+            lumpSumYears > 0
         ) {
             // Full Lump Sum Realized
             if (isCompound) {
-                futureProjection = balance * (Math.pow(1 + rate, account.bondTermYears) - 1);
+                futureProjection = balance * (Math.pow(1 + rate, lumpSumYears) - 1);
             } else {
-                futureProjection = balance * rate * account.bondTermYears;
+                futureProjection = balance * rate * lumpSumYears;
             }
         } else {
             if (isCompound) {

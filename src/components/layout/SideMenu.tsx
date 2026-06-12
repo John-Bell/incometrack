@@ -73,7 +73,6 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
                             Simulator
                         </span>
                     </button>
-                    <div className="px-3 pt-4 pb-1 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Cashflow Projection</div>
                     <button
                         type="button"
                         onClick={() => handleNavigate('/cashflow-projection')}

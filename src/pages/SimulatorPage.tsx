@@ -3,6 +3,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
+import { Button } from '../components/ui/Button';
 import { useStore } from '@/store/useStore';
 import { useSimulatorCalculations } from '@/hooks/useSimulatorCalculations';
 
@@ -10,6 +11,13 @@ export function SimulatorPage() {
     const { profile } = useStore();
     const [movableInterestP1Percent, setMovableInterestP1Percent] = React.useState<number | undefined>();
     const [propertySplits, setPropertySplits] = React.useState<Record<string, number>>({});
+    const isModified = movableInterestP1Percent !== undefined || Object.keys(propertySplits).length > 0;
+
+    const handleReset = () => {
+        setMovableInterestP1Percent(undefined);
+        setPropertySplits({});
+    };
+
     const p1Name = profile?.partner1Name || 'Person 1';
     const p2Name = profile?.partner2Name || 'Person 2';
 
@@ -41,7 +49,22 @@ export function SimulatorPage() {
                             <Icon name="science" className="text-2xl" />
                         </div>
                     }
-                    rightElement={<MainHeaderActions showSaveButton />}
+                    rightElement={
+                        <div className="flex items-center gap-2">
+                            {isModified && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleReset}
+                                    className="text-xs font-bold uppercase tracking-wider"
+                                >
+                                    <Icon name="restart_alt" className="text-lg" />
+                                    Reset
+                                </Button>
+                            )}
+                            <MainHeaderActions showSaveButton />
+                        </div>
+                    }
                 />
             }
         >

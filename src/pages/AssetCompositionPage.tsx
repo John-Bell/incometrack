@@ -80,7 +80,7 @@ export function AssetCompositionPage() {
                                             ))}
                                         </Pie>
                                         <Tooltip
-                                            formatter={(value: number) => [formatCurrency(value), 'Value']}
+                                            formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Value']}
                                             contentStyle={{
                                                 backgroundColor: 'rgba(255, 255, 255, 0.96)',
                                                 borderRadius: '12px',

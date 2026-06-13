@@ -31,6 +31,7 @@ import { AddPropertyOwnershipPage } from '@/pages/AddPropertyOwnershipPage';
 import { EditPropertyOwnershipPage } from '@/pages/EditPropertyOwnershipPage';
 import { SimulatorPage } from '@/pages/SimulatorPage';
 import { CashflowProjectionPage } from '@/pages/CashflowProjectionPage';
+import { AssetCompositionPage } from '@/pages/AssetCompositionPage';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
 import { dbHooks } from '@/lib/db';
@@ -92,6 +93,7 @@ function AppRoutes() {
       <Route path="/property-ownerships/edit/:id" element={<EditPropertyOwnershipPage />} />
       <Route path="/simulator" element={<SimulatorPage />} />
       <Route path="/cashflow-projection" element={<CashflowProjectionPage />} />
+      <Route path="/asset-composition" element={<AssetCompositionPage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
 

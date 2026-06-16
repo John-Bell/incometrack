@@ -304,9 +304,9 @@ describe('calculateLifetimeProjection', () => {
     expect(results[0].potBalances.pensions).toBe(90000);
   });
 
-  it('TEST CASE 8: Bed & ISA Sweep - 2027 Start, Emergency Floor, and Age-based Allowance', () => {
+  it('TEST CASE 8: Bed & ISA Sweep - 2027 Start, No Emergency Floor, and Age-based Allowance', () => {
     // Partner 1: Born Jan 1 1966 -> Age 59 in 2025.
-    // In 2027 (Start of sweep), Age 61 (< 65). Allowance = 30k.
+    // In 2027 (Start of sweep), Age 61 (< 65). Allowance = 12k.
     // In 2031, Age 65 (>= 65). Allowance = 20k.
     const input: ProjectionEngineInput = {
       ...baseInput,
@@ -333,29 +333,30 @@ describe('calculateLifetimeProjection', () => {
     expect(results[1].potBalances.taxFree).toBe(50000);
 
     // Year 2 (2027): Sweep starts.
-    // Taxable = 150k. Floor = 70k. Available = 80k.
-    // P1 age 61, P2 age 60. Household Allowance = 30k + 30k = 60k.
-    // Sweep 60k. New Taxable = 90k. New TaxFree = 110k.
+    // Taxable = 150k. Floor = 0k. Available = 150k.
+    // P1 age 61, P2 age 60. Household Allowance = 12k + 12k = 24k.
+    // Sweep 24k. New Taxable = 126k. New TaxFree = 74k.
     expect(results[2].calendarYear).toBe(2027);
-    expect(results[2].potBalances.taxable).toBe(90000);
-    expect(results[2].potBalances.taxFree).toBe(110000);
-    expect(results[2].milestones[0]).toContain('Bed & ISA sweep: £60,000 moved');
+    expect(results[2].potBalances.taxable).toBe(126000);
+    expect(results[2].potBalances.taxFree).toBe(74000);
+    expect(results[2].milestones[0]).toContain('Bed & ISA sweep: £24,000 moved');
 
     // Year 3 (2028): Sweep continues.
-    // Taxable = 90k. Floor = 70k. Available = 20k.
-    // Household Allowance = 60k.
-    // Sweep 20k. New Taxable = 70k. New TaxFree = 130k.
+    // Taxable = 126k. Floor = 0k. Available = 126k.
+    // Household Allowance = 24k.
+    // Sweep 24k. New Taxable = 102k. New TaxFree = 98k.
     expect(results[3].calendarYear).toBe(2028);
-    expect(results[3].potBalances.taxable).toBe(70000);
-    expect(results[3].potBalances.taxFree).toBe(130000);
-    expect(results[3].milestones[0]).toContain('Bed & ISA sweep: £20,000 moved');
+    expect(results[3].potBalances.taxable).toBe(102000);
+    expect(results[3].potBalances.taxFree).toBe(98000);
+    expect(results[3].milestones[0]).toContain('Bed & ISA sweep: £24,000 moved');
 
-    // Year 4 (2029): Sweep blocked by floor.
-    // Taxable = 70k. Floor = 70k. Available = 0k.
+    // Year 4 (2029): Sweep NOT blocked by floor.
+    // Taxable = 102k. Floor = 0k. Available = 102k.
+    // Sweep 24k. New Taxable = 78k. New TaxFree = 122k.
     expect(results[4].calendarYear).toBe(2029);
-    expect(results[4].potBalances.taxable).toBe(70000);
-    expect(results[4].potBalances.taxFree).toBe(130000);
-    expect(results[4].milestones).toHaveLength(0);
+    expect(results[4].potBalances.taxable).toBe(78000);
+    expect(results[4].potBalances.taxFree).toBe(122000);
+    expect(results[4].milestones[0]).toContain('Bed & ISA sweep: £24,000 moved');
 
     // Fast forward to 2032 when both are >= 65.
     // P1 (born 1966) turns 65 in 2031.
@@ -371,7 +372,7 @@ describe('calculateLifetimeProjection', () => {
   });
 
   it('TEST CASE 9: Bed & ISA Sweep - Age 65 Transition', () => {
-    // Test transition from 30k to 20k allowance
+    // Test transition from 12k to 20k allowance
     // Partner 1 born 1966 turns 65 in 2031.
     const input: ProjectionEngineInput = {
       ...baseInput,
@@ -390,27 +391,27 @@ describe('calculateLifetimeProjection', () => {
 
     const results = calculateLifetimeProjection(input);
 
-    // 2027: Age 61. Allowance 30k. Taxable 200 -> 170.
+    // 2027: Age 61. Allowance 12k. Taxable 200 -> 188.
     const r2027 = results.find(r => r.calendarYear === 2027);
-    expect(r2027?.potBalances.taxable).toBe(170000);
-    expect(r2027?.milestones[0]).toContain('£30,000 moved');
+    expect(r2027?.potBalances.taxable).toBe(188000);
+    expect(r2027?.milestones[0]).toContain('£12,000 moved');
 
-    // 2030: Age 64. Allowance 30k. Taxable 170 -> 140 -> 110 -> 80.
-    // 2027: 170
-    // 2028: 140
-    // 2029: 110
-    // 2030: 80
+    // 2030: Age 64. Allowance 12k. Taxable 188 -> 176 -> 164 -> 152.
+    // 2027: 188
+    // 2028: 176
+    // 2029: 164
+    // 2030: 152
     const r2030 = results.find(r => r.calendarYear === 2030);
-    expect(r2030?.potBalances.taxable).toBe(80000);
+    expect(r2030?.potBalances.taxable).toBe(152000);
     expect(r2030?.ageP1).toBe(64);
 
     // 2031: Age 65. Allowance 20k.
-    // Taxable 80. Floor 70. Available 10.
-    // Sweep 10k (even though allowance is 20k).
-    // Taxable 80 -> 70.
+    // Taxable 152. Floor 0. Available 152.
+    // Sweep 20k.
+    // Taxable 152 -> 132.
     const r2031 = results.find(r => r.calendarYear === 2031);
     expect(r2031?.ageP1).toBe(65);
-    expect(r2031?.potBalances.taxable).toBe(70000);
-    expect(r2031?.milestones[0]).toContain('£10,000 moved');
+    expect(r2031?.potBalances.taxable).toBe(132000);
+    expect(r2031?.milestones[0]).toContain('£20,000 moved');
   });
 });

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { calculateLifetimeProjection } from '@/utils/projectionEngine';
+import { calculateLifetimeProjection, type DrawdownStrategy } from '@/utils/projectionEngine';
 import type { TaxRulesByYear } from '@/constants/taxConstants';
 import type { ProjectionYearResult } from '@/utils/projectionEngine';
 
-export function useLifetimeProjection() {
+export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
   const dbProfile = useLiveQuery(() => db.profile.toArray());
   const dbAccounts = useLiveQuery(() => db.accounts.toArray());
   const dbIncomes = useLiveQuery(() => db.incomes.toArray());
@@ -48,6 +48,18 @@ export function useLifetimeProjection() {
     const totalLiquidBalances = dbAccounts
       .filter((account) => liquidCategories.includes(account.category))
       .reduce((sum, account) => sum + account.balance, 0);
+
+    const assetPots = {
+      taxable: dbAccounts
+        .filter(a => liquidCategories.includes(a.category) && !['Cash ISA', 'Shares ISA', 'Premium Bonds', 'DC Pension'].includes(a.category))
+        .reduce((sum, a) => sum + a.balance, 0),
+      taxFree: dbAccounts
+        .filter(a => ['Cash ISA', 'Shares ISA', 'Premium Bonds'].includes(a.category))
+        .reduce((sum, a) => sum + a.balance, 0),
+      pensions: dbAccounts
+        .filter(a => a.category === 'DC Pension')
+        .reduce((sum, a) => sum + a.balance, 0)
+    };
 
     // Reduce tax rules into a keyed map dictionary
     const reducedTaxRulesMap: TaxRulesByYear = dbTaxRules.reduce((acc, rule) => {
@@ -93,6 +105,8 @@ export function useLifetimeProjection() {
     // Execute Engine Matrix
     const projectionData = calculateLifetimeProjection({
       currentBalances: totalLiquidBalances,
+      assetPots,
+      drawdownStrategy,
       realGrowthRate: growthRate,
       profile: {
         partner1Dob: activeProfile.partner1Dob as number,
@@ -120,6 +134,7 @@ export function useLifetimeProjection() {
     dbProperties,
     dbPropertyOwnership,
     dbTaxRules,
-    dbSettings
+    dbSettings,
+    drawdownStrategy
   ]);
 }

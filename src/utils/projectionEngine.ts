@@ -2,8 +2,16 @@ import type { Income, Budget, Property, PropertyOwnership } from '../lib/db';
 import { TaxCalculationService } from '../services/TaxCalculationService';
 import type { TaxRulesByYear } from '../constants/taxConstants';
 
+export type DrawdownStrategy = 'taxable_first' | 'tax_free_first' | 'pensions_first' | 'proportional';
+
 export interface ProjectionEngineInput {
   currentBalances: number; // Sum of active balances across liquid pots
+  assetPots?: {
+    taxable: number;
+    taxFree: number;
+    pensions: number;
+  };
+  drawdownStrategy?: DrawdownStrategy;
   realGrowthRate: number;  // App global growth asset rate (e.g., 2.38)
   profile: {
     partner1Dob: number;   // Epoch timestamp ms
@@ -22,6 +30,12 @@ export interface ProjectionYearResult {
   ageP1: number;
   ageP2: number | null;
   liquidAssets: number;
+  potBalances: {
+    taxable: number;
+    taxFree: number;
+    pensions: number;
+    total: number;
+  };
   isRunwayBroken: boolean;
   milestones: string[];
   annualBudget: number;
@@ -48,7 +62,10 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     currentAgeP2 = calculateAge(input.profile.partner2Dob, currentDate);
   }
 
-  let trackingLiquidAssets = input.currentBalances;
+  let trackingTaxable = input.assetPots?.taxable ?? input.currentBalances;
+  let trackingTaxFree = input.assetPots?.taxFree ?? 0;
+  let trackingPensions = input.assetPots?.pensions ?? 0;
+
   const results: ProjectionYearResult[] = [];
 
   let yearIndex = 0;
@@ -179,15 +196,72 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const totalInflows = (p1Salary + p1Pension + p1Dividends + p2Salary + p2Pension + p2Dividends) + p1RentalGrossForYear + p2RentalGrossForYear;
     const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
-    if (trackingLiquidAssets > 0 || totalCashInjectionsForYear > 0) {
-      trackingLiquidAssets = (trackingLiquidAssets + netCashFlow + totalCashInjectionsForYear) * (1 + input.realGrowthRate / 100);
+    const totalBefore = trackingTaxable + trackingTaxFree + trackingPensions;
+
+    if (totalBefore > 0 || totalCashInjectionsForYear > 0) {
+      let annualSurplus = netCashFlow + totalCashInjectionsForYear;
+
+      if (annualSurplus >= 0) {
+        trackingTaxable += annualSurplus;
+      } else {
+        let deficit = Math.abs(annualSurplus);
+        const strategy = input.drawdownStrategy || 'proportional';
+
+        if (strategy === 'proportional') {
+          const totalAtStartOfDeficit = trackingTaxable + trackingTaxFree + trackingPensions;
+          if (totalAtStartOfDeficit > 0) {
+            const ratioTaxable = trackingTaxable / totalAtStartOfDeficit;
+            const ratioTaxFree = trackingTaxFree / totalAtStartOfDeficit;
+            const ratioPensions = trackingPensions / totalAtStartOfDeficit;
+
+            trackingTaxable -= deficit * ratioTaxable;
+            trackingTaxFree -= deficit * ratioTaxFree;
+            trackingPensions -= deficit * ratioPensions;
+          }
+        } else {
+          const order: ('taxable' | 'taxFree' | 'pensions')[] =
+            strategy === 'taxable_first' ? ['taxable', 'taxFree', 'pensions'] :
+            strategy === 'tax_free_first' ? ['taxFree', 'taxable', 'pensions'] :
+            ['pensions', 'taxable', 'taxFree']; // pensions_first
+
+          for (const pot of order) {
+            if (deficit <= 0) break;
+            if (pot === 'taxable') {
+              const draw = Math.min(trackingTaxable, deficit);
+              trackingTaxable -= draw;
+              deficit -= draw;
+            } else if (pot === 'taxFree') {
+              const draw = Math.min(trackingTaxFree, deficit);
+              trackingTaxFree -= draw;
+              deficit -= draw;
+            } else if (pot === 'pensions') {
+              const draw = Math.min(trackingPensions, deficit);
+              trackingPensions -= draw;
+              deficit -= draw;
+            }
+          }
+        }
+      }
+
+      // Apply Growth
+      trackingTaxable *= (1 + input.realGrowthRate / 100);
+      trackingTaxFree *= (1 + input.realGrowthRate / 100);
+      trackingPensions *= (1 + input.realGrowthRate / 100);
     } else {
-      trackingLiquidAssets = 0;
+      trackingTaxable = 0;
+      trackingTaxFree = 0;
+      trackingPensions = 0;
     }
 
+    // Floor and handle runway
+    if (trackingTaxable < 0) trackingTaxable = 0;
+    if (trackingTaxFree < 0) trackingTaxFree = 0;
+    if (trackingPensions < 0) trackingPensions = 0;
+
+    const trackingTotalLiquidAssets = trackingTaxable + trackingTaxFree + trackingPensions;
+
     let isRunwayBroken = false;
-    if (trackingLiquidAssets <= 0) {
-      trackingLiquidAssets = 0;
+    if (trackingTotalLiquidAssets <= 0) {
       isRunwayBroken = true;
     }
 
@@ -196,7 +270,13 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       calendarYear: runningCalendarYear,
       ageP1: currentAgeP1,
       ageP2: currentAgeP2,
-      liquidAssets: trackingLiquidAssets,
+      liquidAssets: trackingTotalLiquidAssets,
+      potBalances: {
+        taxable: trackingTaxable,
+        taxFree: trackingTaxFree,
+        pensions: trackingPensions,
+        total: trackingTotalLiquidAssets
+      },
       isRunwayBroken: isRunwayBroken,
       milestones: [],
       annualBudget: totalBudgetsForYear,

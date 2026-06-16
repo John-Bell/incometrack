@@ -170,4 +170,52 @@ describe('calculateLifetimeProjection', () => {
       expect(r.liquidAssets).toBeGreaterThanOrEqual(0);
     });
   });
+
+  it('TEST CASE 5: Property Sale - Income Termination and Cash Injection', () => {
+    // Sale on July 1st, 2026 (approx 50% through the year)
+    const saleDate = new Date('2026-07-01T00:00:00.000Z').getTime();
+
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 100000,
+      properties: [
+        {
+          id: 'prop-1',
+          name: 'Rental Prop',
+          expectedMonthlyIncome: 1000, // £12k / year
+          annualGrowthRate: 0,
+          estimatedSaleDate: saleDate,
+          estimatedNetCashOnSale: 200000,
+          updatedAt: Date.now(),
+        },
+      ],
+      propertyOwnership: [
+        {
+          id: 'own-1',
+          propertyId: 'prop-1',
+          startDate: 0,
+          person1Percent: 50,
+          person2Percent: 50,
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Year 0 (2025): Full rental income (£12,000)
+    const year0Delta = results[0].liquidAssets - input.currentBalances;
+    expect(year0Delta).toBeCloseTo(12000, 2);
+
+    // Year 1 (2026): Pro-rated rent (~£6,000) + Cash Injection (£200,000)
+    // Rent is for Jan-June inclusive (approx 181 days out of 365)
+    // 181/365 * 12000 = 5950.68
+    const year1Delta = results[1].liquidAssets - results[0].liquidAssets;
+    expect(year1Delta).toBeGreaterThan(205900);
+    expect(year1Delta).toBeLessThan(206100);
+
+    // Year 2 (2027): No rental income, no more cash injection
+    const year2Delta = results[2].liquidAssets - results[1].liquidAssets;
+    expect(year2Delta).toBe(0);
+  });
 });

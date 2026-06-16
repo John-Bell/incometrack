@@ -73,6 +73,35 @@ export function AddPropertyPage() {
                                 />
                             </div>
                         </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="estimatedSaleDate" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Estimated Sale Date
+                                </label>
+                                <input
+                                    id="estimatedSaleDate"
+                                    type="date"
+                                    value={formData.estimatedSaleDate || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedSaleDate: e.target.value }))}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="estimatedNetCashOnSale" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    Est. Net Cash on Sale (£)
+                                </label>
+                                <input
+                                    id="estimatedNetCashOnSale"
+                                    type="number"
+                                    step="1"
+                                    value={formData.estimatedNetCashOnSale || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedNetCashOnSale: e.target.value ? parseFloat(e.target.value) : undefined }))}
+                                    placeholder="0"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-[#283933] bg-white dark:bg-black/20 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="pt-6 border-t border-slate-100 dark:border-[#283933] flex justify-end gap-3">

@@ -7,6 +7,8 @@ export function usePropertyForm(id?: string) {
         name: string;
         expectedMonthlyIncome?: number;
         annualGrowthRate?: number;
+        estimatedNetCashOnSale?: number;
+        estimatedSaleDate?: string;
     }>({
         name: '',
     });
@@ -27,6 +29,8 @@ export function usePropertyForm(id?: string) {
                 name: property.name,
                 expectedMonthlyIncome: property.expectedMonthlyIncome,
                 annualGrowthRate: property.annualGrowthRate,
+                estimatedNetCashOnSale: property.estimatedNetCashOnSale,
+                estimatedSaleDate: property.estimatedSaleDate ? new Date(property.estimatedSaleDate).toISOString().split('T')[0] : undefined,
             });
         }
     }, [property]);
@@ -40,6 +44,8 @@ export function usePropertyForm(id?: string) {
             name: formData.name,
             expectedMonthlyIncome: formData.expectedMonthlyIncome ? Number(formData.expectedMonthlyIncome) : undefined,
             annualGrowthRate: formData.annualGrowthRate ? Number(formData.annualGrowthRate) : undefined,
+            estimatedNetCashOnSale: formData.estimatedNetCashOnSale ? Number(formData.estimatedNetCashOnSale) : undefined,
+            estimatedSaleDate: formData.estimatedSaleDate ? new Date(formData.estimatedSaleDate).getTime() : undefined,
             updatedAt: Date.now(),
         };
 

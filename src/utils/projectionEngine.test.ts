@@ -218,4 +218,89 @@ describe('calculateLifetimeProjection', () => {
     const year2Delta = results[2].liquidAssets - results[1].liquidAssets;
     expect(year2Delta).toBe(0);
   });
+
+  it('TEST CASE 6: Asset Pot Breakdown and Drawdown Strategy (taxable_first)', () => {
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 300000,
+      assetPots: {
+        taxable: 100000,
+        taxFree: 100000,
+        pensions: 100000,
+      },
+      drawdownStrategy: 'taxable_first',
+      realGrowthRate: 0,
+      budgets: [
+        {
+          id: 'budg-1',
+          accountId: 'acc-1',
+          name: 'Budget',
+          amount: 50000,
+          frequency: 'annually',
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Year 0 (2025): 300k - 50k = 250k total.
+    // strategy: taxable_first. Taxable should be 100k - 50k = 50k. others 100k.
+    expect(results[0].liquidAssets).toBe(250000);
+    expect(results[0].potBalances.taxable).toBe(50000);
+    expect(results[0].potBalances.taxFree).toBe(100000);
+    expect(results[0].potBalances.pensions).toBe(100000);
+    expect(results[0].potBalances.total).toBe(250000);
+
+    // Year 1 (2026): 250k - 50k = 200k total.
+    // Taxable was 50k. 50k - 50k = 0k. others 100k.
+    expect(results[1].liquidAssets).toBe(200000);
+    expect(results[1].potBalances.taxable).toBe(0);
+    expect(results[1].potBalances.taxFree).toBe(100000);
+    expect(results[1].potBalances.pensions).toBe(100000);
+
+    // Year 2 (2027): 200k - 50k = 150k total.
+    // Taxable was 0k. Deficit 50k comes from taxFree (next in order).
+    // taxFree: 100k - 50k = 50k. pensions: 100k.
+    expect(results[2].liquidAssets).toBe(150000);
+    expect(results[2].potBalances.taxable).toBe(0);
+    expect(results[2].potBalances.taxFree).toBe(50000);
+    expect(results[2].potBalances.pensions).toBe(100000);
+  });
+
+  it('TEST CASE 7: Proportional Drawdown Strategy', () => {
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 300000,
+      assetPots: {
+        taxable: 150000,
+        taxFree: 50000,
+        pensions: 100000,
+      },
+      drawdownStrategy: 'proportional',
+      realGrowthRate: 0,
+      budgets: [
+        {
+          id: 'budg-1',
+          accountId: 'acc-1',
+          name: 'Budget',
+          amount: 30000,
+          frequency: 'annually',
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Total = 300k. Deficit = 30k (10%).
+    // Each pot should be reduced by 10%.
+    // taxable: 150k - 15k = 135k
+    // taxFree: 50k - 5k = 45k
+    // pensions: 100k - 10k = 90k
+    expect(results[0].liquidAssets).toBe(270000);
+    expect(results[0].potBalances.taxable).toBe(135000);
+    expect(results[0].potBalances.taxFree).toBe(45000);
+    expect(results[0].potBalances.pensions).toBe(90000);
+  });
 });

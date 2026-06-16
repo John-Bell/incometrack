@@ -246,15 +246,15 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
       // Bed & ISA sweep logic (Starts in tax year 2027/2028)
       if (runningCalendarYear >= 2027) {
-        const p1IsaAllowance = currentAgeP1 < 65 ? 30000 : 20000;
+        const p1IsaAllowance = currentAgeP1 < 65 ? 12000 : 20000;
         let totalHouseholdAllowance = p1IsaAllowance;
 
         if (currentAgeP2 !== null) {
-          const p2IsaAllowance = currentAgeP2 < 65 ? 30000 : 20000;
+          const p2IsaAllowance = currentAgeP2 < 65 ? 12000 : 20000;
           totalHouseholdAllowance += p2IsaAllowance;
         }
 
-        const emergencyFloor = 70000;
+        const emergencyFloor = 0;
         if (trackingTaxable > emergencyFloor) {
           const availableToSweep = trackingTaxable - emergencyFloor;
           const amountToSweep = Math.min(availableToSweep, totalHouseholdAllowance);

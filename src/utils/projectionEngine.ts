@@ -99,15 +99,37 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
     let p1RentalGrossForYear = 0;
     let p2RentalGrossForYear = 0;
+    let totalCashInjectionsForYear = 0;
 
     for (const property of input.properties) {
+      // Step 0: Check for sale in this year
+      const saleTs = property.estimatedSaleDate;
+      const hasSaleDate = saleTs !== undefined;
+      const isSoldBeforeThisYear = hasSaleDate && saleTs < yearStartTs;
+      const isSoldDuringThisYear = hasSaleDate && saleTs >= yearStartTs && saleTs <= yearEndTs;
+
+      if (isSoldBeforeThisYear) {
+        // No rental income if sold in a previous year
+        continue;
+      }
+
       // Step A: Escalate Expected Rent
       const baseMonthly = property.expectedMonthlyIncome ?? 0;
       const annualBaseRent = baseMonthly * 12;
       const growthRate = property.annualGrowthRate ?? 0;
-      const escalatedGrossRent = annualBaseRent * Math.pow(1 + growthRate / 100, yearIndex);
+      let escalatedGrossRent = annualBaseRent * Math.pow(1 + growthRate / 100, yearIndex);
 
-      // Step B: Find active ownership split
+      // Step B: Pro-rate rent if sold this year
+      if (isSoldDuringThisYear && saleTs !== undefined) {
+        const activeMs = saleTs - yearStartTs;
+        const fraction = Math.max(0, activeMs / yearTotalMs);
+        escalatedGrossRent *= fraction;
+
+        // Inject cash on sale
+        totalCashInjectionsForYear += property.estimatedNetCashOnSale ?? 0;
+      }
+
+      // Step C: Find active ownership split
       const relevantOwnerships = input.propertyOwnership
         .filter(o => o.propertyId === property.id && o.startDate <= yearEndTs)
         .sort((a, b) => b.startDate - a.startDate);
@@ -116,7 +138,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
         ? relevantOwnerships[0]
         : { person1Percent: 50, person2Percent: 50 };
 
-      // Step C: Apportion to loop tracking variables
+      // Step D: Apportion to loop tracking variables
       p1RentalGrossForYear += escalatedGrossRent * (activeSplit.person1Percent / 100);
       p2RentalGrossForYear += escalatedGrossRent * (activeSplit.person2Percent / 100);
     }
@@ -157,8 +179,8 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const totalInflows = (p1Salary + p1Pension + p1Dividends + p2Salary + p2Pension + p2Dividends) + p1RentalGrossForYear + p2RentalGrossForYear;
     const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
-    if (trackingLiquidAssets > 0) {
-      trackingLiquidAssets = (trackingLiquidAssets + netCashFlow) * (1 + input.realGrowthRate / 100);
+    if (trackingLiquidAssets > 0 || totalCashInjectionsForYear > 0) {
+      trackingLiquidAssets = (trackingLiquidAssets + netCashFlow + totalCashInjectionsForYear) * (1 + input.realGrowthRate / 100);
     } else {
       trackingLiquidAssets = 0;
     }

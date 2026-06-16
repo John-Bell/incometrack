@@ -123,6 +123,22 @@ export function PropertiesPage() {
                                             </p>
                                         </div>
                                     </div>
+
+                                    {(property.estimatedSaleDate || property.estimatedNetCashOnSale) && (
+                                        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-[#283933] space-y-2">
+                                            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Estimated Sale</p>
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                                                    <Icon name="calendar_today" className="text-sm" />
+                                                    <span className="text-sm">{property.estimatedSaleDate ? new Date(property.estimatedSaleDate).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) : 'Not set'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-semibold">
+                                                    <Icon name="payments" className="text-sm" />
+                                                    <span className="text-sm">{property.estimatedNetCashOnSale ? Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(property.estimatedNetCashOnSale) : '£0'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mt-6 flex flex-wrap justify-end gap-2">

@@ -27,7 +27,7 @@ describe('calculateLifetimeProjection Growth Rates', () => {
     taxRules: TAX_YEAR_CONSTANTS,
   };
 
-  it('verifies pot-specific growth rates', () => {
+  it('verifies pot-specific growth rates and timing', () => {
     const input: ProjectionEngineInput = {
       ...baseInput,
       assetPots: {
@@ -39,20 +39,20 @@ describe('calculateLifetimeProjection Growth Rates', () => {
 
     const results = calculateLifetimeProjection(input);
 
-    // After 1 year (2025)
+    // Year 0 (2025): Baseline, no growth applied yet
+    const year0 = results[0];
+    expect(year0.potBalances.taxable).toBe(1000);
+    expect(year0.potBalances.taxFree).toBe(1000);
+    expect(year0.potBalances.pensions).toBe(1000);
+
+    // Year 1 (2026): Growth from Year 0 applied at the end of Year 0 loop
     // Expected with new logic:
     // Taxable rate: 10 * 0.4 = 4% -> 1000 * 1.04 = 1040
     // Tax-Free rate: 10 * 0.5 = 5% -> 1000 * 1.05 = 1050
-    // Pensions rate: 10 * 2.2 = 22% -> 1000 * 1.22 = 1220
-
-    // Note: If the code is NOT yet updated, they will all be 10% -> 1100
-
-    const year0 = results[0];
-
-    // We expect these to fail initially if we want to see them fail,
-    // but I'll write them as what we WANT.
-    expect(year0.potBalances.taxable).toBeCloseTo(1040, 2);
-    expect(year0.potBalances.taxFree).toBeCloseTo(1050, 2);
-    expect(year0.potBalances.pensions).toBeCloseTo(1220, 2);
+    // Pensions rate: 10 * 1.5 = 15% -> 1000 * 1.15 = 1150
+    const year1 = results[1];
+    expect(year1.potBalances.taxable).toBeCloseTo(1040, 2);
+    expect(year1.potBalances.taxFree).toBeCloseTo(1050, 2);
+    expect(year1.potBalances.pensions).toBeCloseTo(1150, 2);
   });
 });

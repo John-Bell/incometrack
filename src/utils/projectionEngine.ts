@@ -268,9 +268,17 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       }
 
       // Apply Growth
-      trackingTaxable *= (1 + input.realGrowthRate / 100);
-      trackingTaxFree *= (1 + input.realGrowthRate / 100);
-      trackingPensions *= (1 + input.realGrowthRate / 100);
+      // Derive realistic net-of-inflation growth rates relative to the global macro base
+      // Taxable: Cash yields generally trail the macro rate + suffers minor unmodeled tax drag
+      const rateTaxable = (input.realGrowthRate * 0.4) / 100;
+      // Tax-Free: Cash ISA yields trail the macro rate but enjoy zero tax drag
+      const rateTaxFree = (input.realGrowthRate * 0.5) / 100;
+      // Pensions: Long-term equity/bond market returns outpace cash baseline compounding
+      const ratePensions = (input.realGrowthRate * 2.2) / 100;
+
+      trackingTaxable *= (1 + rateTaxable);
+      trackingTaxFree *= (1 + rateTaxFree);
+      trackingPensions *= (1 + ratePensions);
     } else {
       trackingTaxable = 0;
       trackingTaxFree = 0;

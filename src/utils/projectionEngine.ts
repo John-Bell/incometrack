@@ -4,6 +4,8 @@ import type { TaxRulesByYear } from '../constants/taxConstants';
 
 export type DrawdownStrategy = 'taxable_first' | 'tax_free_first' | 'pensions_first' | 'proportional';
 
+const PENSION_DRAWDOWN_TAX_RATE = 0.15;
+
 export interface ProjectionEngineInput {
   currentBalances: number; // Sum of active balances across liquid pots
   assetPots?: {
@@ -215,9 +217,13 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             const ratioTaxFree = trackingTaxFree / totalAtStartOfDeficit;
             const ratioPensions = trackingPensions / totalAtStartOfDeficit;
 
-            trackingTaxable -= deficit * ratioTaxable;
-            trackingTaxFree -= deficit * ratioTaxFree;
-            trackingPensions -= deficit * ratioPensions;
+            // Apply realistic effective tax drag on the pension portion of the proportional drawdown
+            const pensionDrawNeeded = deficit * ratioPensions;
+            const grossPensionWithdrawal = pensionDrawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
+
+            trackingTaxable -= Math.min(trackingTaxable, deficit * ratioTaxable);
+            trackingTaxFree -= Math.min(trackingTaxFree, deficit * ratioTaxFree);
+            trackingPensions -= Math.min(trackingPensions, grossPensionWithdrawal);
           }
         } else {
           const order: ('taxable' | 'taxFree' | 'pensions')[] =
@@ -236,9 +242,17 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               trackingTaxFree -= draw;
               deficit -= draw;
             } else if (pot === 'pensions') {
-              const draw = Math.min(trackingPensions, deficit);
-              trackingPensions -= draw;
-              deficit -= draw;
+              const drawNeeded = Math.min(trackingPensions, deficit);
+              // Define a realistic effective tax drag on DC pension withdrawals
+              // (Accounts for 75% taxable portion hitting basic/higher rate bands)
+              // Gross up the withdrawal: To get £85 net, you must pull £100 out of the pot
+              const grossPensionWithdrawal = drawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
+              // Ensure we don't draw more than the pot actually holds
+              const actualGrossDraw = Math.min(trackingPensions, grossPensionWithdrawal);
+              trackingPensions -= actualGrossDraw;
+              // The deficit is only reduced by the NET amount that lands in your bank account
+              const netDrawReceived = actualGrossDraw * (1 - PENSION_DRAWDOWN_TAX_RATE);
+              deficit -= netDrawReceived;
             }
           }
         }

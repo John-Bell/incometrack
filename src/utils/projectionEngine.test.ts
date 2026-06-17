@@ -266,6 +266,16 @@ describe('calculateLifetimeProjection', () => {
     expect(results[2].potBalances.taxable).toBe(0);
     expect(results[2].potBalances.taxFree).toBe(50000);
     expect(results[2].potBalances.pensions).toBe(100000);
+
+    // Year 3 (2028): 150k - 50k = 100k total.
+    // taxFree was 50k. 50k - 50k = 0k. pensions: 100k.
+    expect(results[3].potBalances.taxFree).toBe(0);
+    expect(results[3].potBalances.pensions).toBe(100000);
+
+    // Year 4 (2029): 100k - 50k (net) = ?
+    // pensions: 100k - (50k / 0.85) = 100k - 58823.53 = 41176.47
+    expect(results[4].potBalances.pensions).toBeCloseTo(41176.47, 1);
+    expect(results[4].liquidAssets).toBeCloseTo(41176.47, 1);
   });
 
   it('TEST CASE 7: Proportional Drawdown Strategy', () => {
@@ -294,14 +304,16 @@ describe('calculateLifetimeProjection', () => {
     const results = calculateLifetimeProjection(input);
 
     // Total = 300k. Deficit = 30k (10%).
-    // Each pot should be reduced by 10%.
-    // taxable: 150k - 15k = 135k
-    // taxFree: 50k - 5k = 45k
-    // pensions: 100k - 10k = 90k
-    expect(results[0].liquidAssets).toBe(270000);
+    // Each pot should be reduced by its proportional share of the deficit.
+    // taxable share: 15k. New = 135k
+    // taxFree share: 5k. New = 45k
+    // pensions share: 10k net.
+    // To get 10k net from pensions, we need to draw 10k / 0.85 = 11,764.71 gross.
+    // pensions: 100k - 11764.71 = 88235.29
+    expect(results[0].liquidAssets).toBeCloseTo(268235.29, 1);
     expect(results[0].potBalances.taxable).toBe(135000);
     expect(results[0].potBalances.taxFree).toBe(45000);
-    expect(results[0].potBalances.pensions).toBe(90000);
+    expect(results[0].potBalances.pensions).toBeCloseTo(88235.29, 1);
   });
 
   it('TEST CASE 8: Bed & ISA Sweep - 2027 Start, No Emergency Floor, and Age-based Allowance', () => {

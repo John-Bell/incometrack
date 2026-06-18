@@ -214,19 +214,25 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
         const strategy = input.drawdownStrategy || 'proportional';
 
         if (strategy === 'proportional') {
-          const availableTaxable = Math.max(0, trackingTaxable - floor);
-          const totalAtStartOfDeficit = availableTaxable + trackingTaxFree + trackingPensions;
+          const availableCash = Math.max(0, (trackingTaxable + trackingTaxFree) - floor);
+          const totalAtStartOfDeficit = availableCash + trackingPensions;
           if (totalAtStartOfDeficit > 0) {
-            const ratioTaxable = availableTaxable / totalAtStartOfDeficit;
-            const ratioTaxFree = trackingTaxFree / totalAtStartOfDeficit;
+            const ratioCash = availableCash / totalAtStartOfDeficit;
             const ratioPensions = trackingPensions / totalAtStartOfDeficit;
 
-            // Apply realistic effective tax drag on the pension portion of the proportional drawdown
+            const cashDrawNeeded = deficit * ratioCash;
             const pensionDrawNeeded = deficit * ratioPensions;
             const grossPensionWithdrawal = pensionDrawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
 
-            trackingTaxable -= Math.min(availableTaxable, deficit * ratioTaxable);
-            trackingTaxFree -= Math.min(trackingTaxFree, deficit * ratioTaxFree);
+            // Split cashDrawNeeded between taxable and taxFree proportionally to their current relative balances
+            const totalCash = trackingTaxable + trackingTaxFree;
+            if (totalCash > 0) {
+              const ratioTaxable = trackingTaxable / totalCash;
+              const ratioTaxFree = trackingTaxFree / totalCash;
+              trackingTaxable -= Math.min(trackingTaxable, cashDrawNeeded * ratioTaxable);
+              trackingTaxFree -= Math.min(trackingTaxFree, cashDrawNeeded * ratioTaxFree);
+            }
+
             trackingPensions -= Math.min(trackingPensions, grossPensionWithdrawal);
           }
         } else {
@@ -235,17 +241,20 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             strategy === 'tax_free_first' ? ['taxFree', 'taxable', 'pensions'] :
             ['pensions', 'taxable', 'taxFree']; // pensions_first
 
+          let availableCash = Math.max(0, (trackingTaxable + trackingTaxFree) - floor);
+
           for (const pot of order) {
             if (deficit <= 0) break;
             if (pot === 'taxable') {
-              const available = Math.max(0, trackingTaxable - floor);
-              const draw = Math.min(available, deficit);
+              const draw = Math.min(trackingTaxable, availableCash, deficit);
               trackingTaxable -= draw;
               deficit -= draw;
+              availableCash -= draw;
             } else if (pot === 'taxFree') {
-              const draw = Math.min(trackingTaxFree, deficit);
+              const draw = Math.min(trackingTaxFree, availableCash, deficit);
               trackingTaxFree -= draw;
               deficit -= draw;
+              availableCash -= draw;
             } else if (pot === 'pensions') {
               const drawNeeded = Math.min(trackingPensions, deficit);
               // Define a realistic effective tax drag on DC pension withdrawals

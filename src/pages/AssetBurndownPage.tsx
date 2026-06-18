@@ -77,7 +77,7 @@ export function AssetBurndownPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label htmlFor="protectionFloor" className="text-[10px] font-bold text-slate-500 dark:text-primary/60 uppercase ml-1">
-                                        Taxable Protection Floor (£)
+                                        Cash & ISA Protection Floor (£)
                                     </label>
                                     <div className="relative group">
                                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -97,7 +97,7 @@ export function AssetBurndownPage() {
                                         />
                                     </div>
                                     <p className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
-                                        Minimum balance to keep in taxable accounts before drawing from SIPP/Pensions.
+                                        Minimum combined balance to keep in taxable and tax-free (ISA) accounts before drawing from pensions.
                                     </p>
                                 </div>
                             </div>

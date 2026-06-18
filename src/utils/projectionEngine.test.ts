@@ -570,4 +570,35 @@ describe('calculateLifetimeProjection', () => {
     expect(results[3].potBalances.taxable).toBe(22000);
     expect(results[3].potBalances.taxFree).toBe(38000);
   });
+
+  it('TEST CASE 13: Milestones - Cash Injection and Labeling', () => {
+    const year2030Start = new Date('2030-01-01T00:00:00.000Z').getTime();
+
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 100000,
+      milestones: [
+        {
+          id: 'm-1',
+          name: 'Inheritance',
+          date: year2030Start,
+          amount: 50000,
+          updatedAt: Date.now(),
+        },
+      ],
+      realGrowthRate: 0,
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Year 2029 (yearIndex 4)
+    const r2029 = results.find(r => r.calendarYear === 2029);
+    expect(r2029?.liquidAssets).toBe(100000);
+    expect(r2029?.milestones).not.toContain('Inheritance');
+
+    // Year 2030 (yearIndex 5)
+    const r2030 = results.find(r => r.calendarYear === 2030);
+    expect(r2030?.liquidAssets).toBe(150000);
+    expect(r2030?.milestones).toContain('Inheritance');
+  });
 });

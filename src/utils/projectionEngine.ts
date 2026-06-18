@@ -1,4 +1,4 @@
-import type { Income, Budget, Property, PropertyOwnership } from '../lib/db';
+import type { Income, Budget, Property, PropertyOwnership, Milestone } from '../lib/db';
 import { TaxCalculationService } from '../services/TaxCalculationService';
 import type { TaxRulesByYear } from '../constants/taxConstants';
 
@@ -23,6 +23,7 @@ export interface ProjectionEngineInput {
   budgets: Budget[];
   properties: Property[];
   propertyOwnership: PropertyOwnership[];
+  milestones?: Milestone[];
   taxRules: TaxRulesByYear;
   protectionFloor?: number;
 }
@@ -122,6 +123,16 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     let p1RentalGrossForYear = 0;
     let p2RentalGrossForYear = 0;
     let totalCashInjectionsForYear = 0;
+    const currentMilestones: string[] = [];
+
+    if (input.milestones) {
+      for (const milestone of input.milestones) {
+        if (milestone.date >= yearStartTs && milestone.date <= yearEndTs) {
+          totalCashInjectionsForYear += milestone.amount;
+          currentMilestones.push(milestone.name);
+        }
+      }
+    }
 
     for (const property of input.properties) {
       // Step 0: Check for sale in this year
@@ -202,7 +213,6 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
     const totalBefore = trackingTaxable + trackingTaxFree + trackingPensions;
-    const currentMilestones: string[] = [];
 
     if (totalBefore > 0 || totalCashInjectionsForYear > 0) {
       let annualSurplus = netCashFlow + totalCashInjectionsForYear;

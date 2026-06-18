@@ -18,7 +18,15 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
   return useMemo(() => {
     // Fallback Boundary
     if (!dbProfile || dbProfile.length === 0 || !dbProfile[0].partner1Dob) {
-      return { data: [] as ProjectionYearResult[], isReady: false, p1Name: 'Partner 1', p2Name: 'Partner 2', growthRate: 1.75 };
+      return {
+        data: [] as ProjectionYearResult[],
+        isReady: false,
+        p1Name: 'Partner 1',
+        p2Name: 'Partner 2',
+        growthRate: 1.75,
+        protectionFloor: 0,
+        settingsId: undefined as string | undefined
+      };
     }
 
     const activeProfile = dbProfile[0];
@@ -27,10 +35,19 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
 
     // Ensure dependent data are loaded
     if (!dbAccounts || !dbIncomes || !dbBudgets || !dbProperties || !dbPropertyOwnership || !dbTaxRules || !dbSettings) {
-      return { data: [] as ProjectionYearResult[], isReady: false, p1Name, p2Name, growthRate: 1.75 };
+      return {
+        data: [] as ProjectionYearResult[],
+        isReady: false,
+        p1Name,
+        p2Name,
+        growthRate: 1.75,
+        protectionFloor: 0,
+        settingsId: undefined as string | undefined
+      };
     }
 
     const growthRate = dbSettings[0]?.defaultGrowthRate ?? 1.75;
+    const protectionFloor = dbSettings[0]?.protectionFloor ?? 0;
 
     // Calculate Initial Capital Pool
     const liquidCategories = [
@@ -108,6 +125,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
       assetPots,
       drawdownStrategy,
       realGrowthRate: growthRate,
+      protectionFloor,
       profile: {
         partner1Dob: activeProfile.partner1Dob as number,
         partner2Dob: activeProfile.partner2Dob
@@ -124,7 +142,9 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
       isReady: true,
       p1Name,
       p2Name,
-      growthRate
+      growthRate,
+      protectionFloor,
+      settingsId: dbSettings[0]?.id
     };
   }, [
     dbProfile,

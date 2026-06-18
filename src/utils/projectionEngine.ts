@@ -24,6 +24,7 @@ export interface ProjectionEngineInput {
   properties: Property[];
   propertyOwnership: PropertyOwnership[];
   taxRules: TaxRulesByYear;
+  protectionFloor?: number;
 }
 
 export interface ProjectionYearResult {
@@ -67,6 +68,8 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
   let trackingTaxable = input.assetPots?.taxable ?? input.currentBalances;
   let trackingTaxFree = input.assetPots?.taxFree ?? 0;
   let trackingPensions = input.assetPots?.pensions ?? 0;
+
+  const floor = input.protectionFloor ?? 0;
 
   const results: ProjectionYearResult[] = [];
 
@@ -211,9 +214,10 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
         const strategy = input.drawdownStrategy || 'proportional';
 
         if (strategy === 'proportional') {
-          const totalAtStartOfDeficit = trackingTaxable + trackingTaxFree + trackingPensions;
+          const availableTaxable = Math.max(0, trackingTaxable - floor);
+          const totalAtStartOfDeficit = availableTaxable + trackingTaxFree + trackingPensions;
           if (totalAtStartOfDeficit > 0) {
-            const ratioTaxable = trackingTaxable / totalAtStartOfDeficit;
+            const ratioTaxable = availableTaxable / totalAtStartOfDeficit;
             const ratioTaxFree = trackingTaxFree / totalAtStartOfDeficit;
             const ratioPensions = trackingPensions / totalAtStartOfDeficit;
 
@@ -221,7 +225,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             const pensionDrawNeeded = deficit * ratioPensions;
             const grossPensionWithdrawal = pensionDrawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
 
-            trackingTaxable -= Math.min(trackingTaxable, deficit * ratioTaxable);
+            trackingTaxable -= Math.min(availableTaxable, deficit * ratioTaxable);
             trackingTaxFree -= Math.min(trackingTaxFree, deficit * ratioTaxFree);
             trackingPensions -= Math.min(trackingPensions, grossPensionWithdrawal);
           }
@@ -234,7 +238,8 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
           for (const pot of order) {
             if (deficit <= 0) break;
             if (pot === 'taxable') {
-              const draw = Math.min(trackingTaxable, deficit);
+              const available = Math.max(0, trackingTaxable - floor);
+              const draw = Math.min(available, deficit);
               trackingTaxable -= draw;
               deficit -= draw;
             } else if (pot === 'taxFree') {

@@ -426,4 +426,97 @@ describe('calculateLifetimeProjection', () => {
     expect(r2031?.potBalances.taxable).toBe(132000);
     expect(r2031?.milestones[0]).toContain('£20,000 moved');
   });
+
+  it('TEST CASE 10: Taxable Protection Floor', () => {
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 150000,
+      assetPots: {
+        taxable: 50000,
+        taxFree: 50000,
+        pensions: 50000,
+      },
+      protectionFloor: 20000,
+      drawdownStrategy: 'taxable_first',
+      realGrowthRate: 0,
+      budgets: [
+        {
+          id: 'budg-1',
+          accountId: 'acc-1',
+          name: 'Budget',
+          amount: 40000,
+          frequency: 'annually',
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Year 0 (2025): 150k - 40k = 110k total.
+    // strategy: taxable_first.
+    // Taxable available = 50k - 20k = 30k.
+    // Deficit = 40k.
+    // taxable draw = min(30k, 40k) = 30k.
+    // remaining deficit = 10k.
+    // taxFree draw = 10k.
+    // New Taxable = 50k - 30k = 20k.
+    // New taxFree = 50k - 10k = 40k.
+    // New pensions = 50k.
+    expect(results[0].potBalances.taxable).toBe(20000);
+    expect(results[0].potBalances.taxFree).toBe(40000);
+    expect(results[0].potBalances.pensions).toBe(50000);
+
+    // Year 1 (2026): 110k - 40k = 70k total.
+    // Taxable available = 20k - 20k = 0k.
+    // taxFree available = 40k.
+    // Deficit = 40k.
+    // taxFree draw = 40k.
+    // New Taxable = 20k.
+    // New taxFree = 0k.
+    // New pensions = 50k.
+    expect(results[1].potBalances.taxable).toBe(20000);
+    expect(results[1].potBalances.taxFree).toBe(0);
+    expect(results[1].potBalances.pensions).toBe(50000);
+  });
+
+  it('TEST CASE 11: Taxable Protection Floor (Proportional)', () => {
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 120000,
+      assetPots: {
+        taxable: 40000,
+        taxFree: 40000,
+        pensions: 40000,
+      },
+      protectionFloor: 20000,
+      drawdownStrategy: 'proportional',
+      realGrowthRate: 0,
+      budgets: [
+        {
+          id: 'budg-1',
+          accountId: 'acc-1',
+          name: 'Budget',
+          amount: 20000,
+          frequency: 'annually',
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Initial: Taxable 40k, taxFree 40k, pensions 40k. Total = 120k.
+    // floor = 20k.
+    // availableTaxable = 40k - 20k = 20k.
+    // totalAvailable = 20k + 40k + 40k = 100k.
+    // Deficit = 20k.
+    // taxable share: 20k / 100k = 0.2. Draw = 20k * 0.2 = 4k. New Taxable = 40k - 4k = 36k.
+    // taxFree share: 40k / 100k = 0.4. Draw = 20k * 0.4 = 8k. New taxFree = 40k - 8k = 32k.
+    // pensions share: 40k / 100k = 0.4. Draw net = 20k * 0.4 = 8k.
+    // Gross draw = 8k / 0.85 = 9411.76. New pensions = 40k - 9411.76 = 30588.24.
+    expect(results[0].potBalances.taxable).toBe(36000);
+    expect(results[0].potBalances.taxFree).toBe(32000);
+    expect(results[0].potBalances.pensions).toBeCloseTo(30588.24, 1);
+  });
 });

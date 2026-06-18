@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { db } from '@/lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 export function AssetBurndownPage() {
     const [strategy, setStrategy] = useState<DrawdownStrategy>('taxable_first');
-    const { data, isReady } = useLifetimeProjection(strategy);
+    const { data, isReady, protectionFloor, settingsId } = useLifetimeProjection(strategy);
 
     const firstPoint = isReady && data.length > 0 ? data[0] : null;
     const lastPoint = isReady && data.length > 0 ? data[data.length - 1] : null;
@@ -64,6 +65,42 @@ export function AssetBurndownPage() {
                                     <span className="sm:hidden">{s.label.split(' ')[0]}</span>
                                 </button>
                             ))}
+                        </div>
+
+                        {/* Simulation Configuration */}
+                        <div className="bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-gray-100 dark:border-slate-800 space-y-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Icon name="settings" className="text-primary text-lg" />
+                                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200 uppercase tracking-tight">Simulation Config</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label htmlFor="protectionFloor" className="text-[10px] font-bold text-slate-500 dark:text-primary/60 uppercase ml-1">
+                                        Taxable Protection Floor (£)
+                                    </label>
+                                    <div className="relative group">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                                            <Icon name="account_balance_wallet" className="text-lg" />
+                                        </div>
+                                        <input
+                                            id="protectionFloor"
+                                            type="number"
+                                            value={protectionFloor ?? ''}
+                                            onChange={(e) => {
+                                                if (settingsId) {
+                                                    db.settings.update(settingsId, { protectionFloor: Number(e.target.value) || 0 });
+                                                }
+                                            }}
+                                            placeholder="e.g. 20000"
+                                            className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg pl-10 pr-3 py-2.5 outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
+                                        Minimum balance to keep in taxable accounts before drawing from SIPP/Pensions.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="space-y-4">

@@ -84,6 +84,7 @@ export interface Settings {
     syncPassphrase?: string;
     syncHeaderKey?: string;
     defaultGrowthRate?: number;
+    protectionFloor?: number;
 }
 
 export interface MonthlyArchive {
@@ -605,6 +606,14 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             annualGrowthRate: p.annualGrowthRate !== undefined ? Number(p.annualGrowthRate) : undefined,
             estimatedNetCashOnSale: p.estimatedNetCashOnSale !== undefined ? Number(p.estimatedNetCashOnSale) : undefined,
             estimatedSaleDate: p.estimatedSaleDate !== undefined ? Number(p.estimatedSaleDate) : undefined,
+        }));
+    }
+
+    if (rawData.settings) {
+        rawData.settings = rawData.settings.map(s => ({
+            ...s,
+            defaultGrowthRate: s.defaultGrowthRate !== undefined ? Number(s.defaultGrowthRate) : undefined,
+            protectionFloor: s.protectionFloor !== undefined ? Number(s.protectionFloor) : undefined,
         }));
     }
 

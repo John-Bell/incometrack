@@ -125,6 +125,22 @@ const AssetBurndownChart: React.FC<AssetBurndownChartProps> = ({ drawdownStrateg
           </div>
         </div>
 
+        {/* Secondary Financial Metrics Sub-Grid */}
+        <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-dashed border-gray-100 dark:border-slate-800">
+          <div>
+            <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Annual Outgoings</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {formatCurrency(displayPoint.annualBudget || 0)}
+            </span>
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Net Cashflow</span>
+            <span className={`text-sm font-bold ${(displayPoint.netCashFlow || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {(displayPoint.netCashFlow || 0) >= 0 ? '+' : ''}{formatCurrency(displayPoint.netCashFlow || 0)}
+            </span>
+          </div>
+        </div>
+
         {/* Milestones Row */}
         {displayPoint.milestones && displayPoint.milestones.length > 0 && (
           <div className="mt-3 pt-3 border-t border-dashed border-gray-100 dark:border-slate-800">

@@ -112,6 +112,20 @@ const LifetimeProjectionChart: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Milestones Row */}
+        {displayPoint.milestones && displayPoint.milestones.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-dashed border-gray-100 dark:border-slate-800">
+            <span className="block text-[10px] uppercase font-bold text-primary tracking-wider mb-1">Milestones</span>
+            <div className="flex flex-wrap gap-1">
+              {displayPoint.milestones.map((m: string, i: number) => (
+                <span key={i} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                  {m}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* A. STATIC ASSUMPTIONS OVERLAY BADGE */}

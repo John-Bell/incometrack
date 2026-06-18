@@ -12,6 +12,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
   const dbBudgets = useLiveQuery(() => db.budgets.toArray());
   const dbProperties = useLiveQuery(() => db.properties.toArray());
   const dbPropertyOwnership = useLiveQuery(() => db.propertyOwnership.toArray());
+  const dbMilestones = useLiveQuery(() => db.milestones.toArray());
   const dbTaxRules = useLiveQuery(() => db.taxRules.toArray());
   const dbSettings = useLiveQuery(() => db.settings.toArray());
 
@@ -34,7 +35,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
     const p2Name = activeProfile.partner2Name || 'Partner 2';
 
     // Ensure dependent data are loaded
-    if (!dbAccounts || !dbIncomes || !dbBudgets || !dbProperties || !dbPropertyOwnership || !dbTaxRules || !dbSettings) {
+    if (!dbAccounts || !dbIncomes || !dbBudgets || !dbProperties || !dbPropertyOwnership || !dbMilestones || !dbTaxRules || !dbSettings) {
       return {
         data: [] as ProjectionYearResult[],
         isReady: false,
@@ -134,6 +135,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
       budgets: dbBudgets,
       properties: dbProperties,
       propertyOwnership: dbPropertyOwnership,
+      milestones: dbMilestones,
       taxRules: reducedTaxRulesMap
     });
 
@@ -153,6 +155,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
     dbBudgets,
     dbProperties,
     dbPropertyOwnership,
+    dbMilestones,
     dbTaxRules,
     dbSettings,
     drawdownStrategy

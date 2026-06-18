@@ -200,6 +200,14 @@ export interface PropertyOwnership {
     updatedAt?: number;
 }
 
+export interface Milestone {
+    id: string;
+    name: string;
+    date: number; // timestamp
+    amount: number;
+    updatedAt?: number;
+}
+
 export const db = new Dexie('IncomeTrackDB') as Dexie & {
     profile: EntityTable<Profile, 'id'>;
     accounts: EntityTable<Account, 'id'>;
@@ -217,6 +225,7 @@ export const db = new Dexie('IncomeTrackDB') as Dexie & {
     propertyExpenses: EntityTable<PropertyExpense, 'id'>;
     propertyIncomes: EntityTable<PropertyIncome, 'id'>;
     propertyOwnership: EntityTable<PropertyOwnership, 'id'>;
+    milestones: EntityTable<Milestone, 'id'>;
     deletedRows: EntityTable<DeletedRow, 'id'>;
 };
 
@@ -500,6 +509,27 @@ db.version(16).stores({
     deletedRows: '&id, tableName, deletedAt'
 });
 
+db.version(17).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt',
+    properties: '&id, name, updatedAt',
+    propertyExpenses: '&id, propertyId, date, updatedAt',
+    propertyIncomes: '&id, propertyId, date, updatedAt',
+    propertyOwnership: '&id, propertyId, startDate, updatedAt',
+    milestones: '&id, date, updatedAt',
+    deletedRows: '&id, tableName, deletedAt'
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -518,6 +548,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         propertyExpenses: await db.propertyExpenses.toArray(),
         propertyIncomes: await db.propertyIncomes.toArray(),
         propertyOwnership: await db.propertyOwnership.toArray(),
+        milestones: await db.milestones.toArray(),
         deletedRows: await db.deletedRows.toArray(),
     };
 
@@ -609,6 +640,14 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
         }));
     }
 
+    if (rawData.milestones) {
+        rawData.milestones = rawData.milestones.map(m => ({
+            ...m,
+            date: Number(m.date) || 0,
+            amount: Number(m.amount) || 0,
+        }));
+    }
+
     if (rawData.settings) {
         rawData.settings = rawData.settings.map(s => ({
             ...s,
@@ -647,7 +686,7 @@ export const dbHooks = {
 };
 
 // Add hooks to automatically update the updatedAt timestamp
-const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership'];
+const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership', 'milestones'];
 
 tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {

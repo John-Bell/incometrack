@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -28,6 +29,15 @@ export function CashflowProjectionPage() {
                         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                             <Icon name="trending_up" className="text-2xl" />
                         </div>
+                    }
+                    rightElement={
+                        <Link
+                            to="/milestones"
+                            className="flex items-center gap-2 bg-white dark:bg-surface-dark hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-xl transition-colors font-semibold text-sm border border-slate-200 dark:border-slate-700 shadow-sm"
+                        >
+                            <Icon name="flag" className="text-lg text-primary" />
+                            <span>Milestones</span>
+                        </Link>
                     }
                 />
             }

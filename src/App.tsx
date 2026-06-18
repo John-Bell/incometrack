@@ -33,6 +33,9 @@ import { SimulatorPage } from '@/pages/SimulatorPage';
 import { CashflowProjectionPage } from '@/pages/CashflowProjectionPage';
 import { AssetBurndownPage } from '@/pages/AssetBurndownPage';
 import { AssetCompositionPage } from '@/pages/AssetCompositionPage';
+import { MilestonesPage } from '@/pages/MilestonesPage';
+import { AddMilestonePage } from '@/pages/AddMilestonePage';
+import { EditMilestonePage } from '@/pages/EditMilestonePage';
 import { useStore } from '@/store/useStore';
 import { remoteSyncService } from '@/services/remoteSyncService';
 import { dbHooks } from '@/lib/db';
@@ -96,6 +99,9 @@ function AppRoutes() {
       <Route path="/cashflow-projection" element={<CashflowProjectionPage />} />
       <Route path="/asset-burndown" element={<AssetBurndownPage />} />
       <Route path="/asset-composition" element={<AssetCompositionPage />} />
+      <Route path="/milestones" element={<MilestonesPage />} />
+      <Route path="/milestones/add" element={<AddMilestonePage />} />
+      <Route path="/milestones/edit/:id" element={<EditMilestonePage />} />
       {/* Setup Routes */}
       <Route path="/setup" element={<SimplifiedAppSetupPage />} />
 

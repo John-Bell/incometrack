@@ -427,7 +427,7 @@ describe('calculateLifetimeProjection', () => {
     expect(r2031?.milestones[0]).toContain('£20,000 moved');
   });
 
-  it('TEST CASE 10: Taxable Protection Floor', () => {
+  it('TEST CASE 10: Cash Protection Floor (Sequential)', () => {
     const input: ProjectionEngineInput = {
       ...baseInput,
       currentBalances: 150000,
@@ -436,7 +436,7 @@ describe('calculateLifetimeProjection', () => {
         taxFree: 50000,
         pensions: 50000,
       },
-      protectionFloor: 20000,
+      protectionFloor: 60000,
       drawdownStrategy: 'taxable_first',
       realGrowthRate: 0,
       budgets: [
@@ -444,7 +444,7 @@ describe('calculateLifetimeProjection', () => {
           id: 'budg-1',
           accountId: 'acc-1',
           name: 'Budget',
-          amount: 40000,
+          amount: 50000,
           frequency: 'annually',
           updatedAt: Date.now(),
         },
@@ -453,34 +453,24 @@ describe('calculateLifetimeProjection', () => {
 
     const results = calculateLifetimeProjection(input);
 
-    // Year 0 (2025): 150k - 40k = 110k total.
-    // strategy: taxable_first.
-    // Taxable available = 50k - 20k = 30k.
-    // Deficit = 40k.
-    // taxable draw = min(30k, 40k) = 30k.
-    // remaining deficit = 10k.
-    // taxFree draw = 10k.
-    // New Taxable = 50k - 30k = 20k.
-    // New taxFree = 50k - 10k = 40k.
-    // New pensions = 50k.
-    expect(results[0].potBalances.taxable).toBe(20000);
-    expect(results[0].potBalances.taxFree).toBe(40000);
-    expect(results[0].potBalances.pensions).toBe(50000);
-
-    // Year 1 (2026): 110k - 40k = 70k total.
-    // Taxable available = 20k - 20k = 0k.
-    // taxFree available = 40k.
-    // Deficit = 40k.
-    // taxFree draw = 40k.
-    // New Taxable = 20k.
-    // New taxFree = 0k.
-    // New pensions = 50k.
-    expect(results[1].potBalances.taxable).toBe(20000);
-    expect(results[1].potBalances.taxFree).toBe(0);
-    expect(results[1].potBalances.pensions).toBe(50000);
+    // Initial: taxable 50k, taxFree 50k, pensions 50k. Total 150k.
+    // Floor: 60k.
+    // Available Cash (Taxable + TaxFree) = (50k + 50k) - 60k = 40k.
+    // Deficit = 50k.
+    // Order: taxable, taxFree, pensions.
+    // Draw from taxable: min(50k, 40k, 50k) = 40k. Remaining deficit = 10k. Available Cash = 0.
+    // Draw from taxFree: min(50k, 0k, 10k) = 0k. Remaining deficit = 10k.
+    // Draw from pensions: net 10k needed. Gross = 10k / 0.85 = 11764.71.
+    // New Taxable = 50k - 40k = 10k.
+    // New TaxFree = 50k.
+    // New Pensions = 50k - 11764.71 = 38235.29.
+    // Combined Cash = 10k + 50k = 60k (Hits floor exactly).
+    expect(results[0].potBalances.taxable).toBe(10000);
+    expect(results[0].potBalances.taxFree).toBe(50000);
+    expect(results[0].potBalances.pensions).toBeCloseTo(38235.29, 1);
   });
 
-  it('TEST CASE 11: Taxable Protection Floor (Proportional)', () => {
+  it('TEST CASE 11: Cash Protection Floor (Proportional)', () => {
     const input: ProjectionEngineInput = {
       ...baseInput,
       currentBalances: 120000,
@@ -489,7 +479,7 @@ describe('calculateLifetimeProjection', () => {
         taxFree: 40000,
         pensions: 40000,
       },
-      protectionFloor: 20000,
+      protectionFloor: 40000,
       drawdownStrategy: 'proportional',
       realGrowthRate: 0,
       budgets: [
@@ -507,16 +497,77 @@ describe('calculateLifetimeProjection', () => {
     const results = calculateLifetimeProjection(input);
 
     // Initial: Taxable 40k, taxFree 40k, pensions 40k. Total = 120k.
-    // floor = 20k.
-    // availableTaxable = 40k - 20k = 20k.
-    // totalAvailable = 20k + 40k + 40k = 100k.
+    // Floor = 40k.
+    // AvailableCash = (40k + 40k) - 40k = 40k.
+    // TotalAvailable = 40k (cash) + 40k (pensions) = 80k.
     // Deficit = 20k.
-    // taxable share: 20k / 100k = 0.2. Draw = 20k * 0.2 = 4k. New Taxable = 40k - 4k = 36k.
-    // taxFree share: 40k / 100k = 0.4. Draw = 20k * 0.4 = 8k. New taxFree = 40k - 8k = 32k.
-    // pensions share: 40k / 100k = 0.4. Draw net = 20k * 0.4 = 8k.
-    // Gross draw = 8k / 0.85 = 9411.76. New pensions = 40k - 9411.76 = 30588.24.
-    expect(results[0].potBalances.taxable).toBe(36000);
-    expect(results[0].potBalances.taxFree).toBe(32000);
-    expect(results[0].potBalances.pensions).toBeCloseTo(30588.24, 1);
+    // Cash ratio: 40k / 80k = 0.5. Cash draw needed = 20k * 0.5 = 10k.
+    // Pension ratio: 40k / 80k = 0.5. Pension net draw needed = 20k * 0.5 = 10k.
+    // Cash draw split (taxable vs taxFree):
+    // TotalCash = 80k. taxable: 40k (50%), taxFree: 40k (50%).
+    // New Taxable = 40k - (10k * 0.5) = 35k.
+    // New TaxFree = 40k - (10k * 0.5) = 35k.
+    // Pension gross draw = 10k / 0.85 = 11764.71.
+    // New Pensions = 40k - 11764.71 = 28235.29.
+    // Combined Cash = 35k + 35k = 70k.
+    expect(results[0].potBalances.taxable).toBe(35000);
+    expect(results[0].potBalances.taxFree).toBe(35000);
+    expect(results[0].potBalances.pensions).toBeCloseTo(28235.29, 1);
+  });
+
+  it('TEST CASE 12: Bed & ISA Sweep and Protection Floor Interaction', () => {
+    // Verifies that sweeping from taxable to taxFree does not prevent drawing from taxFree
+    // when the combined balance is above the floor.
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 100000,
+      assetPots: {
+        taxable: 100000,
+        taxFree: 0,
+        pensions: 50000,
+      },
+      protectionFloor: 20000,
+      drawdownStrategy: 'tax_free_first',
+      realGrowthRate: 0,
+      budgets: [
+        {
+          id: 'budg-1',
+          accountId: 'acc-1',
+          name: 'Budget',
+          amount: 10000,
+          frequency: 'annually',
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // 2025: Taxable 100k -> 90k. taxFree 0. floor 20k.
+    expect(results[0].calendarYear).toBe(2025);
+    expect(results[0].potBalances.taxable).toBe(90000);
+    expect(results[0].potBalances.taxFree).toBe(0);
+
+    // 2026: Taxable 90k -> 80k. taxFree 0.
+    expect(results[1].calendarYear).toBe(2026);
+    expect(results[1].potBalances.taxable).toBe(80000);
+
+    // 2027: Bed & ISA Sweep occurs.
+    // P1 age 61, P2 age 60. Allowance 24k.
+    // Surplus/Deficit check first: Taxable 80k -> 70k.
+    // Then Sweep: Taxable 70k -> 46k. taxFree 0 -> 24k.
+    expect(results[2].calendarYear).toBe(2027);
+    expect(results[2].potBalances.taxable).toBe(46000);
+    expect(results[2].potBalances.taxFree).toBe(24000);
+
+    // 2028: tax_free_first strategy.
+    // Initial: Taxable 46k, taxFree 24k. Combined 70k. Floor 20k. Available 50k.
+    // Deficit 10k.
+    // Draw from taxFree: min(24k, 50k, 10k) = 10k.
+    // New taxFree = 24k - 10k = 14k.
+    // Then Sweep: Taxable 46k -> 22k. taxFree 14k -> 38k.
+    expect(results[3].calendarYear).toBe(2028);
+    expect(results[3].potBalances.taxable).toBe(22000);
+    expect(results[3].potBalances.taxFree).toBe(38000);
   });
 });

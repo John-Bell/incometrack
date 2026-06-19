@@ -259,6 +259,13 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               trackingTaxFree -= Math.min(trackingTaxFree, cashDrawNeeded * ratioTaxFree);
             }
 
+            // Sort pension pots: Uncrystallised ('DC Pension') first, then Crystallised
+            trackingPensions.sort((a: any, b: any) => {
+              if (a.category === 'DC Pension' && b.category !== 'DC Pension') return -1;
+              if (a.category !== 'DC Pension' && b.category === 'DC Pension') return 1;
+              return 0;
+            });
+
             // Iterate over pension pots to fulfill pensionDrawNeeded
             for (const pot of trackingPensions) {
               if (pensionDrawNeeded <= 0) break;
@@ -319,6 +326,13 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               deficit -= draw;
               availableCash -= draw;
             } else if (pot === 'pensions') {
+              // Sort pension pots: Uncrystallised ('DC Pension') first, then Crystallised
+              trackingPensions.sort((a: any, b: any) => {
+                if (a.category === 'DC Pension' && b.category !== 'DC Pension') return -1;
+                if (a.category !== 'DC Pension' && b.category === 'DC Pension') return 1;
+                return 0;
+              });
+
               for (const pPot of trackingPensions) {
                 if (deficit <= 0) break;
                 if (pPot.balance <= 0) continue;

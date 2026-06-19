@@ -134,6 +134,14 @@ describe('calculateTaxableSavings', () => {
         expect(calculateTaxableSavings(accounts)).toBe(100);
     });
 
+    it('excludes DC Pension (Post-Drawdown) accounts', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
+            { id: '2', name: 'Acc 2', balance: 500, ownerId: 'p2', updatedAt: 0, category: 'DC Pension (Post-Drawdown)', interestRate: 0 },
+        ];
+        expect(calculateTaxableSavings(accounts)).toBe(100);
+    });
+
     it('excludes Premium Bonds accounts', () => {
         const accounts: Account[] = [
             { id: '1', name: 'Acc 1', balance: 100, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 0 },
@@ -194,6 +202,14 @@ describe('calculateProjectedTaxableInterest', () => {
         const accounts: Account[] = [
             { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
             { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension', interestRate: 10 },
+        ];
+        expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
+    });
+
+    it('excludes DC Pension (Post-Drawdown) accounts from interest calculation', () => {
+        const accounts: Account[] = [
+            { id: '1', name: 'Acc 1', balance: 1000, ownerId: 'p1', updatedAt: 0, category: 'Current Account', interestRate: 5 },
+            { id: '2', name: 'Acc 2', balance: 5000, ownerId: 'p2', updatedAt: 0, category: 'DC Pension (Post-Drawdown)', interestRate: 10 },
         ];
         expect(calculateProjectedTaxableInterest(accounts, [], startTs, endTs)).toBeCloseTo(50, 4);
     });

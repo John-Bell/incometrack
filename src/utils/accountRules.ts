@@ -1,7 +1,7 @@
 import { type AccountCategory } from '@/constants/taxConstants';
 
 export const canShowAER = (category: string | AccountCategory): boolean => {
-    return category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'Premium Bonds'].includes(category as string);
+    return category === '' || !['Stocks & Shares', 'Shares ISA', 'DC Pension', 'DC Pension (Post-Drawdown)', 'Premium Bonds'].includes(category as string);
 };
 
 export const canShowBonus = (category: string | AccountCategory): boolean => {

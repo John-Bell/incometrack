@@ -46,19 +46,7 @@ export type TaxYearConstants = {
   StartingBand: string;
 };
 
-export type AccountCategory =
-  | 'Current Account'
-  | 'Easy Access Savings'
-  | 'Fixed Term Savings'
-  | 'Notice Savings'
-  | 'Stocks & Shares'
-  | 'Cash ISA'
-  | 'Shares ISA'
-  | 'Premium Bonds'
-  | 'DC Pension'
-  | 'DC Pension (Post-Drawdown)';
-
-export const ACCOUNT_CATEGORIES: AccountCategory[] = [
+export const ACCOUNT_CATEGORIES = [
   'Current Account',
   'Easy Access Savings',
   'Fixed Term Savings',
@@ -68,8 +56,10 @@ export const ACCOUNT_CATEGORIES: AccountCategory[] = [
   'Shares ISA',
   'Premium Bonds',
   'DC Pension',
-  'DC Pension (Post-Drawdown)'
-];
+  'DC Pension (Post-Drawdown)',
+] as const;
+
+export type AccountCategory = (typeof ACCOUNT_CATEGORIES)[number];
 
 export const TAX_FREE_CATEGORIES: AccountCategory[] = [
   'Cash ISA',

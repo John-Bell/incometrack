@@ -104,11 +104,17 @@ const AssetBurndownChart: React.FC<AssetBurndownChartProps> = ({ drawdownStrateg
         </div>
 
         {/* Breakdown Row */}
-        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-dashed border-gray-100 dark:border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-3 border-t border-dashed border-gray-100 dark:border-slate-800">
           <div>
             <span className="block text-[10px] uppercase font-bold text-indigo-600 tracking-wider">Taxable</span>
             <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
               {formatCurrency(displayPoint.potBalances.taxable)}
+            </span>
+          </div>
+          <div>
+            <span className="block text-[10px] uppercase font-bold text-sky-600 tracking-wider">Premium Bonds</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+              {formatCurrency(displayPoint.potBalances.premiumBonds)}
             </span>
           </div>
           <div>
@@ -198,6 +204,15 @@ const AssetBurndownChart: React.FC<AssetBurndownChartProps> = ({ drawdownStrateg
               stackId="1"
               stroke="#F59E0B"
               fill="#F59E0B"
+              fillOpacity={0.6}
+              animationDuration={1000}
+            />
+            <Area
+              type="monotone"
+              dataKey="potBalances.premiumBonds"
+              stackId="1"
+              stroke="#0EA5E9"
+              fill="#0EA5E9"
               fillOpacity={0.6}
               animationDuration={1000}
             />

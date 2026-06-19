@@ -73,7 +73,10 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
         .filter(a => liquidCategories.includes(a.category) && !['Cash ISA', 'Shares ISA', 'Premium Bonds', 'DC Pension', 'DC Pension (Post-Drawdown)'].includes(a.category))
         .reduce((sum, a) => sum + a.balance, 0),
       taxFree: dbAccounts
-        .filter(a => ['Cash ISA', 'Shares ISA', 'Premium Bonds'].includes(a.category))
+        .filter(a => ['Cash ISA', 'Shares ISA'].includes(a.category))
+        .reduce((sum, a) => sum + a.balance, 0),
+      premiumBonds: dbAccounts
+        .filter(a => a.category === 'Premium Bonds')
         .reduce((sum, a) => sum + a.balance, 0),
       pensions: dbAccounts
         .filter(a => a.category === 'DC Pension' || a.category === 'DC Pension (Post-Drawdown)')

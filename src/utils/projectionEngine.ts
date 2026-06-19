@@ -11,6 +11,7 @@ export interface ProjectionEngineInput {
   assetPots?: {
     taxable: number;
     taxFree: number;
+    premiumBonds: number;
     pensions: number;
   };
   pensionPots?: {
@@ -43,6 +44,7 @@ export interface ProjectionYearResult {
   potBalances: {
     taxable: number;
     taxFree: number;
+    premiumBonds: number;
     pensions: number;
     total: number;
   };
@@ -74,6 +76,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
   let trackingTaxable = input.assetPots?.taxable ?? input.currentBalances;
   let trackingTaxFree = input.assetPots?.taxFree ?? 0;
+  let trackingPremiumBonds = input.assetPots?.premiumBonds ?? 0;
 
   let trackingPensions = input.pensionPots ? JSON.parse(JSON.stringify(input.pensionPots)) : [];
   if (!input.pensionPots && input.assetPots?.pensions) {
@@ -228,7 +231,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
     const totalPensions = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
-    const totalBefore = trackingTaxable + trackingTaxFree + totalPensions;
+    const totalBefore = trackingTaxable + trackingTaxFree + trackingPremiumBonds + totalPensions;
 
     if (totalBefore > 0 || totalCashInjectionsForYear > 0) {
       let annualSurplus = netCashFlow + totalCashInjectionsForYear;
@@ -240,7 +243,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
         const strategy = input.drawdownStrategy || 'proportional';
 
         if (strategy === 'proportional') {
-          const availableCash = Math.max(0, (trackingTaxable + trackingTaxFree) - floor);
+          const availableCash = Math.max(0, (trackingTaxable + trackingTaxFree + trackingPremiumBonds) - floor);
           const currentTotalPensions = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
           const totalAtStartOfDeficit = availableCash + currentTotalPensions;
           if (totalAtStartOfDeficit > 0) {
@@ -250,13 +253,15 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             const cashDrawNeeded = deficit * ratioCash;
             let pensionDrawNeeded = deficit * ratioPensions;
 
-            // Split cashDrawNeeded between taxable and taxFree proportionally to their current relative balances
-            const totalCash = trackingTaxable + trackingTaxFree;
+            // Split cashDrawNeeded between taxable, taxFree, and premiumBonds proportionally to their current relative balances
+            const totalCash = trackingTaxable + trackingTaxFree + trackingPremiumBonds;
             if (totalCash > 0) {
               const ratioTaxable = trackingTaxable / totalCash;
               const ratioTaxFree = trackingTaxFree / totalCash;
+              const ratioPremiumBonds = trackingPremiumBonds / totalCash;
               trackingTaxable -= Math.min(trackingTaxable, cashDrawNeeded * ratioTaxable);
               trackingTaxFree -= Math.min(trackingTaxFree, cashDrawNeeded * ratioTaxFree);
+              trackingPremiumBonds -= Math.min(trackingPremiumBonds, cashDrawNeeded * ratioPremiumBonds);
             }
 
             // Sort pension pots: Uncrystallised ('DC Pension') first, then Crystallised
@@ -306,12 +311,12 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             }
           }
         } else {
-          const order: ('taxable' | 'taxFree' | 'pensions')[] =
-            strategy === 'taxable_first' ? ['taxable', 'taxFree', 'pensions'] :
-            strategy === 'tax_free_first' ? ['taxFree', 'taxable', 'pensions'] :
-            ['pensions', 'taxable', 'taxFree']; // pensions_first
+          const order: ('taxable' | 'taxFree' | 'premiumBonds' | 'pensions')[] =
+            strategy === 'taxable_first' ? ['taxable', 'premiumBonds', 'taxFree', 'pensions'] :
+            strategy === 'tax_free_first' ? ['premiumBonds', 'taxFree', 'taxable', 'pensions'] :
+            ['pensions', 'taxable', 'premiumBonds', 'taxFree']; // pensions_first
 
-          let availableCash = Math.max(0, (trackingTaxable + trackingTaxFree) - floor);
+          let availableCash = Math.max(0, (trackingTaxable + trackingTaxFree + trackingPremiumBonds) - floor);
 
           for (const pot of order) {
             if (deficit <= 0) break;
@@ -323,6 +328,11 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             } else if (pot === 'taxFree') {
               const draw = Math.min(trackingTaxFree, availableCash, deficit);
               trackingTaxFree -= draw;
+              deficit -= draw;
+              availableCash -= draw;
+            } else if (pot === 'premiumBonds') {
+              const draw = Math.min(trackingPremiumBonds, availableCash, deficit);
+              trackingPremiumBonds -= draw;
               deficit -= draw;
               availableCash -= draw;
             } else if (pot === 'pensions') {
@@ -401,18 +411,20 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     } else {
       trackingTaxable = 0;
       trackingTaxFree = 0;
+      trackingPremiumBonds = 0;
       for (const pot of trackingPensions) pot.balance = 0;
     }
 
     // Floor and handle runway
     if (trackingTaxable < 0) trackingTaxable = 0;
     if (trackingTaxFree < 0) trackingTaxFree = 0;
+    if (trackingPremiumBonds < 0) trackingPremiumBonds = 0;
     for (const pot of trackingPensions) {
       if (pot.balance < 0) pot.balance = 0;
     }
 
     const currentTotalPensionsAfterDrawdown = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
-    const trackingTotalLiquidAssets = trackingTaxable + trackingTaxFree + currentTotalPensionsAfterDrawdown;
+    const trackingTotalLiquidAssets = trackingTaxable + trackingTaxFree + trackingPremiumBonds + currentTotalPensionsAfterDrawdown;
 
     let isRunwayBroken = false;
     if (trackingTotalLiquidAssets <= 0) {
@@ -428,6 +440,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       potBalances: {
         taxable: trackingTaxable,
         taxFree: trackingTaxFree,
+        premiumBonds: trackingPremiumBonds,
         pensions: currentTotalPensionsAfterDrawdown,
         total: trackingTotalLiquidAssets
       },
@@ -453,6 +466,11 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
       trackingTaxable *= (1 + rateTaxable);
       trackingTaxFree *= (1 + rateTaxFree);
+
+      // Premium Bonds: No compound interest, winnings paid out to taxable account
+      const pbWinnings = trackingPremiumBonds * rateTaxFree;
+      trackingTaxable += pbWinnings;
+
       for (const pot of trackingPensions) {
         pot.balance *= (1 + ratePensions);
       }

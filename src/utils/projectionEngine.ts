@@ -13,6 +13,12 @@ export interface ProjectionEngineInput {
     taxFree: number;
     pensions: number;
   };
+  pensionPots?: {
+    id: string;
+    ownerId: 'person1' | 'person2';
+    balance: number;
+    category: string;
+  }[];
   drawdownStrategy?: DrawdownStrategy;
   realGrowthRate: number;  // App global growth asset rate (e.g., 2.38)
   profile: {
@@ -68,7 +74,16 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
   let trackingTaxable = input.assetPots?.taxable ?? input.currentBalances;
   let trackingTaxFree = input.assetPots?.taxFree ?? 0;
-  let trackingPensions = input.assetPots?.pensions ?? 0;
+
+  let trackingPensions = input.pensionPots ? JSON.parse(JSON.stringify(input.pensionPots)) : [];
+  if (!input.pensionPots && input.assetPots?.pensions) {
+    trackingPensions.push({
+      id: 'dummy-pension',
+      ownerId: 'person1',
+      balance: input.assetPots.pensions,
+      category: 'DC Pension (Post-Drawdown)' // Crystallised for backwards-compatibility of flat tax tests
+    });
+  }
 
   const floor = input.protectionFloor ?? 0;
 
@@ -212,7 +227,8 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const totalInflows = (p1Salary + p1Pension + p1Dividends + p2Salary + p2Pension + p2Dividends) + p1RentalGrossForYear + p2RentalGrossForYear;
     const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
-    const totalBefore = trackingTaxable + trackingTaxFree + trackingPensions;
+    const totalPensions = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
+    const totalBefore = trackingTaxable + trackingTaxFree + totalPensions;
 
     if (totalBefore > 0 || totalCashInjectionsForYear > 0) {
       let annualSurplus = netCashFlow + totalCashInjectionsForYear;
@@ -225,14 +241,14 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
         if (strategy === 'proportional') {
           const availableCash = Math.max(0, (trackingTaxable + trackingTaxFree) - floor);
-          const totalAtStartOfDeficit = availableCash + trackingPensions;
+          const currentTotalPensions = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
+          const totalAtStartOfDeficit = availableCash + currentTotalPensions;
           if (totalAtStartOfDeficit > 0) {
             const ratioCash = availableCash / totalAtStartOfDeficit;
-            const ratioPensions = trackingPensions / totalAtStartOfDeficit;
+            const ratioPensions = currentTotalPensions / totalAtStartOfDeficit;
 
             const cashDrawNeeded = deficit * ratioCash;
-            const pensionDrawNeeded = deficit * ratioPensions;
-            const grossPensionWithdrawal = pensionDrawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
+            let pensionDrawNeeded = deficit * ratioPensions;
 
             // Split cashDrawNeeded between taxable and taxFree proportionally to their current relative balances
             const totalCash = trackingTaxable + trackingTaxFree;
@@ -243,7 +259,44 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               trackingTaxFree -= Math.min(trackingTaxFree, cashDrawNeeded * ratioTaxFree);
             }
 
-            trackingPensions -= Math.min(trackingPensions, grossPensionWithdrawal);
+            // Iterate over pension pots to fulfill pensionDrawNeeded
+            for (const pot of trackingPensions) {
+              if (pensionDrawNeeded <= 0) break;
+              if (pot.balance <= 0) continue;
+
+              if (pot.category === 'DC Pension') {
+                const requiredCrystallisation = pensionDrawNeeded * 4;
+                if (pot.balance >= requiredCrystallisation) {
+                  pot.balance -= requiredCrystallisation;
+                  pensionDrawNeeded -= pensionDrawNeeded;
+                  let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
+                  if (!postPot) {
+                    postPot = { id: `post-${pot.id}-${yearIndex}`, ownerId: pot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
+                    trackingPensions.push(postPot);
+                  }
+                  postPot.balance += requiredCrystallisation * 0.75;
+                } else {
+                  const availableTaxFree = pot.balance * 0.25;
+                  pensionDrawNeeded -= availableTaxFree;
+                  let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
+                  if (!postPot) {
+                    postPot = { id: `post-${pot.id}-${yearIndex}`, ownerId: pot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
+                    trackingPensions.push(postPot);
+                  }
+                  postPot.balance += pot.balance * 0.75;
+                  pot.balance = 0;
+                }
+              } else if (pot.category === 'DC Pension (Post-Drawdown)') {
+                const grossWithdrawal = pensionDrawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
+                if (pot.balance >= grossWithdrawal) {
+                  pot.balance -= grossWithdrawal;
+                  pensionDrawNeeded = 0;
+                } else {
+                  pensionDrawNeeded -= pot.balance * (1 - PENSION_DRAWDOWN_TAX_RATE);
+                  pot.balance = 0;
+                }
+              }
+            }
           }
         } else {
           const order: ('taxable' | 'taxFree' | 'pensions')[] =
@@ -266,17 +319,43 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               deficit -= draw;
               availableCash -= draw;
             } else if (pot === 'pensions') {
-              const drawNeeded = Math.min(trackingPensions, deficit);
-              // Define a realistic effective tax drag on DC pension withdrawals
-              // (Accounts for 75% taxable portion hitting basic/higher rate bands)
-              // Gross up the withdrawal: To get £85 net, you must pull £100 out of the pot
-              const grossPensionWithdrawal = drawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
-              // Ensure we don't draw more than the pot actually holds
-              const actualGrossDraw = Math.min(trackingPensions, grossPensionWithdrawal);
-              trackingPensions -= actualGrossDraw;
-              // The deficit is only reduced by the NET amount that lands in your bank account
-              const netDrawReceived = actualGrossDraw * (1 - PENSION_DRAWDOWN_TAX_RATE);
-              deficit -= netDrawReceived;
+              for (const pPot of trackingPensions) {
+                if (deficit <= 0) break;
+                if (pPot.balance <= 0) continue;
+
+                if (pPot.category === 'DC Pension') {
+                  const requiredCrystallisation = deficit * 4;
+                  if (pPot.balance >= requiredCrystallisation) {
+                    pPot.balance -= requiredCrystallisation;
+                    deficit -= deficit;
+                    let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pPot.ownerId);
+                    if (!postPot) {
+                      postPot = { id: `post-${pPot.id}-${yearIndex}`, ownerId: pPot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
+                      trackingPensions.push(postPot);
+                    }
+                    postPot.balance += requiredCrystallisation * 0.75;
+                  } else {
+                    const availableTaxFree = pPot.balance * 0.25;
+                    deficit -= availableTaxFree;
+                    let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pPot.ownerId);
+                    if (!postPot) {
+                      postPot = { id: `post-${pPot.id}-${yearIndex}`, ownerId: pPot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
+                      trackingPensions.push(postPot);
+                    }
+                    postPot.balance += pPot.balance * 0.75;
+                    pPot.balance = 0;
+                  }
+                } else if (pPot.category === 'DC Pension (Post-Drawdown)') {
+                  const grossWithdrawal = deficit / (1 - PENSION_DRAWDOWN_TAX_RATE);
+                  if (pPot.balance >= grossWithdrawal) {
+                    pPot.balance -= grossWithdrawal;
+                    deficit = 0;
+                  } else {
+                    deficit -= pPot.balance * (1 - PENSION_DRAWDOWN_TAX_RATE);
+                    pPot.balance = 0;
+                  }
+                }
+              }
             }
           }
         }
@@ -308,15 +387,18 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     } else {
       trackingTaxable = 0;
       trackingTaxFree = 0;
-      trackingPensions = 0;
+      for (const pot of trackingPensions) pot.balance = 0;
     }
 
     // Floor and handle runway
     if (trackingTaxable < 0) trackingTaxable = 0;
     if (trackingTaxFree < 0) trackingTaxFree = 0;
-    if (trackingPensions < 0) trackingPensions = 0;
+    for (const pot of trackingPensions) {
+      if (pot.balance < 0) pot.balance = 0;
+    }
 
-    const trackingTotalLiquidAssets = trackingTaxable + trackingTaxFree + trackingPensions;
+    const currentTotalPensionsAfterDrawdown = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
+    const trackingTotalLiquidAssets = trackingTaxable + trackingTaxFree + currentTotalPensionsAfterDrawdown;
 
     let isRunwayBroken = false;
     if (trackingTotalLiquidAssets <= 0) {
@@ -332,7 +414,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       potBalances: {
         taxable: trackingTaxable,
         taxFree: trackingTaxFree,
-        pensions: trackingPensions,
+        pensions: currentTotalPensionsAfterDrawdown,
         total: trackingTotalLiquidAssets
       },
       isRunwayBroken: isRunwayBroken,
@@ -357,7 +439,9 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
       trackingTaxable *= (1 + rateTaxable);
       trackingTaxFree *= (1 + rateTaxFree);
-      trackingPensions *= (1 + ratePensions);
+      for (const pot of trackingPensions) {
+        pot.balance *= (1 + ratePensions);
+      }
     }
 
     yearIndex++;

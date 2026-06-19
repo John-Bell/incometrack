@@ -35,8 +35,9 @@ export function AddAccountPage() {
                     <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
                 {/* Account Name Field */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Account Name</label>
+                    <label htmlFor="accountName" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Account Name</label>
                     <input
+                        id="accountName"
                         className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         placeholder="e.g. Santander eSaver"
@@ -48,8 +49,9 @@ export function AddAccountPage() {
 
                 {/* Nickname Field */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Nickname (Optional)</label>
+                    <label htmlFor="nickname" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Nickname (Optional)</label>
                     <input
+                        id="nickname"
                         className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         placeholder="e.g. Holiday Fund"
@@ -60,8 +62,9 @@ export function AddAccountPage() {
 
                 {/* Last 4 Digits Field */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Last 4 Digits (Optional)</label>
+                    <label htmlFor="last4Digits" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Last 4 Digits (Optional)</label>
                     <input
+                        id="last4Digits"
                         className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         maxLength={4}
@@ -73,9 +76,10 @@ export function AddAccountPage() {
 
                 {/* Category Field */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Category</label>
+                    <label htmlFor="category" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Category</label>
                     <div className="relative">
                         <select
+                            id="category"
                             className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                 value={formData.category}
                                 onChange={(e) => handleChange('category', e.target.value as AccountCategory)}
@@ -92,8 +96,9 @@ export function AddAccountPage() {
                 {/* Budget Order Field */}
                     {formData.category === 'Current Account' && (
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
+                        <label htmlFor="budgetOrder" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
                         <input
+                            id="budgetOrder"
                             className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                             type="number"
                             placeholder="e.g. 1"
@@ -106,8 +111,9 @@ export function AddAccountPage() {
                 {/* Bond Term Years Field */}
                 {formData.category === 'Fixed Term Savings' && (
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Term (Years, Optional)</label>
+                        <label htmlFor="bondTermYears" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Term (Years, Optional)</label>
                         <input
+                            id="bondTermYears"
                             className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                             type="number"
                             step="0.1"
@@ -123,9 +129,10 @@ export function AddAccountPage() {
                 {/* Balance and Interest Rate Fields */}
                 <div className={showAER ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
                     <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
+                        <label htmlFor="balance" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
                         <div className="relative flex items-center">
                             <input
+                                id="balance"
                                 className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                 type="number"
                                 placeholder="0.00"
@@ -138,9 +145,10 @@ export function AddAccountPage() {
 
                     {showAER && (
                         <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
+                            <label htmlFor="interestRate" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
                             <div className="relative flex items-center">
                                 <input
+                                    id="interestRate"
                                     className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                     type="number"
                                     step="0.01"
@@ -178,9 +186,10 @@ export function AddAccountPage() {
                     <div className="space-y-4 p-5 rounded-xl border border-primary/20 bg-primary/5">
                         <h3 className="font-bold text-slate-900 dark:text-slate-100">Interest Payout</h3>
                         <div className="space-y-2">
-                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Frequency</label>
+                            <label htmlFor="interestPayoutFrequency" className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Frequency</label>
                             <div className="relative">
                                 <select
+                                    id="interestPayoutFrequency"
                                     className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                     value={formData.interestPayoutFrequency}
                                     onChange={(e) => handleChange('interestPayoutFrequency', e.target.value as 'monthly' | 'annually' | 'at_maturity' | '')}
@@ -196,11 +205,12 @@ export function AddAccountPage() {
 
                         {(formData.interestPayoutFrequency === 'annually' || formData.interestPayoutFrequency === 'at_maturity') && (
                             <div className="space-y-2 fade-in min-w-0 w-full">
-                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                                <label htmlFor="interestPayoutDate" className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
                                     {formData.interestPayoutFrequency === 'at_maturity' ? 'Maturity Date' : 'Next Payout Date'}
                                 </label>
                                 <div className="relative min-w-0 w-full">
                                     <DateInput
+                                        id="interestPayoutDate"
                                         className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100"
                                         value={formData.interestPayoutDate}
                                         onChange={(e) => handleChange('interestPayoutDate', e.target.value)}
@@ -232,9 +242,10 @@ export function AddAccountPage() {
 
                         {formData.bonusRateActive && (
                             <div className="space-y-2 fade-in min-w-0 w-full">
-                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
+                                <label htmlFor="bonusEndDate" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bonus End Date</label>
                                 <div className="relative min-w-0 w-full">
                                     <DateInput
+                                        id="bonusEndDate"
                                         className="w-full h-12 px-4 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary outline-none text-slate-900 dark:text-slate-100"
                                         value={formData.bonusEndDate}
                                         onChange={(e) => handleChange('bonusEndDate', e.target.value)}

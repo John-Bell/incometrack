@@ -7,7 +7,7 @@ export function calculateTotalSavings(accounts: Account[]): number {
 }
 
 export function calculateNonPensionSavings(accounts: Account[]): number {
-    return accounts.reduce((sum, acc) => acc.category !== 'DC Pension' ? sum + (acc.balance || 0) : sum, 0);
+    return accounts.reduce((sum, acc) => (acc.category !== 'DC Pension' && acc.category !== 'DC Pension (Post-Drawdown)') ? sum + (acc.balance || 0) : sum, 0);
 }
 
 export function calculateTaxableSavings(accounts: Account[]): number {

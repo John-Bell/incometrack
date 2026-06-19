@@ -55,7 +55,8 @@ export type AccountCategory =
   | 'Cash ISA'
   | 'Shares ISA'
   | 'Premium Bonds'
-  | 'DC Pension';
+  | 'DC Pension'
+  | 'DC Pension (Post-Drawdown)';
 
 export const ACCOUNT_CATEGORIES: AccountCategory[] = [
   'Current Account',
@@ -66,14 +67,16 @@ export const ACCOUNT_CATEGORIES: AccountCategory[] = [
   'Cash ISA',
   'Shares ISA',
   'Premium Bonds',
-  'DC Pension'
+  'DC Pension',
+  'DC Pension (Post-Drawdown)'
 ];
 
 export const TAX_FREE_CATEGORIES: AccountCategory[] = [
   'Cash ISA',
   'Shares ISA',
   'Premium Bonds',
-  'DC Pension'
+  'DC Pension',
+  'DC Pension (Post-Drawdown)'
 ];
 
 const DEFAULT_TAX_YEAR = '2025-2026';

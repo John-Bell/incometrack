@@ -80,6 +80,15 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
         .reduce((sum, a) => sum + a.balance, 0)
     };
 
+    const pensionPots = dbAccounts
+      .filter(a => a.category === 'DC Pension' || a.category === 'DC Pension (Post-Drawdown)')
+      .map(a => ({
+        id: a.id,
+        ownerId: a.ownerId as 'person1' | 'person2',
+        balance: a.balance,
+        category: a.category
+      }));
+
     // Reduce tax rules into a keyed map dictionary
     const reducedTaxRulesMap: TaxRulesByYear = dbTaxRules.reduce((acc, rule) => {
       acc[rule.id] = {
@@ -125,6 +134,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
     const projectionData = calculateLifetimeProjection({
       currentBalances: totalLiquidBalances,
       assetPots,
+      pensionPots,
       drawdownStrategy,
       realGrowthRate: growthRate,
       protectionFloor,

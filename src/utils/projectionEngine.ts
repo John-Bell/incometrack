@@ -259,9 +259,15 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               const ratioTaxable = trackingTaxable / totalCash;
               const ratioTaxFree = trackingTaxFree / totalCash;
               const ratioPremiumBonds = trackingPremiumBonds / totalCash;
-              trackingTaxable -= Math.min(trackingTaxable, cashDrawNeeded * ratioTaxable);
-              trackingTaxFree -= Math.min(trackingTaxFree, cashDrawNeeded * ratioTaxFree);
-              trackingPremiumBonds -= Math.min(trackingPremiumBonds, cashDrawNeeded * ratioPremiumBonds);
+
+              const drawTaxable = Math.min(trackingTaxable, cashDrawNeeded * ratioTaxable);
+              const drawTaxFree = Math.min(trackingTaxFree, cashDrawNeeded * ratioTaxFree);
+              const drawPremiumBonds = Math.min(trackingPremiumBonds, cashDrawNeeded * ratioPremiumBonds);
+
+              trackingTaxable -= drawTaxable;
+              trackingTaxFree -= drawTaxFree;
+              trackingPremiumBonds -= drawPremiumBonds;
+              deficit -= (drawTaxable + drawTaxFree + drawPremiumBonds);
             }
 
             // Sort pension pots: Uncrystallised ('DC Pension') first, then Crystallised
@@ -280,7 +286,8 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                 const requiredCrystallisation = pensionDrawNeeded * 4;
                 if (pot.balance >= requiredCrystallisation) {
                   pot.balance -= requiredCrystallisation;
-                  pensionDrawNeeded -= pensionDrawNeeded;
+                  deficit -= pensionDrawNeeded;
+                  pensionDrawNeeded = 0;
                   let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
                   if (!postPot) {
                     postPot = { id: `post-${pot.id}-${yearIndex}`, ownerId: pot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
@@ -289,6 +296,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                   postPot.balance += requiredCrystallisation * 0.75;
                 } else {
                   const availableTaxFree = pot.balance * 0.25;
+                  deficit -= availableTaxFree;
                   pensionDrawNeeded -= availableTaxFree;
                   let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
                   if (!postPot) {
@@ -302,9 +310,12 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                 const grossWithdrawal = pensionDrawNeeded / (1 - PENSION_DRAWDOWN_TAX_RATE);
                 if (pot.balance >= grossWithdrawal) {
                   pot.balance -= grossWithdrawal;
+                  deficit -= pensionDrawNeeded;
                   pensionDrawNeeded = 0;
                 } else {
-                  pensionDrawNeeded -= pot.balance * (1 - PENSION_DRAWDOWN_TAX_RATE);
+                  const netDrawn = pot.balance * (1 - PENSION_DRAWDOWN_TAX_RATE);
+                  deficit -= netDrawn;
+                  pensionDrawNeeded -= netDrawn;
                   pot.balance = 0;
                 }
               }
@@ -380,6 +391,27 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                   }
                 }
               }
+            }
+          }
+        }
+
+        // Final Resort: If deficit remains, breach the protection floor to cover it from cash pots
+        if (deficit > 0) {
+          const finalOrder: ('taxable' | 'premiumBonds' | 'taxFree')[] = ['taxable', 'premiumBonds', 'taxFree'];
+          for (const pot of finalOrder) {
+            if (deficit <= 0) break;
+            if (pot === 'taxable') {
+              const draw = Math.min(trackingTaxable, deficit);
+              trackingTaxable -= draw;
+              deficit -= draw;
+            } else if (pot === 'premiumBonds') {
+              const draw = Math.min(trackingPremiumBonds, deficit);
+              trackingPremiumBonds -= draw;
+              deficit -= draw;
+            } else if (pot === 'taxFree') {
+              const draw = Math.min(trackingTaxFree, deficit);
+              trackingTaxFree -= draw;
+              deficit -= draw;
             }
           }
         }

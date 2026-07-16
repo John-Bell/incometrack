@@ -11,6 +11,7 @@ export function TransactionsPage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const selectedAccountId = searchParams.get('accountId') || '';
+    const selectedBudgetId = searchParams.get('budgetId') || '';
 
     const allTransactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray()) || [];
     const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
@@ -20,9 +21,15 @@ export function TransactionsPage() {
         .filter(account => account.category === 'Current Account')
         .sort((a, b) => a.name.localeCompare(b.name));
 
-    const transactions = selectedAccountId
-        ? allTransactions.filter(tx => tx.accountId === selectedAccountId)
-        : allTransactions;
+    const availableBudgets = selectedAccountId
+        ? budgets.filter(b => b.accountId === selectedAccountId)
+        : budgets;
+
+    const transactions = allTransactions.filter(tx => {
+        const matchesAccount = !selectedAccountId || tx.accountId === selectedAccountId;
+        const matchesBudget = !selectedBudgetId || tx.budgetId === selectedBudgetId;
+        return matchesAccount && matchesBudget;
+    });
 
     const budgetsMap = Object.fromEntries(budgets.map(b => [b.id, b]));
 
@@ -68,33 +75,71 @@ export function TransactionsPage() {
         >
             <div className="flex flex-col gap-8 px-4 py-6 pb-24">
                 <div className="flex flex-col gap-4">
-                    <div className="relative">
-                        <select
-                            value={selectedAccountId}
-                            onChange={(e) => {
-                                const newAccountId = e.target.value;
-                                if (newAccountId) {
-                                    setSearchParams({ accountId: newAccountId });
-                                } else {
-                                    setSearchParams({});
-                                }
-                            }}
-                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm"
-                        >
-                            <option value="">All Accounts</option>
-                            {currentAccounts.map(account => (
-                                <option key={account.id} value={account.id}>
-                                    {account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}
-                                </option>
-                            ))}
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                            <Icon name="expand_more" className="text-xl" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="relative">
+                            <select
+                                value={selectedAccountId}
+                                onChange={(e) => {
+                                    const newAccountId = e.target.value;
+                                    const params: Record<string, string> = {};
+                                    if (newAccountId) params.accountId = newAccountId;
+                                    if (selectedBudgetId) {
+                                        const budget = budgets.find(b => b.id === selectedBudgetId);
+                                        if (budget && (!newAccountId || budget.accountId === newAccountId)) {
+                                            params.budgetId = selectedBudgetId;
+                                        }
+                                    }
+                                    setSearchParams(params);
+                                }}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm"
+                            >
+                                <option value="">All Accounts</option>
+                                {currentAccounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.nickname || account.name}{account.last4Digits ? ` (x${account.last4Digits})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                <Icon name="expand_more" className="text-xl" />
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                value={selectedBudgetId}
+                                onChange={(e) => {
+                                    const newBudgetId = e.target.value;
+                                    const params: Record<string, string> = {};
+                                    if (selectedAccountId) params.accountId = selectedAccountId;
+                                    if (newBudgetId) params.budgetId = newBudgetId;
+                                    setSearchParams(params);
+                                }}
+                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm"
+                            >
+                                <option value="">All Budgets</option>
+                                {availableBudgets
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map(budget => (
+                                        <option key={budget.id} value={budget.id}>
+                                            {budget.name}
+                                        </option>
+                                    ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+                                <Icon name="expand_more" className="text-xl" />
+                            </div>
                         </div>
                     </div>
 
                     <button
-                        onClick={() => navigate(selectedAccountId ? `/transactions/add?accountId=${selectedAccountId}` : '/transactions/add')}
+                        onClick={() => {
+                            const params = new URLSearchParams();
+                            if (selectedAccountId) params.set('accountId', selectedAccountId);
+                            if (selectedBudgetId) params.set('budgetId', selectedBudgetId);
+                            const queryString = params.toString();
+                            navigate(queryString ? `/transactions/add?${queryString}` : '/transactions/add');
+                        }}
                         className="w-full flex items-center justify-center gap-2 bg-primary text-black font-semibold py-3 rounded-xl shadow-[0_4px_14px_0_rgba(255,184,80,0.39)] hover:brightness-110 active:scale-[0.98] transition-all"
                     >
                         <Icon name="add" className="text-xl" />
@@ -108,8 +153,19 @@ export function TransactionsPage() {
                             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-primary/60">{dateLabel}</h2>
                         </div>
                         <div className="space-y-1">
-                            {dailyTransactions.map((tx) => (
-                                <Link to={selectedAccountId ? `/transactions/edit/${tx.id}?accountId=${selectedAccountId}` : `/transactions/edit/${tx.id}`} key={tx.id} className="group flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5">
+                            {dailyTransactions.map((tx) => {
+                                const editParams = new URLSearchParams();
+                                if (selectedAccountId) editParams.set('accountId', selectedAccountId);
+                                if (selectedBudgetId) editParams.set('budgetId', selectedBudgetId);
+                                const editQueryString = editParams.toString();
+                                const editUrl = editQueryString ? `/transactions/edit/${tx.id}?${editQueryString}` : `/transactions/edit/${tx.id}`;
+
+                                return (
+                                <Link
+                                    to={editUrl}
+                                    key={tx.id}
+                                    className="group flex items-center gap-4 py-4 hover:bg-primary/5 transition-colors cursor-pointer border-b border-slate-100 dark:border-primary/5"
+                                >
                                     <div className="size-12 min-w-[3rem] rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                                         <Icon name={tx.icon} />
                                     </div>
@@ -133,7 +189,8 @@ export function TransactionsPage() {
                                         </div>
                                     </div>
                                 </Link>
-                            ))}
+                                );
+                            })}
                         </div>
                     </section>
                 ))}

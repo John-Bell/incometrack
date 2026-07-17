@@ -118,7 +118,7 @@ export function TransactionsPage() {
                                 className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm"
                             >
                                 <option value="">All Budgets</option>
-                                {availableBudgets
+                                {[...availableBudgets]
                                     .sort((a, b) => a.name.localeCompare(b.name))
                                     .map(budget => (
                                         <option key={budget.id} value={budget.id}>

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NOVA - Lifetime Projection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#2b323c",
+                    "primary-container": "#4b0082",
+                    "secondary-container": "#d6e0f1",
+                    "secondary-fixed": "#d9e3f4",
+                    "on-surface": "#191c1e",
+                    "on-primary-fixed": "#2c0050",
+                    "grid-line": "#E5E7EB",
+                    "on-secondary-container": "#596372",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#cec3d3",
+                    "on-tertiary": "#ffffff",
+                    "surface-base": "#FFFFFF",
+                    "surface-container-high": "#e7e8ea",
+                    "inverse-on-surface": "#f0f1f3",
+                    "secondary": "#555f6d",
+                    "primary-fixed": "#f0dbff",
+                    "tertiary-fixed-dim": "#c0c7d3",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#151c25",
+                    "surface": "#f8f9fb",
+                    "chart-fill-start": "rgba(75, 0, 130, 0.15)",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#ddb7ff",
+                    "primary-fixed-dim": "#ddb7ff",
+                    "background": "#f8f9fb",
+                    "surface-variant": "#e1e2e4",
+                    "surface-tint": "#7b41b3",
+                    "on-primary-fixed-variant": "#622599",
+                    "tertiary-fixed": "#dce3f0",
+                    "secondary-fixed-dim": "#bdc7d8",
+                    "tertiary": "#161d26",
+                    "surface-container": "#edeef0",
+                    "on-background": "#191c1e",
+                    "inverse-surface": "#2e3132",
+                    "surface-dim": "#d9dadc",
+                    "error": "#ba1a1a",
+                    "surface-bright": "#f8f9fb",
+                    "on-surface-variant": "#4c4451",
+                    "on-secondary-fixed": "#121c28",
+                    "surface-muted": "#F9FAFB",
+                    "surface-container-highest": "#e1e2e4",
+                    "on-tertiary-container": "#939aa6",
+                    "chart-fill-end": "rgba(75, 0, 130, 0)",
+                    "primary": "#2e0052",
+                    "outline": "#7d7483",
+                    "on-primary-container": "#ba7ef4",
+                    "surface-container-low": "#f3f4f6",
+                    "on-secondary-fixed-variant": "#3e4755",
+                    "on-tertiary-fixed-variant": "#404752",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "base": "4px",
+                    "xl": "32px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "24px",
+                    "sm": "8px",
+                    "gutter": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "caption-muted": ["Inter"],
+                    "display-value": ["Manrope"],
+                    "label-caps": ["Inter"],
+                    "body-md": ["Inter"],
+                    "heading-section": ["Manrope"],
+                    "chart-tick": ["Inter"],
+                    "caption-bold": ["Inter"]
+            },
+            "fontSize": {
+                    "caption-muted": ["10px", {"lineHeight": "14px", "fontWeight": "400"}],
+                    "display-value": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "heading-section": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "chart-tick": ["10px", {"lineHeight": "12px", "fontWeight": "500"}],
+                    "caption-bold": ["10px", {"lineHeight": "14px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .chart-container {
+            height: 260px;
+            position: relative;
+        }
+        .path-line {
+            fill: none;
+            stroke: #4B0082;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .path-area {
+            fill: url(#chartGradient);
+        }
+        .connector-line {
+            stroke: #E5E7EB;
+            stroke-width: 1;
+            stroke-dasharray: 2 2;
+        }
+        .grid-line-svg {
+            stroke: #E5E7EB;
+            stroke-width: 1;
+            stroke-dasharray: 3 3;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<meta content="web_standard" name="shell-type"/><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 bg-surface-base border-b border-surface-variant px-margin-mobile md:px-margin-desktop py-sm flex items-center justify-between shadow-sm"><div class="flex items-center gap-sm"><div class="flex flex-col"><span class="font-heading-section text-heading-section text-on-surface">Budget vs Actual</span><span class="font-caption-muted text-caption-muted text-secondary">Dan &amp; Freya · Current Period Matching</span></div></div><div class="flex items-center gap-xs"><div class="flex items-center gap-xs bg-surface-container px-sm py-xs rounded-full cursor-pointer hover:bg-surface-container-high transition-colors"><span class="font-caption-bold text-caption-bold text-on-surface hidden md:inline">Household</span><span class="material-symbols-outlined text-secondary text-[16px]">more_vert</span></div></div></header><main class="flex-1 w-full max-w-screen-xl mx-auto px-margin-mobile md:px-margin-desktop py-lg pb-24"><div class="flex flex-col w-full pb-20 space-y-md">
+<!-- Interactive Header & Filters -->
+<div class="flex flex-col space-y-sm">
+<div class="flex flex-col">
+<h2 class="font-heading-section text-heading-section text-on-surface">Budget Tuning</h2>
+<p class="font-caption-muted text-caption-muted text-secondary">Dan &amp; Freya · Multi-Month Variance Audit</p>
+</div>
+<!-- Account Selector Dropdown -->
+<div class="relative w-full">
+<div class="bg-surface-base shadow-sm rounded-xl px-md py-sm flex items-center justify-between cursor-pointer">
+<div class="flex items-center space-x-sm min-w-0">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-caption-muted text-caption-muted text-secondary uppercase tracking-wider">Account Scope</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface truncate">Joint Household (acc_2) [Monthly]</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Horizontal Timeframe Selector (iOS Pill Scroll) -->
+<div class="flex items-center space-x-xs overflow-x-auto py-xs no-scrollbar">
+<button class="px-md py-xs rounded-full font-label-caps text-label-caps text-secondary bg-surface-container shrink-0 transition-all hover:bg-surface-container-high">
+        Last 3 Months
+      </button>
+<button class="px-md py-xs rounded-full font-label-caps text-label-caps text-on-primary bg-primary shrink-0 shadow-sm transition-all">
+        Last 6 Months
+      </button>
+<button class="px-md py-xs rounded-full font-label-caps text-label-caps text-secondary bg-surface-container shrink-0 transition-all hover:bg-surface-container-high">
+        Last 9 Months
+      </button>
+<button class="px-md py-xs rounded-full font-label-caps text-label-caps text-secondary bg-surface-container shrink-0 transition-all hover:bg-surface-container-high">
+        YTD / 12 Months
+      </button>
+</div>
+</div>
+<!-- Historical Comparison Graph Card -->
+<div class="bg-surface-base rounded-xl shadow-sm p-md flex flex-col space-y-md">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-xs">
+<div>
+<h3 class="font-heading-section text-heading-section text-on-surface">Account Spend vs Budget Cap</h3>
+<p class="font-caption-muted text-caption-muted text-secondary">Past 6 Months trajectory · Baseline £2,710/mo</p>
+</div>
+<!-- Legend -->
+<div class="flex flex-wrap items-center gap-xs">
+<div class="flex items-center space-x-xs bg-surface-container-low px-sm py-xs rounded-full">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
+<span class="font-caption-muted text-caption-muted text-on-surface">Under Cap (3)</span>
+</div>
+<div class="flex items-center space-x-xs bg-error-container px-sm py-xs rounded-full">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+<span class="font-caption-muted text-caption-muted text-on-error-container">Exceeded (3)</span>
+</div>
+</div>
+</div>
+<!-- Responsive Bar Chart Visualization -->
+<div class="relative w-full pt-6 pb-2">
+<!-- Cap Reference Line Overlay -->
+<div class="absolute left-0 right-0 top-[38%] flex items-center z-10 pointer-events-none">
+<div class="w-full border-t border-dashed border-primary opacity-60"></div>
+<span class="absolute right-0 -top-3 bg-primary-fixed text-on-primary-fixed px-1.5 py-0.5 rounded font-caption-bold text-caption-bold">
+          Cap: £2,710
+        </span>
+</div>
+<!-- Chart Columns Container -->
+<div class="grid grid-cols-6 gap-xs sm:gap-sm items-end h-48 w-full pt-4">
+<!-- May -->
+<div class="flex flex-col items-center h-full justify-end group">
+<span class="font-caption-muted text-caption-muted text-secondary mb-1">£2.58k</span>
+<div class="w-full max-w-[36px] bg-secondary-container rounded-t-lg transition-all duration-300 group-hover:opacity-90" style="height: 75%;"></div>
+<span class="font-label-caps text-label-caps text-secondary mt-2">May</span>
+</div>
+<!-- Jun -->
+<div class="flex flex-col items-center h-full justify-end group">
+<span class="font-caption-muted text-caption-muted text-secondary mb-1">£2.69k</span>
+<div class="w-full max-w-[36px] bg-secondary-container rounded-t-lg transition-all duration-300 group-hover:opacity-90" style="height: 80%;"></div>
+<span class="font-label-caps text-label-caps text-secondary mt-2">Jun</span>
+</div>
+<!-- Jul -->
+<div class="flex flex-col items-center h-full justify-end group">
+<span class="font-caption-bold text-caption-bold text-error mb-1">£2.82k</span>
+<div class="w-full max-w-[36px] bg-error rounded-t-lg transition-all duration-300 group-hover:opacity-90" style="height: 86%;"></div>
+<span class="font-label-caps text-label-caps text-on-surface font-semibold mt-2">Jul</span>
+</div>
+<!-- Aug -->
+<div class="flex flex-col items-center h-full justify-end group">
+<span class="font-caption-bold text-caption-bold text-error mb-1">£2.91k</span>
+<div class="w-full max-w-[36px] bg-error rounded-t-lg transition-all duration-300 group-hover:opacity-90" style="height: 94%;"></div>
+<span class="font-label-caps text-label-caps text-on-surface font-semibold mt-2">Aug</span>
+</div>
+<!-- Sep -->
+<div class="flex flex-col items-center h-full justify-end group">
+<span class="font-caption-muted text-caption-muted text-secondary mb-1">£2.64k</span>
+<div class="w-full max-w-[36px] bg-secondary-container rounded-t-lg transition-all duration-300 group-hover:opacity-90" style="height: 77%;"></div>
+<span class="font-label-caps text-label-caps text-secondary mt-2">Sep</span>
+</div>
+<!-- Oct -->
+<div class="flex flex-col items-center h-full justify-end group">
+<span class="font-caption-bold text-caption-bold text-error mb-1">£2.77k</span>
+<div class="w-full max-w-[36px] bg-error rounded-t-lg transition-all duration-300 group-hover:opacity-90" style="height: 84%;"></div>
+<span class="font-label-caps text-label-caps text-on-surface font-semibold mt-2">Oct</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Required KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-sm">
+<!-- Persistent Overspend Alert -->
+<div class="bg-error-container text-on-error-container p-md rounded-xl shadow-sm flex flex-col justify-between space-y-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-sm">
+<div class="w-8 h-8 rounded-full bg-error text-on-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption-bold text-caption-bold uppercase tracking-wider text-error">Persistent Overspend</span>
+<h4 class="font-body-md text-body-md font-bold text-on-surface">Utilities &amp; Comms</h4>
+</div>
+</div>
+<span class="bg-surface-base text-error px-2 py-0.5 rounded-full font-caption-bold text-caption-bold shadow-sm">
+          Breached 4 of 6 mos
+        </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        Consistently exceeding target by an average of <span class="font-bold text-error">+£35/mo</span>. Rate review strongly recommended.
+      </p>
+</div>
+<!-- Excess Slack Available Alert -->
+<div class="bg-secondary-container text-on-secondary-container p-md rounded-xl shadow-sm flex flex-col justify-between space-y-sm">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-sm">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">savings</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption-bold text-caption-bold uppercase tracking-wider text-primary">Excess Slack Available</span>
+<h4 class="font-body-md text-body-md font-bold text-on-surface">Family &amp; Transport</h4>
+</div>
+</div>
+<span class="bg-surface-base text-primary px-2 py-0.5 rounded-full font-caption-bold text-caption-bold shadow-sm">
+          Low 5 of 6 mos
+        </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+        Under-utilized budget leaving approx <span class="font-bold text-primary">£90/mo unspent</span>. Ready to reallocate into reserves.
+      </p>
+</div>
+</div>
+<!-- Category Calibration & Tuning List -->
+<div class="flex flex-col space-y-sm">
+<div class="flex items-center justify-between">
+<h3 class="font-heading-section text-heading-section text-on-surface">Category Calibration &amp; Tuning</h3>
+<span class="font-caption-muted text-caption-muted text-secondary">3 Budgets Monitored</span>
+</div>
+<!-- Item A: Utilities & High-Speed Comms -->
+<div class="bg-surface-base rounded-xl shadow-sm p-md flex flex-col space-y-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-body-md text-body-md font-bold text-on-surface">Utilities &amp; High-Speed Comms</h4>
+<span class="font-caption-muted text-caption-muted text-secondary">Current Cap: £380/mo</span>
+</div>
+</div>
+<span class="bg-error-container text-error px-2 py-0.5 rounded-full font-caption-bold text-caption-bold">
+          Breached: 4 of last 6 months
+        </span>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-sm bg-surface-container-low p-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-caption-muted text-caption-muted text-secondary">Avg Monthly Spend</span>
+<span class="font-body-md text-body-md font-bold text-error">£415/mo</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption-muted text-caption-muted text-secondary">Peak Month</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">£460 <span class="font-caption-muted text-caption-muted text-secondary font-normal">(August)</span></span>
+</div>
+</div>
+<!-- Month Dot Sequence -->
+<div class="flex flex-col space-y-xs">
+<div class="flex justify-between items-center text-secondary font-caption-muted text-caption-muted">
+<span>6-Month Audit Trend</span>
+<span>4 Out of Bounds</span>
+</div>
+<div class="grid grid-cols-6 gap-xs bg-surface-container p-xs rounded-full text-center">
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">May</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Jun</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-error mb-1"></span><span class="font-chart-tick text-chart-tick text-error font-bold">Jul</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-error mb-1"></span><span class="font-chart-tick text-chart-tick text-error font-bold">Aug</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-error mb-1"></span><span class="font-chart-tick text-chart-tick text-error font-bold">Sep</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-error mb-1"></span><span class="font-chart-tick text-chart-tick text-error font-bold">Oct</span></div>
+</div>
+</div>
+<!-- Proposal Action Pill -->
+<div class="flex items-center justify-between bg-surface-container-high px-sm py-xs rounded-lg">
+<div class="flex items-center space-x-xs min-w-0">
+<span class="material-symbols-outlined text-[16px] text-error shrink-0">trending_up</span>
+<span class="font-caption-muted text-caption-muted text-on-surface truncate">Under-budgeted by £35/mo · Suggest adjusting cap to £415/mo</span>
+</div>
+<button class="bg-primary text-on-primary px-sm py-0.5 rounded-full font-label-caps text-label-caps shrink-0 hover:opacity-90">
+          Tune
+        </button>
+</div>
+</div>
+<!-- Item B: Family & Transport -->
+<div class="bg-surface-base rounded-xl shadow-sm p-md flex flex-col space-y-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-body-md text-body-md font-bold text-on-surface">Family &amp; Transport</h4>
+<span class="font-caption-muted text-caption-muted text-secondary">Current Cap: £480/mo</span>
+</div>
+</div>
+<span class="bg-secondary-container text-primary px-2 py-0.5 rounded-full font-caption-bold text-caption-bold">
+          Always within budget
+        </span>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-sm bg-surface-container-low p-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-caption-muted text-caption-muted text-secondary">Avg Monthly Spend</span>
+<span class="font-body-md text-body-md font-bold text-primary">£390/mo</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption-muted text-caption-muted text-secondary">Peak Month</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">£420 <span class="font-caption-muted text-caption-muted text-secondary font-normal">(July)</span></span>
+</div>
+</div>
+<!-- Month Dot Sequence -->
+<div class="flex flex-col space-y-xs">
+<div class="flex justify-between items-center text-secondary font-caption-muted text-caption-muted">
+<span>6-Month Audit Trend</span>
+<span>100% Healthy</span>
+</div>
+<div class="grid grid-cols-6 gap-xs bg-surface-container p-xs rounded-full text-center">
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">May</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Jun</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Jul</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Aug</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Sep</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Oct</span></div>
+</div>
+</div>
+<!-- Proposal Action Pill -->
+<div class="flex items-center justify-between bg-surface-container-high px-sm py-xs rounded-lg">
+<div class="flex items-center space-x-xs min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary shrink-0">check_circle</span>
+<span class="font-caption-muted text-caption-muted text-on-surface truncate">Unused cushion: £90/mo · Safe to trim cap to £420/mo</span>
+</div>
+<button class="bg-primary text-on-primary px-sm py-0.5 rounded-full font-label-caps text-label-caps shrink-0 hover:opacity-90">
+          Trim
+        </button>
+</div>
+</div>
+<!-- Item C: Mortgage & Rates -->
+<div class="bg-surface-base rounded-xl shadow-sm p-md flex flex-col space-y-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center space-x-sm">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</div>
+<div class="flex flex-col">
+<h4 class="font-body-md text-body-md font-bold text-on-surface">Mortgage &amp; Rates</h4>
+<span class="font-caption-muted text-caption-muted text-secondary">Current Cap: £1,850/mo</span>
+</div>
+</div>
+<span class="bg-surface-container-high text-secondary px-2 py-0.5 rounded-full font-caption-bold text-caption-bold">
+          100% Fixed / On Target
+        </span>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-sm bg-surface-container-low p-sm rounded-lg">
+<div class="flex flex-col">
+<span class="font-caption-muted text-caption-muted text-secondary">Avg Monthly Spend</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">£1,850/mo</span>
+</div>
+<div class="flex flex-col">
+<span class="font-caption-muted text-caption-muted text-secondary">Peak Month</span>
+<span class="font-body-md text-body-md font-bold text-on-surface">£1,850 <span class="font-caption-muted text-caption-muted text-secondary font-normal">(Stable)</span></span>
+</div>
+</div>
+<!-- Month Dot Sequence -->
+<div class="flex flex-col space-y-xs">
+<div class="flex justify-between items-center text-secondary font-caption-muted text-caption-muted">
+<span>6-Month Audit Trend</span>
+<span>Exact Match</span>
+</div>
+<div class="grid grid-cols-6 gap-xs bg-surface-container p-xs rounded-full text-center">
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">May</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Jun</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Jul</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Aug</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Sep</span></div>
+<div class="flex flex-col items-center py-0.5"><span class="w-2.5 h-2.5 rounded-full bg-primary mb-1"></span><span class="font-chart-tick text-chart-tick text-secondary">Oct</span></div>
+</div>
+</div>
+<!-- Proposal Action Pill -->
+<div class="flex items-center justify-between bg-surface-container-high px-sm py-xs rounded-lg">
+<div class="flex items-center space-x-xs min-w-0">
+<span class="material-symbols-outlined text-[16px] text-secondary shrink-0">lock</span>
+<span class="font-caption-muted text-caption-muted text-secondary truncate">Zero variance · Maintain current £1,850/mo cap</span>
+</div>
+<button class="bg-surface-container text-secondary px-sm py-0.5 rounded-full font-label-caps text-label-caps shrink-0 cursor-default">
+          Locked
+        </button>
+</div>
+</div>
+</div>
+</div></main>
+<!-- Footer -->
+<!-- Simple Interactivity -->
+<script>
+        // Smooth entry for the chart path
+        window.addEventListener('DOMContentLoaded', () => {
+            const path = document.querySelector('.path-line');
+            if(path) {
+                const length = path.getTotalLength();
+                path.style.strokeDasharray = length;
+                path.style.strokeDashoffset = length;
+                
+                requestAnimationFrame(() => {
+                    path.style.transition = 'stroke-dashoffset 2s ease-in-out';
+                    path.style.strokeDashoffset = '0';
+                });
+            }
+        });
+    </script>
+<script>
+(function() {
+  const accountsData = {
+    acc_2: {
+      periodTitle: 'October 2026 Spend vs Monthly Budget',
+      periodSubtitle: '22 of 31 days elapsed · 71% of month passed',
+      budget: '£2,710',
+      spent: '£2,655',
+      variance: '+£55',
+      varianceColor: 'text-[#059669]',
+      pace: 'On Track',
+      pillText: '+£55 Remaining Cushion (98% utilized)',
+      pillBg: 'bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]',
+      barWidth: '98%',
+      barColor: 'bg-primary',
+      categories: [
+        {
+          name: 'Mortgage & Rates',
+          icon: 'home',
+          budget: 1850,
+          spent: 1850,
+          pct: 100,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '100% on target · Exact match'
+        },
+        {
+          name: 'Utilities & High-Speed Comms',
+          icon: 'bolt',
+          budget: 380,
+          spent: 415,
+          pct: 109,
+          overspent: true,
+          badgeColor: 'bg-error-container text-error',
+          subtext: '+£35 Over Budget · 109% utilized'
+        },
+        {
+          name: 'Family & Transport',
+          icon: 'directions_car',
+          budget: 480,
+          spent: 390,
+          pct: 81,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£90 remaining cushion · 81% utilized'
+        }
+      ]
+    },
+    acc_1: {
+      periodTitle: 'October 2026 Spend vs Monthly Budget',
+      periodSubtitle: '22 of 31 days elapsed · Daily living discretionary',
+      budget: '£1,420',
+      spent: '£1,260',
+      variance: '+£160',
+      varianceColor: 'text-[#059669]',
+      pace: 'Under Budget',
+      pillText: '+£160 Remaining Cushion (88% utilized)',
+      pillBg: 'bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]',
+      barWidth: '88%',
+      barColor: 'bg-primary',
+      categories: [
+        {
+          name: 'Groceries & Household Goods',
+          icon: 'local_mall',
+          budget: 650,
+          spent: 540,
+          pct: 83,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£110 remaining cushion · 83% utilized'
+        },
+        {
+          name: 'Dining & Social',
+          icon: 'restaurant',
+          budget: 550,
+          spent: 610,
+          pct: 111,
+          overspent: true,
+          badgeColor: 'bg-error-container text-error',
+          subtext: '+£60 Over Budget · 111% utilized'
+        },
+        {
+          name: 'Personal Media & Subscriptions',
+          icon: 'subscriptions',
+          budget: 220,
+          spent: 110,
+          pct: 50,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£110 remaining cushion · 50% utilized'
+        }
+      ]
+    },
+    acc_3: {
+      periodTitle: 'Year-to-Date Spend vs Annual Budget (2026)',
+      periodSubtitle: '10 of 12 months elapsed (Jan–Oct) · Prorated check',
+      budget: '£7,400',
+      spent: '£6,850',
+      variance: '+£550',
+      varianceColor: 'text-[#059669]',
+      pace: 'Favourable',
+      pillText: '+£550 Unused Buffer (92% utilized)',
+      pillBg: 'bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]',
+      barWidth: '92%',
+      barColor: 'bg-primary',
+      categories: [
+        {
+          name: 'Annual Insurances (Home & Auto)',
+          icon: 'security',
+          budget: 2400,
+          spent: 2400,
+          pct: 100,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '100% matched · Paid in full'
+        },
+        {
+          name: 'Home Repairs & Seasonal Servicing',
+          icon: 'handyman',
+          budget: 3500,
+          spent: 3100,
+          pct: 88,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£400 buffer remaining · 88% utilized'
+        },
+        {
+          name: 'Council Tax & Annual Fees',
+          icon: 'account_balance',
+          budget: 1500,
+          spent: 1350,
+          pct: 90,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£150 unspent · 90% utilized'
+        }
+      ]
+    },
+    all: {
+      periodTitle: 'Combined Portfolios · Current Active Period',
+      periodSubtitle: 'Normalized aggregate across Joint, Current & Annual Reserves',
+      budget: '£11,530',
+      spent: '£10,765',
+      variance: '+£765',
+      varianceColor: 'text-[#059669]',
+      pace: 'Balanced',
+      pillText: '+£765 Aggregate Cushion (93% utilized)',
+      pillBg: 'bg-[#ecfdf5] text-[#059669] border-[#a7f3d0]',
+      barWidth: '93%',
+      barColor: 'bg-primary',
+      categories: [
+        {
+          name: 'Joint Household Caps',
+          icon: 'group',
+          budget: 2710,
+          spent: 2655,
+          pct: 98,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£55 cushion · 98% utilized'
+        },
+        {
+          name: 'Current & Discretionary',
+          icon: 'wallet',
+          budget: 1420,
+          spent: 1260,
+          pct: 88,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£160 cushion · 88% utilized'
+        },
+        {
+          name: 'Annual Reserve Allocations',
+          icon: 'savings',
+          budget: 7400,
+          spent: 6850,
+          pct: 92,
+          overspent: false,
+          badgeColor: 'bg-secondary-container text-primary',
+          subtext: '£550 cushion · 92% utilized'
+        }
+      ]
+    }
+  };
+
+  function renderAccount(key) {
+    const data = accountsData[key] || accountsData.acc_2;
+    document.getElementById('period-title').textContent = data.periodTitle;
+    document.getElementById('period-subtitle').textContent = data.periodSubtitle;
+    document.getElementById('stat-budget').textContent = data.budget;
+    document.getElementById('stat-spent').textContent = data.spent;
+    
+    const varEl = document.getElementById('stat-variance');
+    varEl.textContent = data.variance;
+    varEl.className = 'text-[18px] font-bold ' + data.varianceColor;
+    document.getElementById('stat-pace').textContent = data.pace;
+
+    const pill = document.getElementById('cushion-pill');
+    pill.className = 'self-start md:self-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-bold border ' + data.pillBg;
+    document.getElementById('cushion-text').textContent = data.pillText;
+
+    document.getElementById('bar-label-spent').textContent = 'Actual Spent: ' + data.spent;
+    document.getElementById('bar-label-budget').textContent = 'Cap: ' + data.budget;
+    const aggBar = document.getElementById('aggregate-progress');
+    aggBar.style.width = data.barWidth;
+    aggBar.className = data.barColor + ' h-full rounded-full transition-all duration-300';
+
+    document.getElementById('cat-count').textContent = data.categories.length + ' Categories Active';
+
+    const container = document.getElementById('categories-container');
+    container.innerHTML = data.categories.map(cat => {
+      const barFillWidth = Math.min(cat.pct, 100) + '%';
+      const barFillColor = cat.overspent ? 'bg-error' : 'bg-primary';
+      const statusBadge = cat.overspent
+        ? '<span class="bg-error-container text-error text-[11px] font-bold px-2 py-0.5 rounded-full uppercase">Over Budget</span>'
+        : (cat.pct === 100 ? '<span class="bg-surface-container text-secondary text-[11px] font-bold px-2 py-0.5 rounded-full">Target Hit</span>' : '');
+
+      return `<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm border border-surface-variant/40 flex flex-col gap-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-sm">
+            <div class="w-10 h-10 rounded-full ${cat.badgeColor} flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-[20px]">${cat.icon}</span>
+            </div>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-xs">
+                <span class="font-label-caps text-label-caps font-bold text-on-surface">${cat.name}</span>
+                ${statusBadge}
+              </div>
+              <span class="font-caption-muted text-caption-muted text-secondary">Spent £${cat.spent} of £${cat.budget}</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-end">
+            <span class="font-label-caps text-label-caps font-bold ${cat.overspent ? 'text-error' : 'text-primary'}">
+              £${cat.spent} / £${cat.budget}
+            </span>
+            <span class="font-caption-muted text-caption-muted text-secondary">${cat.pct}% utilized</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-xs">
+          <div class="w-full bg-surface-container h-2.5 rounded-full overflow-hidden flex">
+            <div class="${barFillColor} h-full rounded-full transition-all duration-300" style="width: ${barFillWidth};"></div>
+          </div>
+          <div class="flex justify-between font-caption-muted text-caption-muted text-secondary">
+            <span class="${cat.overspent ? 'text-error font-bold' : ''}">${cat.subtext}</span>
+            <span>Cap £${cat.budget}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const sel = document.getElementById('account-select');
+    if (sel) {
+      renderAccount(sel.value);
+      sel.addEventListener('change', function(e) {
+        renderAccount(e.target.value);
+      });
+    }
+  });
+})();
+</script></body></html>

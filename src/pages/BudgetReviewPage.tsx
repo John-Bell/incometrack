@@ -3,6 +3,8 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { useStore } from '@/store/useStore';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 
 interface AccountScopeData {
   id: string;
@@ -236,10 +238,15 @@ export function BudgetReviewPage() {
   const p2Name = profile?.partner2Name || 'Freya';
   const namesLabel = `${p1Name} & ${p2Name}`;
 
-  const [selectedAccountKey, setSelectedAccountKey] = useState<string>('acc_2');
+  const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const currentAccounts = accounts
+    .filter(account => account.category === 'Current Account')
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>('6m');
 
-  const currentData = ACCOUNTS_DATA[selectedAccountKey] || ACCOUNTS_DATA.acc_2;
+  const currentData = ACCOUNTS_DATA[selectedAccountId] || ACCOUNTS_DATA.all;
 
   return (
     <AppLayout
@@ -271,15 +278,19 @@ export function BudgetReviewPage() {
           {/* Account Selector Dropdown */}
           <div className="relative w-full">
             <select
-              value={selectedAccountKey}
-              onChange={(e) => setSelectedAccountKey(e.target.value)}
-              className="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 shadow-sm rounded-xl px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50"
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm cursor-pointer text-sm"
             >
-              <option value="acc_2">Joint Household (acc_2) [Monthly]</option>
-              <option value="acc_1">Current & Discretionary (acc_1) [Monthly]</option>
-              <option value="all">All Accounts Combined [Aggregate]</option>
+              <option value="">All Accounts</option>
+              {currentAccounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.nickname || account.name}
+                  {account.last4Digits ? ` (x${account.last4Digits})` : ''}
+                </option>
+              ))}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
               <Icon name="expand_more" className="text-xl" />
             </div>
           </div>

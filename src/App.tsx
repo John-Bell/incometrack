@@ -33,6 +33,7 @@ import { SimulatorPage } from '@/pages/SimulatorPage';
 import { CashflowProjectionPage } from '@/pages/CashflowProjectionPage';
 import { AssetBurndownPage } from '@/pages/AssetBurndownPage';
 import { AssetCompositionPage } from '@/pages/AssetCompositionPage';
+import { BudgetReviewPage } from '@/pages/BudgetReviewPage';
 import { MilestonesPage } from '@/pages/MilestonesPage';
 import { AddMilestonePage } from '@/pages/AddMilestonePage';
 import { EditMilestonePage } from '@/pages/EditMilestonePage';
@@ -99,6 +100,7 @@ function AppRoutes() {
       <Route path="/cashflow-projection" element={<CashflowProjectionPage />} />
       <Route path="/asset-burndown" element={<AssetBurndownPage />} />
       <Route path="/asset-composition" element={<AssetCompositionPage />} />
+      <Route path="/budget-review" element={<BudgetReviewPage />} />
       <Route path="/milestones" element={<MilestonesPage />} />
       <Route path="/milestones/add" element={<AddMilestonePage />} />
       <Route path="/milestones/edit/:id" element={<EditMilestonePage />} />

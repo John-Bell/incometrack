@@ -6,232 +6,6 @@ import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 
-interface AccountScopeData {
-  id: string;
-  label: string;
-  baselineCap: string;
-  barData: { month: string; amount: string; heightPct: number; exceeded: boolean }[];
-  underCount: number;
-  exceededCount: number;
-  categories: {
-    name: string;
-    icon: string;
-    cap: string;
-    statusText: string;
-    isError: boolean;
-    avgSpend: string;
-    peakMonth: string;
-    peakAmount: string;
-    months: { name: string; isError: boolean }[];
-    proposalIcon: string;
-    proposalText: string;
-    actionLabel: string;
-    actionIsLocked?: boolean;
-  }[];
-}
-
-const ACCOUNTS_DATA: Record<string, AccountScopeData> = {
-  acc_2: {
-    id: 'acc_2',
-    label: 'Joint Household (acc_2) [Monthly]',
-    baselineCap: '£2,710/mo',
-    underCount: 3,
-    exceededCount: 3,
-    barData: [
-      { month: 'May', amount: '£2.58k', heightPct: 75, exceeded: false },
-      { month: 'Jun', amount: '£2.69k', heightPct: 80, exceeded: false },
-      { month: 'Jul', amount: '£2.82k', heightPct: 86, exceeded: true },
-      { month: 'Aug', amount: '£2.91k', heightPct: 94, exceeded: true },
-      { month: 'Sep', amount: '£2.64k', heightPct: 77, exceeded: false },
-      { month: 'Oct', amount: '£2.77k', heightPct: 84, exceeded: true },
-    ],
-    categories: [
-      {
-        name: 'Utilities & High-Speed Comms',
-        icon: 'bolt',
-        cap: '£380/mo',
-        statusText: 'Breached: 4 of last 6 months',
-        isError: true,
-        avgSpend: '£415/mo',
-        peakMonth: 'August',
-        peakAmount: '£460',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: true },
-          { name: 'Aug', isError: true },
-          { name: 'Sep', isError: true },
-          { name: 'Oct', isError: true },
-        ],
-        proposalIcon: 'trending_up',
-        proposalText: 'Under-budgeted by £35/mo · Suggest adjusting cap to £415/mo',
-        actionLabel: 'Tune',
-      },
-      {
-        name: 'Family & Transport',
-        icon: 'directions_car',
-        cap: '£480/mo',
-        statusText: 'Always within budget',
-        isError: false,
-        avgSpend: '£390/mo',
-        peakMonth: 'July',
-        peakAmount: '£420',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: false },
-          { name: 'Aug', isError: false },
-          { name: 'Sep', isError: false },
-          { name: 'Oct', isError: false },
-        ],
-        proposalIcon: 'check_circle',
-        proposalText: 'Unused cushion: £90/mo · Safe to trim cap to £420/mo',
-        actionLabel: 'Trim',
-      },
-      {
-        name: 'Mortgage & Rates',
-        icon: 'home',
-        cap: '£1,850/mo',
-        statusText: '100% Fixed / On Target',
-        isError: false,
-        avgSpend: '£1,850/mo',
-        peakMonth: 'Stable',
-        peakAmount: '£1,850',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: false },
-          { name: 'Aug', isError: false },
-          { name: 'Sep', isError: false },
-          { name: 'Oct', isError: false },
-        ],
-        proposalIcon: 'lock',
-        proposalText: 'Zero variance · Maintain current £1,850/mo cap',
-        actionLabel: 'Locked',
-        actionIsLocked: true,
-      },
-    ],
-  },
-  acc_1: {
-    id: 'acc_1',
-    label: 'Current & Discretionary (acc_1) [Monthly]',
-    baselineCap: '£1,420/mo',
-    underCount: 5,
-    exceededCount: 1,
-    barData: [
-      { month: 'May', amount: '£1.20k', heightPct: 65, exceeded: false },
-      { month: 'Jun', amount: '£1.31k', heightPct: 72, exceeded: false },
-      { month: 'Jul', amount: '£1.48k', heightPct: 88, exceeded: true },
-      { month: 'Aug', amount: '£1.25k', heightPct: 68, exceeded: false },
-      { month: 'Sep', amount: '£1.18k', heightPct: 62, exceeded: false },
-      { month: 'Oct', amount: '£1.26k', heightPct: 69, exceeded: false },
-    ],
-    categories: [
-      {
-        name: 'Groceries & Household Goods',
-        icon: 'shopping_bag',
-        cap: '£650/mo',
-        statusText: '100% within budget',
-        isError: false,
-        avgSpend: '£540/mo',
-        peakMonth: 'June',
-        peakAmount: '£610',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: false },
-          { name: 'Aug', isError: false },
-          { name: 'Sep', isError: false },
-          { name: 'Oct', isError: false },
-        ],
-        proposalIcon: 'check_circle',
-        proposalText: '£110 remaining cushion · Safe to keep cap at £650/mo',
-        actionLabel: 'Keep',
-      },
-      {
-        name: 'Dining & Social',
-        icon: 'restaurant',
-        cap: '£550/mo',
-        statusText: 'Breached: 2 of last 6 months',
-        isError: true,
-        avgSpend: '£610/mo',
-        peakMonth: 'July',
-        peakAmount: '£670',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: true },
-          { name: 'Aug', isError: false },
-          { name: 'Sep', isError: false },
-          { name: 'Oct', isError: true },
-        ],
-        proposalIcon: 'trending_up',
-        proposalText: 'Under-budgeted by £60/mo · Suggest adjusting cap to £600/mo',
-        actionLabel: 'Tune',
-      },
-    ],
-  },
-  all: {
-    id: 'all',
-    label: 'All Accounts Combined [Aggregate]',
-    baselineCap: '£4,130/mo',
-    underCount: 4,
-    exceededCount: 2,
-    barData: [
-      { month: 'May', amount: '£3.78k', heightPct: 70, exceeded: false },
-      { month: 'Jun', amount: '£4.00k', heightPct: 76, exceeded: false },
-      { month: 'Jul', amount: '£4.30k', heightPct: 88, exceeded: true },
-      { month: 'Aug', amount: '£4.16k', heightPct: 82, exceeded: true },
-      { month: 'Sep', amount: '£3.82k', heightPct: 71, exceeded: false },
-      { month: 'Oct', amount: '£4.03k', heightPct: 77, exceeded: false },
-    ],
-    categories: [
-      {
-        name: 'Joint Household Caps',
-        icon: 'groups',
-        cap: '£2,710/mo',
-        statusText: '3 of 6 months breached',
-        isError: true,
-        avgSpend: '£2,735/mo',
-        peakMonth: 'August',
-        peakAmount: '£2,910',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: true },
-          { name: 'Aug', isError: true },
-          { name: 'Sep', isError: false },
-          { name: 'Oct', isError: true },
-        ],
-        proposalIcon: 'trending_up',
-        proposalText: 'Joint caps slightly over by £25/mo aggregate',
-        actionLabel: 'Review',
-      },
-      {
-        name: 'Current & Discretionary',
-        icon: 'wallet',
-        cap: '£1,420/mo',
-        statusText: 'Overall healthy',
-        isError: false,
-        avgSpend: '£1,280/mo',
-        peakMonth: 'July',
-        peakAmount: '£1,480',
-        months: [
-          { name: 'May', isError: false },
-          { name: 'Jun', isError: false },
-          { name: 'Jul', isError: true },
-          { name: 'Aug', isError: false },
-          { name: 'Sep', isError: false },
-          { name: 'Oct', isError: false },
-        ],
-        proposalIcon: 'check_circle',
-        proposalText: 'Unused cushion available across discretionary budgets',
-        actionLabel: 'Trim',
-      },
-    ],
-  },
-};
-
 export function BudgetReviewPage() {
   const { profile } = useStore();
   const p1Name = profile?.partner1Name || 'Dan';
@@ -243,7 +17,7 @@ export function BudgetReviewPage() {
   const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
   const currentAccounts = accounts
-    .filter(account => account.category === 'Current Account')
+    .filter((account) => account.category === 'Current Account')
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
@@ -254,6 +28,13 @@ export function BudgetReviewPage() {
   const scopedBudgets = selectedAccountId
     ? budgets.filter((b) => b.accountId === selectedAccountId)
     : budgets;
+
+  // Filter budgets based on account scope AND selected budget filter
+  const filteredBudgets = selectedBudgetId
+    ? scopedBudgets.filter((b) => b.id === selectedBudgetId)
+    : scopedBudgets;
+
+  const sortedBudgets = [...filteredBudgets].sort((a, b) => a.name.localeCompare(b.name));
 
   const handleAccountChange = (newAccountId: string) => {
     setSelectedAccountId(newAccountId);
@@ -276,7 +57,6 @@ export function BudgetReviewPage() {
         { id: 'ytd', label: 'YTD' },
       ];
 
-  const baseData = ACCOUNTS_DATA[selectedAccountId] || ACCOUNTS_DATA.all;
   const selectedBudget = budgets.find((b) => b.id === selectedBudgetId);
 
   const isMonthlyBudgetSelected = Boolean(
@@ -317,12 +97,13 @@ export function BudgetReviewPage() {
     return targetMonths;
   };
 
+  const targetMonths = getTargetMonths();
+
   const calculateGraphData = () => {
     if (!isMonthlyBudgetSelected || !selectedBudget) {
       return { barData: [], underCount: 0, exceededCount: 0, cap: 0 };
     }
 
-    const targetMonths = getTargetMonths();
     let underCount = 0;
     let exceededCount = 0;
 
@@ -365,7 +146,6 @@ export function BudgetReviewPage() {
   const graphData = calculateGraphData();
 
   const calculateBudgetAlerts = () => {
-    const targetMonths = getTargetMonths();
     const totalPeriods = targetMonths.length;
 
     if (totalPeriods === 0 || scopedBudgets.length === 0) {
@@ -468,47 +248,95 @@ export function BudgetReviewPage() {
 
   const { overspendAlert, slackAlert } = calculateBudgetAlerts();
 
-  const matchedCategories = selectedBudget
-    ? baseData.categories.filter(
-        (cat) =>
-          cat.name.toLowerCase().includes(selectedBudget.name.toLowerCase()) ||
-          selectedBudget.name.toLowerCase().includes(cat.name.toLowerCase())
-      )
-    : baseData.categories;
+  // Dynamic Category Calibration & Tuning data
+  const categoryTuningItems = sortedBudgets.map((budget) => {
+    const cap = Number(budget.amount) || 0;
+    const isAnnual = budget.frequency === 'annual';
+    const monthlyCap = isAnnual ? cap / 12 : cap;
 
-  const displayedCategories =
-    selectedBudgetId && selectedBudget
-      ? matchedCategories.length > 0
-        ? matchedCategories
-        : [
-            {
-              name: selectedBudget.name,
-              icon: selectedBudget.icon || 'payments',
-              cap: `£${selectedBudget.amount}/mo`,
-              statusText: '100% within budget',
-              isError: false,
-              avgSpend: `£${Math.round(selectedBudget.amount * 0.85)}/mo`,
-              peakMonth: 'Current',
-              peakAmount: `£${selectedBudget.amount}`,
-              months: [
-                { name: 'May', isError: false },
-                { name: 'Jun', isError: false },
-                { name: 'Jul', isError: false },
-                { name: 'Aug', isError: false },
-                { name: 'Sep', isError: false },
-                { name: 'Oct', isError: false },
-              ],
-              proposalIcon: 'check_circle',
-              proposalText: `On target for ${selectedBudget.name}`,
-              actionLabel: 'Keep',
-            },
-          ]
-      : baseData.categories;
+    let totalSpent = 0;
+    let breachedCount = 0;
+    let maxSpend = -1;
+    let peakMonthLabel = targetMonths[0]?.label || 'Current';
 
-  const currentData = {
-    ...baseData,
-    categories: displayedCategories,
-  };
+    const monthsData = targetMonths.map(({ year, monthIndex, label }) => {
+      const monthSpent = transactions
+        .filter((t) => {
+          if (t.budgetId !== budget.id) return false;
+          if (t.type && t.type === 'income') return false;
+          const d = new Date(t.date);
+          return d.getFullYear() === year && d.getMonth() === monthIndex;
+        })
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+      totalSpent += monthSpent;
+
+      if (monthSpent > maxSpend) {
+        maxSpend = monthSpent;
+        peakMonthLabel = label;
+      }
+
+      const isError = monthlyCap > 0 ? monthSpent > monthlyCap : monthSpent > 0;
+      if (isError) {
+        breachedCount++;
+      }
+
+      return {
+        name: label,
+        isError,
+        amount: monthSpent,
+      };
+    });
+
+    const avgSpend = targetMonths.length > 0 ? totalSpent / targetMonths.length : 0;
+
+    let statusText = 'Always within budget';
+    if (breachedCount > 0) {
+      statusText = `Breached: ${breachedCount} of last ${targetMonths.length} months`;
+    }
+
+    let proposalIcon = 'check_circle';
+    let proposalText = `On target · Maintain current £${Math.round(monthlyCap).toLocaleString('en-GB')}/mo cap`;
+    let actionLabel = 'Keep';
+
+    if (monthlyCap <= 0) {
+      proposalIcon = 'info';
+      proposalText = 'No budget cap set';
+      actionLabel = 'Set Cap';
+    } else if (avgSpend > monthlyCap) {
+      const diff = Math.round(avgSpend - monthlyCap);
+      const suggestedCap = Math.round(avgSpend);
+      proposalIcon = 'trending_up';
+      proposalText = `Under-budgeted by £${diff.toLocaleString('en-GB')}/mo · Suggest adjusting cap to £${suggestedCap.toLocaleString('en-GB')}/mo`;
+      actionLabel = 'Tune';
+    } else if (monthlyCap - avgSpend >= 10) {
+      const cushion = Math.round(monthlyCap - avgSpend);
+      const suggestedCap = Math.round(avgSpend);
+      proposalIcon = 'check_circle';
+      proposalText = `Unused cushion: £${cushion.toLocaleString('en-GB')}/mo · Safe to trim cap to £${suggestedCap.toLocaleString('en-GB')}/mo`;
+      actionLabel = 'Trim';
+    }
+
+    const capText = isAnnual
+      ? `£${cap.toLocaleString('en-GB')}/yr (£${Math.round(monthlyCap).toLocaleString('en-GB')}/mo)`
+      : `£${cap.toLocaleString('en-GB')}/mo`;
+
+    return {
+      id: budget.id,
+      name: budget.name,
+      icon: budget.icon || 'payments',
+      cap: capText,
+      statusText,
+      isError: breachedCount > 0,
+      avgSpend: `£${Math.round(avgSpend).toLocaleString('en-GB')}/mo`,
+      peakMonth: peakMonthLabel,
+      peakAmount: maxSpend >= 0 ? `£${Math.round(maxSpend).toLocaleString('en-GB')}` : '£0',
+      months: monthsData,
+      proposalIcon,
+      proposalText,
+      actionLabel,
+    };
+  });
 
   return (
     <AppLayout
@@ -748,133 +576,141 @@ export function BudgetReviewPage() {
               Category Calibration & Tuning
             </h3>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              {currentData.categories.length} Budgets Monitored
+              {categoryTuningItems.length} Budgets Monitored
             </span>
           </div>
 
-          {currentData.categories.map((cat, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 flex flex-col space-y-4"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center space-x-3">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+          {categoryTuningItems.length === 0 ? (
+            <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500 dark:text-slate-400 text-sm">
+              No budgets found for current account/filter criteria.
+            </div>
+          ) : (
+            categoryTuningItems.map((cat) => (
+              <div
+                key={cat.id}
+                className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 flex flex-col space-y-4"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                        cat.isError
+                          ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                          : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300'
+                      }`}
+                    >
+                      <Icon name={cat.icon} className="text-xl" />
+                    </div>
+                    <div className="flex flex-col">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {cat.name}
+                      </h4>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        Current Cap: {cat.cap}
+                      </span>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                       cat.isError
                         ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
                         : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300'
                     }`}
                   >
-                    <Icon name={cat.icon} className="text-xl" />
+                    {cat.statusText}
+                  </span>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg">
+                  <div className="flex flex-col">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      Avg Monthly Spend
+                    </span>
+                    <span
+                      className={`text-sm font-bold ${
+                        cat.isError
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-purple-900 dark:text-purple-300'
+                      }`}
+                    >
+                      {cat.avgSpend}
+                    </span>
                   </div>
                   <div className="flex flex-col">
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      {cat.name}
-                    </h4>
                     <span className="text-xs text-slate-500 dark:text-slate-400">
-                      Current Cap: {cat.cap}
+                      Peak Month
+                    </span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white">
+                      {cat.peakAmount}{' '}
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+                        ({cat.peakMonth})
+                      </span>
                     </span>
                   </div>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                    cat.isError
-                      ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
-                      : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300'
-                  }`}
-                >
-                  {cat.statusText}
-                </span>
-              </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg">
-                <div className="flex flex-col">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Avg Monthly Spend
-                  </span>
-                  <span
-                    className={`text-sm font-bold ${
-                      cat.isError
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-purple-900 dark:text-purple-300'
-                    }`}
-                  >
-                    {cat.avgSpend}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Peak Month
-                  </span>
-                  <span className="text-sm font-bold text-slate-900 dark:text-white">
-                    {cat.peakAmount}{' '}
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                      ({cat.peakMonth})
+                {/* Month Dot Sequence */}
+                <div className="flex flex-col space-y-1.5">
+                  <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+                    <span>
+                      {selectedTimeframe === 'ytd' || (hasAnnualBudget && selectedTimeframe !== 'ytd')
+                        ? 'YTD Audit Trend'
+                        : `${targetMonths.length}-Month Audit Trend`}
                     </span>
-                  </span>
+                    <span>
+                      {cat.months.filter((m) => m.isError).length > 0
+                        ? `${cat.months.filter((m) => m.isError).length} Out of Bounds`
+                        : '100% Healthy'}
+                    </span>
+                  </div>
+                  <div
+                    className="grid gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-full text-center"
+                    style={{ gridTemplateColumns: `repeat(${cat.months.length}, minmax(0, 1fr))` }}
+                  >
+                    {cat.months.map((m, mIdx) => (
+                      <div key={mIdx} className="flex flex-col items-center py-0.5">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full mb-1 ${
+                            m.isError ? 'bg-red-600' : 'bg-purple-900 dark:bg-purple-400'
+                          }`}
+                        ></span>
+                        <span
+                          className={`text-[10px] font-medium ${
+                            m.isError
+                              ? 'text-red-600 dark:text-red-400 font-bold'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {m.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Month Dot Sequence */}
-              <div className="flex flex-col space-y-1.5">
-                <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
-                  <span>6-Month Audit Trend</span>
-                  <span>
-                    {cat.months.filter((m) => m.isError).length > 0
-                      ? `${cat.months.filter((m) => m.isError).length} Out of Bounds`
-                      : '100% Healthy'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-full text-center">
-                  {cat.months.map((m, mIdx) => (
-                    <div key={mIdx} className="flex flex-col items-center py-0.5">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full mb-1 ${
-                          m.isError ? 'bg-red-600' : 'bg-purple-900 dark:bg-purple-400'
-                        }`}
-                      ></span>
-                      <span
-                        className={`text-[10px] font-medium ${
-                          m.isError
-                            ? 'text-red-600 dark:text-red-400 font-bold'
-                            : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        {m.name}
-                      </span>
-                    </div>
-                  ))}
+                {/* Proposal Action Pill */}
+                <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg">
+                  <div className="flex items-center space-x-2 min-w-0 pr-2">
+                    <Icon
+                      name={cat.proposalIcon}
+                      className={`text-base shrink-0 ${
+                        cat.isError ? 'text-red-600 dark:text-red-400' : 'text-purple-900 dark:text-purple-300'
+                      }`}
+                    />
+                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
+                      {cat.proposalText}
+                    </span>
+                  </div>
+                  <button
+                    className="px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-purple-900 text-white dark:bg-purple-700 hover:opacity-90 cursor-pointer transition-opacity"
+                  >
+                    {cat.actionLabel}
+                  </button>
                 </div>
               </div>
-
-              {/* Proposal Action Pill */}
-              <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg">
-                <div className="flex items-center space-x-2 min-w-0 pr-2">
-                  <Icon
-                    name={cat.proposalIcon}
-                    className={`text-base shrink-0 ${
-                      cat.isError ? 'text-red-600 dark:text-red-400' : 'text-purple-900 dark:text-purple-300'
-                    }`}
-                  />
-                  <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
-                    {cat.proposalText}
-                  </span>
-                </div>
-                <button
-                  disabled={cat.actionIsLocked}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-opacity ${
-                    cat.actionIsLocked
-                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 cursor-default'
-                      : 'bg-purple-900 text-white dark:bg-purple-700 hover:opacity-90 cursor-pointer'
-                  }`}
-                >
-                  {cat.actionLabel}
-                </button>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </AppLayout>

@@ -252,6 +252,7 @@ export function BudgetReviewPage() {
   const categoryTuningItems = sortedBudgets.map((budget) => {
     const cap = Number(budget.amount) || 0;
     const isAnnual = budget.frequency === 'annual';
+    const isMonthly = budget.frequency === 'monthly' || budget.frequency === 'month';
     const monthlyCap = isAnnual ? cap / 12 : cap;
 
     let totalSpent = 0;
@@ -328,7 +329,8 @@ export function BudgetReviewPage() {
       cap: capText,
       statusText,
       isError: breachedCount > 0,
-      avgSpend: `£${Math.round(avgSpend).toLocaleString('en-GB')}/mo`,
+      isMonthly,
+      avgSpend: isMonthly ? `£${Math.round(avgSpend).toLocaleString('en-GB')}/mo` : 'N/A',
       peakMonth: peakMonthLabel,
       peakAmount: maxSpend >= 0 ? `£${Math.round(maxSpend).toLocaleString('en-GB')}` : '£0',
       months: monthsData,
@@ -629,7 +631,9 @@ export function BudgetReviewPage() {
                     </span>
                     <span
                       className={`text-sm font-bold ${
-                        cat.isError
+                        !cat.isMonthly
+                          ? 'text-slate-900 dark:text-white'
+                          : cat.isError
                           ? 'text-red-600 dark:text-red-400'
                           : 'text-purple-900 dark:text-purple-300'
                       }`}
@@ -642,10 +646,16 @@ export function BudgetReviewPage() {
                       Peak Month
                     </span>
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
-                      {cat.peakAmount}{' '}
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                        ({cat.peakMonth})
-                      </span>
+                      {cat.isMonthly ? (
+                        <>
+                          {cat.peakAmount}{' '}
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+                            ({cat.peakMonth})
+                          </span>
+                        </>
+                      ) : (
+                        'N/A'
+                      )}
                     </span>
                   </div>
                 </div>
@@ -672,7 +682,11 @@ export function BudgetReviewPage() {
                       <div key={mIdx} className="flex flex-col items-center py-0.5">
                         <span
                           className={`w-2.5 h-2.5 rounded-full mb-1 ${
-                            m.isError ? 'bg-red-600' : 'bg-purple-900 dark:bg-purple-400'
+                            m.amount === 0
+                              ? 'bg-slate-300 dark:bg-slate-600'
+                              : m.isError
+                              ? 'bg-red-600'
+                              : 'bg-purple-900 dark:bg-purple-400'
                           }`}
                         ></span>
                         <span

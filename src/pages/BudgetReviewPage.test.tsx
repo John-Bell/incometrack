@@ -246,4 +246,38 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByText('£250')).toBeInTheDocument();
         expect(screen.getByText('£450')).toBeInTheDocument();
     });
+
+    it('shows Persistent Overspend and Excess Slack Available sections when no budget is selected and hides them when a budget is selected', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [{ id: 'b1', name: 'Groceries', accountId: 'acc_1', amount: 300, frequency: 'monthly' }];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // When no budget is selected ("All Budgets"), both sections should be present
+        expect(screen.getByText('Persistent Overspend')).toBeInTheDocument();
+        expect(screen.getByText('Excess Slack Available')).toBeInTheDocument();
+
+        // Select a budget
+        const selects = screen.getAllByRole('combobox');
+        fireEvent.change(selects[1], { target: { value: 'b1' } });
+
+        // Sections should no longer be visible
+        expect(screen.queryByText('Persistent Overspend')).not.toBeInTheDocument();
+        expect(screen.queryByText('Excess Slack Available')).not.toBeInTheDocument();
+    });
 });

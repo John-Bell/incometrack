@@ -566,60 +566,62 @@ export function BudgetReviewPage() {
           </div>
         )}
 
-        {/* Action Required KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Persistent Overspend Alert */}
-          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0">
-                  <Icon name="warning" className="text-lg" />
+        {/* Action Required KPI Cards - Only show when no budget is selected */}
+        {!selectedBudgetId && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Persistent Overspend Alert */}
+            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0">
+                    <Icon name="warning" className="text-lg" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+                      Persistent Overspend
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Utilities & Comms
+                    </h4>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
-                    Persistent Overspend
-                  </span>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Utilities & Comms
-                  </h4>
-                </div>
+                <span className="bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                  Breached 4 of 6 mos
+                </span>
               </div>
-              <span className="bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
-                Breached 4 of 6 mos
-              </span>
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                Consistently exceeding target by an average of{' '}
+                <span className="font-bold text-red-600 dark:text-red-400">+£35/mo</span>. Rate review strongly recommended.
+              </p>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
-              Consistently exceeding target by an average of{' '}
-              <span className="font-bold text-red-600 dark:text-red-400">+£35/mo</span>. Rate review strongly recommended.
-            </p>
-          </div>
 
-          {/* Excess Slack Available Alert */}
-          <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full bg-purple-900 text-white flex items-center justify-center shrink-0">
-                  <Icon name="savings" className="text-lg" />
+            {/* Excess Slack Available Alert */}
+            <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-purple-900 text-white flex items-center justify-center shrink-0">
+                    <Icon name="savings" className="text-lg" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
+                      Excess Slack Available
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Family & Transport
+                    </h4>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
-                    Excess Slack Available
-                  </span>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Family & Transport
-                  </h4>
-                </div>
+                <span className="bg-white dark:bg-slate-900 text-purple-900 dark:text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                  Low 5 of 6 mos
+                </span>
               </div>
-              <span className="bg-white dark:bg-slate-900 text-purple-900 dark:text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
-                Low 5 of 6 mos
-              </span>
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                Under-utilized budget leaving approx{' '}
+                <span className="font-bold text-purple-900 dark:text-purple-300">£90/mo unspent</span>. Ready to reallocate into reserves.
+              </p>
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300">
-              Under-utilized budget leaving approx{' '}
-              <span className="font-bold text-purple-900 dark:text-purple-300">£90/mo unspent</span>. Ready to reallocate into reserves.
-            </p>
           </div>
-        </div>
+        )}
 
         {/* Category Calibration & Tuning List */}
         <div className="flex flex-col space-y-3">

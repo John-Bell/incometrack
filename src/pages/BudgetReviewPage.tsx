@@ -239,12 +239,30 @@ export function BudgetReviewPage() {
   const namesLabel = `${p1Name} & ${p2Name}`;
 
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
+  const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+
   const currentAccounts = accounts
     .filter(account => account.category === 'Current Account')
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
-  const [selectedTimeframe, setSelectedTimeframe] = useState<string>('6m');
+  const [selectedTimeframe, setSelectedTimeframe] = useState<string>('ytd');
+
+  // Filter budgets based on the selected account scope
+  const scopedBudgets = selectedAccountId
+    ? budgets.filter((b) => b.accountId === selectedAccountId)
+    : budgets;
+
+  const hasAnnualBudget = scopedBudgets.some((b) => b.frequency === 'annual');
+
+  const availableTimeframes = hasAnnualBudget
+    ? [{ id: 'ytd', label: 'YTD' }]
+    : [
+        { id: '3m', label: 'Last 3 Months' },
+        { id: '6m', label: 'Last 6 Months' },
+        { id: '9m', label: 'Last 9 Months' },
+        { id: 'ytd', label: 'YTD' },
+      ];
 
   const currentData = ACCOUNTS_DATA[selectedAccountId] || ACCOUNTS_DATA.all;
 
@@ -297,13 +315,8 @@ export function BudgetReviewPage() {
 
           {/* Horizontal Timeframe Selector Pills */}
           <div className="flex items-center space-x-2 overflow-x-auto py-1 no-scrollbar">
-            {[
-              { id: '3m', label: 'Last 3 Months' },
-              { id: '6m', label: 'Last 6 Months' },
-              { id: '9m', label: 'Last 9 Months' },
-              { id: '12m', label: 'YTD / 12 Months' },
-            ].map((tf) => {
-              const isActive = selectedTimeframe === tf.id;
+            {availableTimeframes.map((tf) => {
+              const isActive = selectedTimeframe === tf.id || (hasAnnualBudget && tf.id === 'ytd');
               return (
                 <button
                   key={tf.id}

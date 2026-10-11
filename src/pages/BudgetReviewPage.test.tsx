@@ -47,4 +47,59 @@ describe('BudgetReviewPage', () => {
         // Should NOT include non-current accounts
         expect(screen.queryByRole('option', { name: /Marcus Savings/i })).not.toBeInTheDocument();
     });
+
+    it('defaults to YTD timeframe and shows only YTD filter when an annual budget exists in scope', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        // Mock accounts and budgets with one annual budget
+        (useLiveQuery as any)
+            .mockImplementationOnce(() => [
+                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+            ])
+            .mockImplementationOnce(() => [
+                { id: 'b1', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 500 },
+                { id: 'b2', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
+            ]);
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Check timeframe filter buttons
+        expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Last 3 Months' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Last 6 Months' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Last 9 Months' })).not.toBeInTheDocument();
+    });
+
+    it('shows all timeframe options when no annual budget exists in scope', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        // Mock accounts and budgets with only monthly budgets
+        (useLiveQuery as any)
+            .mockImplementationOnce(() => [
+                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+            ])
+            .mockImplementationOnce(() => [
+                { id: 'b1', name: 'Utilities', accountId: 'acc_1', frequency: 'monthly', amount: 100 },
+                { id: 'b2', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
+            ]);
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.getByRole('button', { name: 'Last 3 Months' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Last 6 Months' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Last 9 Months' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument();
+    });
 });

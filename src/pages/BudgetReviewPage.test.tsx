@@ -427,4 +427,70 @@ describe('BudgetReviewPage', () => {
         expect(screen.queryByRole('heading', { name: 'Acc2 Utility' })).not.toBeInTheDocument();
         expect(screen.queryByText('Persistent Overspend')).not.toBeInTheDocument();
     });
+
+    it('displays N/A for Avg Monthly Spend and Peak Month for non-monthly budgets', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_annual', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.getAllByText('N/A').length).toBe(2);
+    });
+
+    it('renders grey bullet for months with no spend in Audit Trend', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_monthly', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 400 },
+        ];
+        // Transaction only in current month; previous months in targetMonths have 0 spend
+        const transactions = [
+            { id: 't1', budgetId: 'b_monthly', accountId: 'acc_1', amount: 250, type: 'expense', date: currentMonthMs },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        const { container } = render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Find bullets in the Audit Trend section
+        const bullets = container.querySelectorAll('span.rounded-full.mb-1');
+        expect(bullets.length).toBeGreaterThan(0);
+
+        // At least one bullet should have grey styling (bg-slate-300) for 0 spend month
+        const greyBullets = Array.from(bullets).filter(b => b.className.includes('bg-slate-300'));
+        expect(greyBullets.length).toBeGreaterThan(0);
+    });
 });

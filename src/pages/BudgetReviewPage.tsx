@@ -246,12 +246,23 @@ export function BudgetReviewPage() {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [selectedBudgetId, setSelectedBudgetId] = useState<string>('');
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>('ytd');
 
   // Filter budgets based on the selected account scope
   const scopedBudgets = selectedAccountId
     ? budgets.filter((b) => b.accountId === selectedAccountId)
     : budgets;
+
+  const handleAccountChange = (newAccountId: string) => {
+    setSelectedAccountId(newAccountId);
+    if (selectedBudgetId) {
+      const budget = budgets.find((b) => b.id === selectedBudgetId);
+      if (budget && newAccountId && budget.accountId !== newAccountId) {
+        setSelectedBudgetId('');
+      }
+    }
+  };
 
   const hasAnnualBudget = scopedBudgets.some((b) => b.frequency === 'annual');
 
@@ -264,7 +275,50 @@ export function BudgetReviewPage() {
         { id: 'ytd', label: 'YTD' },
       ];
 
-  const currentData = ACCOUNTS_DATA[selectedAccountId] || ACCOUNTS_DATA.all;
+  const baseData = ACCOUNTS_DATA[selectedAccountId] || ACCOUNTS_DATA.all;
+  const selectedBudget = budgets.find((b) => b.id === selectedBudgetId);
+
+  const matchedCategories = selectedBudget
+    ? baseData.categories.filter(
+        (cat) =>
+          cat.name.toLowerCase().includes(selectedBudget.name.toLowerCase()) ||
+          selectedBudget.name.toLowerCase().includes(cat.name.toLowerCase())
+      )
+    : baseData.categories;
+
+  const displayedCategories =
+    selectedBudgetId && selectedBudget
+      ? matchedCategories.length > 0
+        ? matchedCategories
+        : [
+            {
+              name: selectedBudget.name,
+              icon: selectedBudget.icon || 'payments',
+              cap: `£${selectedBudget.amount}/mo`,
+              statusText: '100% within budget',
+              isError: false,
+              avgSpend: `£${Math.round(selectedBudget.amount * 0.85)}/mo`,
+              peakMonth: 'Current',
+              peakAmount: `£${selectedBudget.amount}`,
+              months: [
+                { name: 'May', isError: false },
+                { name: 'Jun', isError: false },
+                { name: 'Jul', isError: false },
+                { name: 'Aug', isError: false },
+                { name: 'Sep', isError: false },
+                { name: 'Oct', isError: false },
+              ],
+              proposalIcon: 'check_circle',
+              proposalText: `On target for ${selectedBudget.name}`,
+              actionLabel: 'Keep',
+            },
+          ]
+      : baseData.categories;
+
+  const currentData = {
+    ...baseData,
+    categories: displayedCategories,
+  };
 
   return (
     <AppLayout
@@ -297,7 +351,7 @@ export function BudgetReviewPage() {
           <div className="relative w-full">
             <select
               value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
+              onChange={(e) => handleAccountChange(e.target.value)}
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm cursor-pointer text-sm"
             >
               <option value="">All Accounts</option>
@@ -307,6 +361,27 @@ export function BudgetReviewPage() {
                   {account.last4Digits ? ` (x${account.last4Digits})` : ''}
                 </option>
               ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+              <Icon name="expand_more" className="text-xl" />
+            </div>
+          </div>
+
+          {/* Budget Selector Dropdown */}
+          <div className="relative w-full">
+            <select
+              value={selectedBudgetId}
+              onChange={(e) => setSelectedBudgetId(e.target.value)}
+              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm cursor-pointer text-sm"
+            >
+              <option value="">All Budgets</option>
+              {[...scopedBudgets]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((budget) => (
+                  <option key={budget.id} value={budget.id}>
+                    {budget.name}
+                  </option>
+                ))}
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
               <Icon name="expand_more" className="text-xl" />
@@ -339,7 +414,7 @@ export function BudgetReviewPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Account Spend vs Budget Cap
+                Budget Spend vs Cap
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Past 6 Months trajectory · Baseline {currentData.baselineCap}

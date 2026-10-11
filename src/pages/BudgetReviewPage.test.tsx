@@ -22,11 +22,13 @@ describe('BudgetReviewPage', () => {
             },
         });
 
-        (useLiveQuery as any).mockReturnValue([
-            { id: 'acc_1', name: 'Barclays Main', category: 'Current Account', last4Digits: '1234' },
-            { id: 'acc_2', name: 'Monzo Joint', nickname: 'Joint Monzo', category: 'Current Account' },
-            { id: 'acc_3', name: 'Marcus Savings', category: 'Easy Access Savings' },
-        ]);
+        (useLiveQuery as any)
+            .mockImplementationOnce(() => [
+                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account', last4Digits: '1234' },
+                { id: 'acc_2', name: 'Monzo Joint', nickname: 'Joint Monzo', category: 'Current Account' },
+                { id: 'acc_3', name: 'Marcus Savings', category: 'Easy Access Savings' },
+            ])
+            .mockImplementationOnce(() => []);
 
         render(
             <BrowserRouter>
@@ -34,18 +36,69 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        const selectElement = screen.getByRole('combobox');
-        expect(selectElement).toBeInTheDocument();
+        const selectElements = screen.getAllByRole('combobox');
+        expect(selectElements.length).toBe(2);
 
-        // Should include "All Accounts"
+        // Accounts select (first combobox)
         expect(screen.getByRole('option', { name: 'All Accounts' })).toBeInTheDocument();
-
-        // Should include current accounts
         expect(screen.getByRole('option', { name: 'Barclays Main (x1234)' })).toBeInTheDocument();
         expect(screen.getByRole('option', { name: 'Joint Monzo' })).toBeInTheDocument();
-
-        // Should NOT include non-current accounts
         expect(screen.queryByRole('option', { name: /Marcus Savings/i })).not.toBeInTheDocument();
+    });
+
+    it('renders budget dropdown and filters budgets based on account selection', async () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        (useLiveQuery as any)
+            .mockImplementationOnce(() => [
+                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+                { id: 'acc_2', name: 'Monzo Joint', category: 'Current Account' },
+            ])
+            .mockImplementationOnce(() => [
+                { id: 'b1', name: 'Groceries', accountId: 'acc_1' },
+                { id: 'b2', name: 'Utilities', accountId: 'acc_2' },
+                { id: 'b3', name: 'Entertainment', accountId: 'acc_1' },
+            ]);
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Check "Budget Spend vs Cap" heading is present
+        expect(screen.getByRole('heading', { name: 'Budget Spend vs Cap' })).toBeInTheDocument();
+
+        // Check budget selector exists and shows all budgets initially
+        expect(screen.getByRole('option', { name: 'All Budgets' })).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'Entertainment' })).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'Utilities' })).toBeInTheDocument();
+    });
+
+    it('filters displayed categories when a budget is selected', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        (useLiveQuery as any)
+            .mockImplementationOnce(() => [
+                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+            ])
+            .mockImplementationOnce(() => [
+                { id: 'b1', name: 'Groceries', amount: 500, accountId: 'acc_1' },
+            ]);
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.getByText('Joint Household Caps')).toBeInTheDocument();
+        expect(screen.getByText('Current & Discretionary')).toBeInTheDocument();
     });
 
     it('defaults to YTD timeframe and shows only YTD filter when an annual budget exists in scope', () => {

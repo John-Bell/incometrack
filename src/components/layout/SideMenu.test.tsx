@@ -15,6 +15,7 @@ describe('SideMenu', () => {
         expect(screen.getByText('Cashflow Projection')).toBeInTheDocument();
         expect(screen.getByText('Asset Burndown')).toBeInTheDocument();
         expect(screen.getByText('Asset Composition')).toBeInTheDocument();
+        expect(screen.getByText('Budget Review')).toBeInTheDocument();
         expect(screen.getByText('Settings')).toBeInTheDocument();
         expect(screen.getByText('Properties')).toBeInTheDocument();
 

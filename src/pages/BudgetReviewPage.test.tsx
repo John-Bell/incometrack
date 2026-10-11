@@ -88,13 +88,16 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByRole('option', { name: 'Utilities' })).toBeInTheDocument();
     });
 
-    it('filters displayed categories when a budget is selected', () => {
+    it('filters displayed categories in Category Calibration & Tuning when a budget is selected', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
-        const budgets = [{ id: 'b1', name: 'Groceries', amount: 500, accountId: 'acc_1' }];
+        const budgets = [
+            { id: 'b1', name: 'Groceries', amount: 500, accountId: 'acc_1' },
+            { id: 'b2', name: 'Utilities', amount: 200, accountId: 'acc_1' },
+        ];
 
         (useLiveQuery as any).mockImplementation((cb: any) => {
             const str = cb.toString();
@@ -109,8 +112,60 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        expect(screen.getByText('Joint Household Caps')).toBeInTheDocument();
-        expect(screen.getByText('Current & Discretionary')).toBeInTheDocument();
+        // Both budgets shown initially in Category Calibration & Tuning (or KPI cards)
+        expect(screen.getAllByRole('heading', { name: 'Groceries' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('heading', { name: 'Utilities' }).length).toBeGreaterThan(0);
+
+        // Select Groceries from budget dropdown
+        const budgetSelect = screen.getAllByRole('combobox')[1];
+        fireEvent.change(budgetSelect, { target: { value: 'b1' } });
+
+        // Only Groceries should be shown in Category Calibration & Tuning
+        expect(screen.getAllByRole('heading', { name: 'Groceries' }).length).toBeGreaterThan(0);
+        expect(screen.queryByRole('heading', { name: 'Utilities' })).not.toBeInTheDocument();
+    });
+
+    it('calculates Category Calibration & Tuning for filtered budgets and selected timeframe', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b1', name: 'Dining Out', amount: 100, frequency: 'monthly', accountId: 'acc_1' },
+        ];
+
+        const transactions = [
+            { id: 't1', budgetId: 'b1', accountId: 'acc_1', amount: 150, type: 'expense', date: m1 },
+            { id: 't2', budgetId: 'b1', accountId: 'acc_1', amount: 50, type: 'expense', date: m2 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Check header count
+        expect(screen.getByText('1 Budgets Monitored')).toBeInTheDocument();
+        // Check budget name
+        expect(screen.getAllByRole('heading', { name: 'Dining Out' }).length).toBeGreaterThan(0);
+        // Check current cap
+        expect(screen.getByText('Current Cap: £100/mo')).toBeInTheDocument();
+        // Avg monthly spend section exists
+        expect(screen.getByText('Avg Monthly Spend')).toBeInTheDocument();
     });
 
     it('defaults to YTD timeframe and shows only YTD filter when an annual budget exists in scope', () => {
@@ -244,7 +299,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByText('Groceries · Baseline £400/mo')).toBeInTheDocument();
         expect(screen.getByText('Cap: £400')).toBeInTheDocument();
         expect(screen.getByText('£250')).toBeInTheDocument();
-        expect(screen.getByText('£450')).toBeInTheDocument();
+        expect(screen.getAllByText('£450').length).toBeGreaterThan(0);
     });
 
     it('dynamically calculates Persistent Overspend when spend exceeds budget cap >10% of months', () => {

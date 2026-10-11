@@ -247,18 +247,29 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByText('£450')).toBeInTheDocument();
     });
 
-    it('shows Persistent Overspend and Excess Slack Available sections when no budget is selected and hides them when a budget is selected', () => {
+    it('dynamically calculates Persistent Overspend when spend exceeds budget cap >10% of months', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
-        const budgets = [{ id: 'b1', name: 'Groceries', accountId: 'acc_1', amount: 300, frequency: 'monthly' }];
+        const budgets = [
+            { id: 'b_over', name: 'Energy Bill', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
+        ];
+        const transactions = [
+            { id: 't1', budgetId: 'b_over', accountId: 'acc_1', amount: 150, type: 'expense', date: m1 },
+            { id: 't2', budgetId: 'b_over', accountId: 'acc_1', amount: 150, type: 'expense', date: m2 },
+        ];
 
         (useLiveQuery as any).mockImplementation((cb: any) => {
             const str = cb.toString();
             if (str.includes('accounts')) return accounts;
             if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
             return [];
         });
 
@@ -268,16 +279,97 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        // When no budget is selected ("All Budgets"), both sections should be present
         expect(screen.getByText('Persistent Overspend')).toBeInTheDocument();
+        const headings = screen.getAllByRole('heading', { name: 'Energy Bill' });
+        expect(headings.length).toBeGreaterThan(0);
+        expect(screen.getByText(/Breached 2 of/i)).toBeInTheDocument();
+    });
+
+    it('dynamically calculates Excess Slack Available when spend is <20% of budget cap >10% of months', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_slack', name: 'Gym Membership', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
+        ];
+        // Spend of £10 is only 2% of £500 cap (<20%)
+        const transactions = [
+            { id: 't1', budgetId: 'b_slack', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
         expect(screen.getByText('Excess Slack Available')).toBeInTheDocument();
+        const headings = screen.getAllByRole('heading', { name: 'Gym Membership' });
+        expect(headings.length).toBeGreaterThan(0);
+        expect(screen.getByText(/Low \d+ of/i)).toBeInTheDocument();
+    });
 
-        // Select a budget
-        const selects = screen.getAllByRole('combobox');
-        fireEvent.change(selects[1], { target: { value: 'b1' } });
+    it('recalculates overspend and slack based on selected account scope', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
 
-        // Sections should no longer be visible
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+
+        const accounts = [
+            { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+            { id: 'acc_2', name: 'Monzo Joint', category: 'Current Account' },
+        ];
+        const budgets = [
+            { id: 'b_acc1', name: 'Acc1 Luxury', accountId: 'acc_1', amount: 1000, frequency: 'monthly' },
+            { id: 'b_acc2', name: 'Acc2 Utility', accountId: 'acc_2', amount: 100, frequency: 'monthly' },
+        ];
+        const transactions = [
+            { id: 't1', budgetId: 'b_acc1', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
+            { id: 't2', budgetId: 'b_acc2', accountId: 'acc_2', amount: 200, type: 'expense', date: m1 },
+            { id: 't3', budgetId: 'b_acc2', accountId: 'acc_2', amount: 200, type: 'expense', date: m2 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // All accounts selected initially -> b_acc2 gives overspend, b_acc1 gives slack
+        expect(screen.getAllByRole('heading', { name: 'Acc2 Utility' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('heading', { name: 'Acc1 Luxury' }).length).toBeGreaterThan(0);
+
+        // Filter to acc_1 only
+        const accountSelect = screen.getAllByRole('combobox')[0];
+        fireEvent.change(accountSelect, { target: { value: 'acc_1' } });
+
+        // Now only acc_1's budget (Acc1 Luxury - slack) should be visible, overspend should be hidden
+        expect(screen.getAllByRole('heading', { name: 'Acc1 Luxury' }).length).toBeGreaterThan(0);
+        expect(screen.queryByRole('heading', { name: 'Acc2 Utility' })).not.toBeInTheDocument();
         expect(screen.queryByText('Persistent Overspend')).not.toBeInTheDocument();
-        expect(screen.queryByText('Excess Slack Available')).not.toBeInTheDocument();
     });
 });

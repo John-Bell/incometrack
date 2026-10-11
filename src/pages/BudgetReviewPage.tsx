@@ -285,11 +285,7 @@ export function BudgetReviewPage() {
 
   const capAmount = selectedBudget ? Number(selectedBudget.amount) || 0 : 0;
 
-  const calculateGraphData = () => {
-    if (!isMonthlyBudgetSelected || !selectedBudget) {
-      return { barData: [], underCount: 0, exceededCount: 0, cap: 0 };
-    }
-
+  const getTargetMonths = () => {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -318,7 +314,15 @@ export function BudgetReviewPage() {
         });
       }
     }
+    return targetMonths;
+  };
 
+  const calculateGraphData = () => {
+    if (!isMonthlyBudgetSelected || !selectedBudget) {
+      return { barData: [], underCount: 0, exceededCount: 0, cap: 0 };
+    }
+
+    const targetMonths = getTargetMonths();
     let underCount = 0;
     let exceededCount = 0;
 
@@ -359,6 +363,110 @@ export function BudgetReviewPage() {
   };
 
   const graphData = calculateGraphData();
+
+  const calculateBudgetAlerts = () => {
+    const targetMonths = getTargetMonths();
+    const totalPeriods = targetMonths.length;
+
+    if (totalPeriods === 0 || scopedBudgets.length === 0) {
+      return { overspendAlert: null, slackAlert: null };
+    }
+
+    const overspendCandidates: {
+      budget: typeof scopedBudgets[0];
+      breachedCount: number;
+      avgExcess: number;
+    }[] = [];
+
+    const slackCandidates: {
+      budget: typeof scopedBudgets[0];
+      slackCount: number;
+      avgUnspent: number;
+    }[] = [];
+
+    for (const budget of scopedBudgets) {
+      const cap = Number(budget.amount) || 0;
+      if (cap <= 0) continue;
+
+      let breachedCount = 0;
+      let slackCount = 0;
+      let totalSpent = 0;
+      let breachedExcessTotal = 0;
+      let slackUnspentTotal = 0;
+
+      for (const { year, monthIndex } of targetMonths) {
+        const monthSpent = transactions
+          .filter((t) => {
+            if (t.budgetId !== budget.id) return false;
+            if (t.type && t.type === 'income') return false;
+            const d = new Date(t.date);
+            return d.getFullYear() === year && d.getMonth() === monthIndex;
+          })
+          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+        totalSpent += monthSpent;
+
+        if (monthSpent > cap) {
+          breachedCount++;
+          breachedExcessTotal += (monthSpent - cap);
+        }
+        if (monthSpent < 0.20 * cap) {
+          slackCount++;
+          slackUnspentTotal += (cap - monthSpent);
+        }
+      }
+
+      const avgSpend = totalSpent / totalPeriods;
+
+      if (breachedCount / totalPeriods > 0.10) {
+        const avgExcess = avgSpend > cap ? (avgSpend - cap) : (breachedExcessTotal / breachedCount);
+        overspendCandidates.push({
+          budget,
+          breachedCount,
+          avgExcess,
+        });
+      }
+
+      if (slackCount / totalPeriods > 0.10) {
+        const avgUnspent = cap > avgSpend ? (cap - avgSpend) : (slackUnspentTotal / slackCount);
+        slackCandidates.push({
+          budget,
+          slackCount,
+          avgUnspent,
+        });
+      }
+    }
+
+    overspendCandidates.sort((a, b) => b.breachedCount - a.breachedCount || b.avgExcess - a.avgExcess);
+    slackCandidates.sort((a, b) => b.slackCount - a.slackCount || b.avgUnspent - a.avgUnspent);
+
+    const topOverspend = overspendCandidates[0] || null;
+    const filteredSlackCandidates = topOverspend
+      ? slackCandidates.filter((c) => c.budget.id !== topOverspend.budget.id)
+      : slackCandidates;
+    const topSlack = filteredSlackCandidates[0] || null;
+
+    return {
+      overspendAlert: topOverspend
+        ? {
+            budgetName: topOverspend.budget.name,
+            breachedCount: topOverspend.breachedCount,
+            totalPeriods,
+            avgExcess: topOverspend.avgExcess,
+          }
+        : null,
+      slackAlert: topSlack
+        ? {
+            budgetName: topSlack.budget.name,
+            slackCount: topSlack.slackCount,
+            totalPeriods,
+            avgUnspent: topSlack.avgUnspent,
+          }
+        : null,
+    };
+  };
+
+  const { overspendAlert, slackAlert } = calculateBudgetAlerts();
 
   const matchedCategories = selectedBudget
     ? baseData.categories.filter(
@@ -567,59 +675,69 @@ export function BudgetReviewPage() {
         )}
 
         {/* Action Required KPI Cards - Only show when no budget is selected */}
-        {!selectedBudgetId && (
+        {!selectedBudgetId && (overspendAlert || slackAlert) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Persistent Overspend Alert */}
-            <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0">
-                    <Icon name="warning" className="text-lg" />
+            {overspendAlert ? (
+              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0">
+                      <Icon name="warning" className="text-lg" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+                        Persistent Overspend
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {overspendAlert.budgetName}
+                      </h4>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
-                      Persistent Overspend
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Utilities & Comms
-                    </h4>
-                  </div>
+                  <span className="bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                    Breached {overspendAlert.breachedCount} of {overspendAlert.totalPeriods} mos
+                  </span>
                 </div>
-                <span className="bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
-                  Breached 4 of 6 mos
-                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Consistently exceeding target by an average of{' '}
+                  <span className="font-bold text-red-600 dark:text-red-400">
+                    +£{Math.round(overspendAlert.avgExcess)}/mo
+                  </span>
+                  . Rate review strongly recommended.
+                </p>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                Consistently exceeding target by an average of{' '}
-                <span className="font-bold text-red-600 dark:text-red-400">+£35/mo</span>. Rate review strongly recommended.
-              </p>
-            </div>
+            ) : null}
 
             {/* Excess Slack Available Alert */}
-            <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-purple-900 text-white flex items-center justify-center shrink-0">
-                    <Icon name="savings" className="text-lg" />
+            {slackAlert ? (
+              <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-900 text-white flex items-center justify-center shrink-0">
+                      <Icon name="savings" className="text-lg" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
+                        Excess Slack Available
+                      </span>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {slackAlert.budgetName}
+                      </h4>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300">
-                      Excess Slack Available
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Family & Transport
-                    </h4>
-                  </div>
+                  <span className="bg-white dark:bg-slate-900 text-purple-900 dark:text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
+                    Low {slackAlert.slackCount} of {slackAlert.totalPeriods} mos
+                  </span>
                 </div>
-                <span className="bg-white dark:bg-slate-900 text-purple-900 dark:text-purple-300 px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm whitespace-nowrap">
-                  Low 5 of 6 mos
-                </span>
+                <p className="text-xs text-slate-600 dark:text-slate-300">
+                  Under-utilized budget leaving approx{' '}
+                  <span className="font-bold text-purple-900 dark:text-purple-300">
+                    £{Math.round(slackAlert.avgUnspent)}/mo unspent
+                  </span>
+                  . Ready to reallocate into reserves.
+                </p>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                Under-utilized budget leaving approx{' '}
-                <span className="font-bold text-purple-900 dark:text-purple-300">£90/mo unspent</span>. Ready to reallocate into reserves.
-              </p>
-            </div>
+            ) : null}
           </div>
         )}
 

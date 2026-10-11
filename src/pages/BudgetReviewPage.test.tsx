@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { BudgetReviewPage } from './BudgetReviewPage';
 import { useStore } from '@/store/useStore';
@@ -22,13 +22,17 @@ describe('BudgetReviewPage', () => {
             },
         });
 
-        (useLiveQuery as any)
-            .mockImplementationOnce(() => [
-                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account', last4Digits: '1234' },
-                { id: 'acc_2', name: 'Monzo Joint', nickname: 'Joint Monzo', category: 'Current Account' },
-                { id: 'acc_3', name: 'Marcus Savings', category: 'Easy Access Savings' },
-            ])
-            .mockImplementationOnce(() => []);
+        const accounts = [
+            { id: 'acc_1', name: 'Barclays Main', category: 'Current Account', last4Digits: '1234' },
+            { id: 'acc_2', name: 'Monzo Joint', nickname: 'Joint Monzo', category: 'Current Account' },
+            { id: 'acc_3', name: 'Marcus Savings', category: 'Easy Access Savings' },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            return [];
+        });
 
         render(
             <BrowserRouter>
@@ -51,16 +55,22 @@ describe('BudgetReviewPage', () => {
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
-        (useLiveQuery as any)
-            .mockImplementationOnce(() => [
-                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
-                { id: 'acc_2', name: 'Monzo Joint', category: 'Current Account' },
-            ])
-            .mockImplementationOnce(() => [
-                { id: 'b1', name: 'Groceries', accountId: 'acc_1' },
-                { id: 'b2', name: 'Utilities', accountId: 'acc_2' },
-                { id: 'b3', name: 'Entertainment', accountId: 'acc_1' },
-            ]);
+        const accounts = [
+            { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+            { id: 'acc_2', name: 'Monzo Joint', category: 'Current Account' },
+        ];
+        const budgets = [
+            { id: 'b1', name: 'Groceries', accountId: 'acc_1' },
+            { id: 'b2', name: 'Utilities', accountId: 'acc_2' },
+            { id: 'b3', name: 'Entertainment', accountId: 'acc_1' },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
 
         render(
             <BrowserRouter>
@@ -68,8 +78,8 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        // Check "Budget Spend vs Cap" heading is present
-        expect(screen.getByRole('heading', { name: 'Budget Spend vs Cap' })).toBeInTheDocument();
+        // Budget Spend vs Cap graph should NOT be shown when no budget is selected
+        expect(screen.queryByRole('heading', { name: 'Budget Spend vs Cap' })).not.toBeInTheDocument();
 
         // Check budget selector exists and shows all budgets initially
         expect(screen.getByRole('option', { name: 'All Budgets' })).toBeInTheDocument();
@@ -83,13 +93,15 @@ describe('BudgetReviewPage', () => {
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
-        (useLiveQuery as any)
-            .mockImplementationOnce(() => [
-                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
-            ])
-            .mockImplementationOnce(() => [
-                { id: 'b1', name: 'Groceries', amount: 500, accountId: 'acc_1' },
-            ]);
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [{ id: 'b1', name: 'Groceries', amount: 500, accountId: 'acc_1' }];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
 
         render(
             <BrowserRouter>
@@ -106,15 +118,18 @@ describe('BudgetReviewPage', () => {
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
-        // Mock accounts and budgets with one annual budget
-        (useLiveQuery as any)
-            .mockImplementationOnce(() => [
-                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
-            ])
-            .mockImplementationOnce(() => [
-                { id: 'b1', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 500 },
-                { id: 'b2', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
-            ]);
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b1', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 500 },
+            { id: 'b2', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
 
         render(
             <BrowserRouter>
@@ -134,15 +149,18 @@ describe('BudgetReviewPage', () => {
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
-        // Mock accounts and budgets with only monthly budgets
-        (useLiveQuery as any)
-            .mockImplementationOnce(() => [
-                { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
-            ])
-            .mockImplementationOnce(() => [
-                { id: 'b1', name: 'Utilities', accountId: 'acc_1', frequency: 'monthly', amount: 100 },
-                { id: 'b2', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
-            ]);
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b1', name: 'Utilities', accountId: 'acc_1', frequency: 'monthly', amount: 100 },
+            { id: 'b2', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
 
         render(
             <BrowserRouter>
@@ -154,5 +172,78 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByRole('button', { name: 'Last 6 Months' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Last 9 Months' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'YTD' })).toBeInTheDocument();
+    });
+
+    it('does not render Budget Spend vs Cap graph when an annual budget is selected', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [{ id: 'b_annual', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 }];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        const selects = screen.getAllByRole('combobox');
+        const budgetSelect = selects[1];
+
+        // Select the annual budget
+        fireEvent.change(budgetSelect, { target: { value: 'b_annual' } });
+
+        expect(screen.queryByRole('heading', { name: 'Budget Spend vs Cap' })).not.toBeInTheDocument();
+    });
+
+    it('renders and populates Budget Spend vs Cap graph when a monthly budget is selected', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+        const prevMonthMs = new Date(now.getFullYear(), now.getMonth() - 1, 15).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [{ id: 'b_monthly', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 400 }];
+        const transactions = [
+            { id: 't1', budgetId: 'b_monthly', accountId: 'acc_1', amount: 250, type: 'expense', date: currentMonthMs },
+            { id: 't2', budgetId: 'b_monthly', accountId: 'acc_1', amount: 450, type: 'expense', date: prevMonthMs },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        const selects = screen.getAllByRole('combobox');
+        const budgetSelect = selects[1];
+
+        // Select monthly budget
+        fireEvent.change(budgetSelect, { target: { value: 'b_monthly' } });
+
+        expect(screen.getByRole('heading', { name: 'Budget Spend vs Cap' })).toBeInTheDocument();
+        expect(screen.getByText('Groceries · Baseline £400/mo')).toBeInTheDocument();
+        expect(screen.getByText('Cap: £400')).toBeInTheDocument();
+        expect(screen.getByText('£250')).toBeInTheDocument();
+        expect(screen.getByText('£450')).toBeInTheDocument();
     });
 });

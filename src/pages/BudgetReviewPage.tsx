@@ -240,6 +240,7 @@ export function BudgetReviewPage() {
 
   const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
   const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
+  const transactions = useLiveQuery(() => db.transactions.toArray()) || [];
 
   const currentAccounts = accounts
     .filter(account => account.category === 'Current Account')
@@ -277,6 +278,87 @@ export function BudgetReviewPage() {
 
   const baseData = ACCOUNTS_DATA[selectedAccountId] || ACCOUNTS_DATA.all;
   const selectedBudget = budgets.find((b) => b.id === selectedBudgetId);
+
+  const isMonthlyBudgetSelected = Boolean(
+    selectedBudget && (selectedBudget.frequency === 'monthly' || selectedBudget.frequency === 'month')
+  );
+
+  const capAmount = selectedBudget ? Number(selectedBudget.amount) || 0 : 0;
+
+  const calculateGraphData = () => {
+    if (!isMonthlyBudgetSelected || !selectedBudget) {
+      return { barData: [], underCount: 0, exceededCount: 0, cap: 0 };
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const activeTimeframe = (hasAnnualBudget && selectedTimeframe !== 'ytd') ? 'ytd' : selectedTimeframe;
+
+    const targetMonths: { year: number; monthIndex: number; label: string }[] = [];
+
+    if (activeTimeframe === 'ytd') {
+      for (let m = 0; m <= currentMonth; m++) {
+        const d = new Date(currentYear, m, 1);
+        targetMonths.push({
+          year: currentYear,
+          monthIndex: m,
+          label: d.toLocaleString('en-GB', { month: 'short' }),
+        });
+      }
+    } else {
+      const count = activeTimeframe === '3m' ? 3 : activeTimeframe === '9m' ? 9 : 6;
+      for (let i = count - 1; i >= 0; i--) {
+        const d = new Date(currentYear, currentMonth - i, 1);
+        targetMonths.push({
+          year: d.getFullYear(),
+          monthIndex: d.getMonth(),
+          label: d.toLocaleString('en-GB', { month: 'short' }),
+        });
+      }
+    }
+
+    let underCount = 0;
+    let exceededCount = 0;
+
+    const barData = targetMonths.map(({ year, monthIndex, label }) => {
+      const monthSpent = transactions
+        .filter((t) => {
+          if (t.budgetId !== selectedBudget.id) return false;
+          if (t.type && t.type !== 'expense') return false;
+          const d = new Date(t.date);
+          return d.getFullYear() === year && d.getMonth() === monthIndex;
+        })
+        .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+
+      const exceeded = capAmount > 0 ? monthSpent > capAmount : monthSpent > 0;
+      if (exceeded) {
+        exceededCount++;
+      } else {
+        underCount++;
+      }
+
+      const heightPct = capAmount > 0
+        ? Math.min(100, Math.round((monthSpent / capAmount) * 70))
+        : (monthSpent > 0 ? 100 : 0);
+
+      const formattedAmount = monthSpent >= 1000
+        ? `£${(monthSpent / 1000).toFixed(2)}k`
+        : `£${Math.round(monthSpent)}`;
+
+      return {
+        month: label,
+        amount: formattedAmount,
+        heightPct,
+        exceeded,
+      };
+    });
+
+    return { barData, underCount, exceededCount, cap: capAmount };
+  };
+
+  const graphData = calculateGraphData();
 
   const matchedCategories = selectedBudget
     ? baseData.categories.filter(
@@ -409,75 +491,80 @@ export function BudgetReviewPage() {
           </div>
         </div>
 
-        {/* Historical Comparison Graph Card */}
-        <div className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 flex flex-col space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Budget Spend vs Cap
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Past 6 Months trajectory · Baseline {currentData.baselineCap}
-              </p>
-            </div>
-            {/* Legend */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                <span className="text-xs text-slate-700 dark:text-slate-300">
-                  Under Cap ({currentData.underCount})
-                </span>
+        {/* Historical Comparison Graph Card - Only rendered when a monthly budget is selected */}
+        {isMonthlyBudgetSelected && (
+          <div className="bg-white dark:bg-surface-dark rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 flex flex-col space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Budget Spend vs Cap
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {selectedBudget?.name} · Baseline £{graphData.cap.toLocaleString('en-GB')}/mo
+                </p>
               </div>
-              <div className="flex items-center space-x-1.5 bg-red-100 dark:bg-red-950/50 px-2.5 py-1 rounded-full">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
-                <span className="text-xs text-red-700 dark:text-red-300">
-                  Exceeded ({currentData.exceededCount})
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bar Chart Visualization */}
-          <div className="relative w-full pt-6 pb-2">
-            {/* Cap Reference Line Overlay */}
-            <div className="absolute left-0 right-0 top-[38%] flex items-center z-10 pointer-events-none">
-              <div className="w-full border-t border-dashed border-purple-800 dark:border-purple-400 opacity-60"></div>
-              <span className="absolute right-0 -top-3 bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                Cap: {currentData.baselineCap.split('/')[0]}
-              </span>
-            </div>
-
-            {/* Chart Columns Container */}
-            <div className="grid grid-cols-6 gap-2 sm:gap-4 items-end h-48 w-full pt-4">
-              {currentData.barData.map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center h-full justify-end group">
-                  <span
-                    className={`text-[10px] mb-1 font-medium ${
-                      item.exceeded ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {item.amount}
-                  </span>
-                  <div
-                    className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 group-hover:opacity-90 ${
-                      item.exceeded ? 'bg-red-600' : 'bg-slate-300 dark:bg-slate-700'
-                    }`}
-                    style={{ height: `${item.heightPct}%` }}
-                  ></div>
-                  <span
-                    className={`text-xs mt-2 ${
-                      item.exceeded
-                        ? 'text-slate-900 dark:text-white font-semibold'
-                        : 'text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {item.month}
+              {/* Legend */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                  <span className="text-xs text-slate-700 dark:text-slate-300">
+                    Under Cap ({graphData.underCount})
                   </span>
                 </div>
-              ))}
+                <div className="flex items-center space-x-1.5 bg-red-100 dark:bg-red-950/50 px-2.5 py-1 rounded-full">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+                  <span className="text-xs text-red-700 dark:text-red-300">
+                    Exceeded ({graphData.exceededCount})
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bar Chart Visualization */}
+            <div className="relative w-full pt-6 pb-2">
+              {/* Cap Reference Line Overlay */}
+              <div className="absolute left-0 right-0 top-[30%] flex items-center z-10 pointer-events-none">
+                <div className="w-full border-t border-dashed border-purple-800 dark:border-purple-400 opacity-60"></div>
+                <span className="absolute right-0 -top-3 bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                  Cap: £{graphData.cap.toLocaleString('en-GB')}
+                </span>
+              </div>
+
+              {/* Chart Columns Container */}
+              <div
+                className="grid gap-2 sm:gap-4 items-end h-48 w-full pt-4"
+                style={{ gridTemplateColumns: `repeat(${graphData.barData.length}, minmax(0, 1fr))` }}
+              >
+                {graphData.barData.map((item, idx) => (
+                  <div key={idx} className="flex flex-col items-center h-full justify-end group">
+                    <span
+                      className={`text-[10px] mb-1 font-medium ${
+                        item.exceeded ? 'text-red-600 dark:text-red-400 font-bold' : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {item.amount}
+                    </span>
+                    <div
+                      className={`w-full max-w-[36px] rounded-t-lg transition-all duration-300 group-hover:opacity-90 ${
+                        item.exceeded ? 'bg-red-600' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}
+                      style={{ height: `${item.heightPct}%` }}
+                    ></div>
+                    <span
+                      className={`text-xs mt-2 ${
+                        item.exceeded
+                          ? 'text-slate-900 dark:text-white font-semibold'
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {item.month}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Action Required KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

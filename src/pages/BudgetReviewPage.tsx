@@ -202,7 +202,7 @@ export function BudgetReviewPage() {
 
       const avgSpend = totalSpent / totalPeriods;
 
-      if (breachedCount / totalPeriods > 0.40) {
+      if (breachedCount / totalPeriods > 0.35) {
         const avgExcess = avgSpend > cap ? (avgSpend - cap) : (breachedExcessTotal / breachedCount);
         overspendCandidates.push({
           budget,
@@ -211,7 +211,7 @@ export function BudgetReviewPage() {
         });
       }
 
-      if (slackCount / totalPeriods > 0.40) {
+      if (slackCount / totalPeriods > 0.35) {
         const avgUnspent = cap > avgSpend ? (cap - avgSpend) : (slackUnspentTotal / slackCount);
         slackCandidates.push({
           budget,

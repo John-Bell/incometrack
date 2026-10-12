@@ -302,7 +302,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getAllByText('£450').length).toBeGreaterThan(0);
     });
 
-    it('dynamically calculates Persistent Overspend when spend exceeds budget cap >40% of months', () => {
+    it('dynamically calculates Persistent Overspend when spend exceeds budget cap >35% of months', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
@@ -315,7 +315,7 @@ describe('BudgetReviewPage', () => {
         const budgets = [
             { id: 'b_over', name: 'Energy Bill', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
         ];
-        // Generate transactions exceeding cap for all YTD months (100% > 40%)
+        // Generate transactions exceeding cap for all YTD months (100% > 35%)
         const transactions = Array.from({ length: currentMonth + 1 }, (_, m) => ({
             id: `t_${m}`,
             budgetId: 'b_over',
@@ -345,7 +345,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByText(new RegExp(`Breached ${currentMonth + 1} of`, 'i'))).toBeInTheDocument();
     });
 
-    it('dynamically calculates Excess Slack Available when spend is <30% of budget cap >40% of months for monthly budgets', () => {
+    it('dynamically calculates Excess Slack Available when spend is <30% of budget cap >35% of months for monthly budgets', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
@@ -757,5 +757,116 @@ describe('BudgetReviewPage', () => {
         expect(screen.getAllByRole('heading', { name: 'Groceries' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('heading', { name: 'Gym Membership' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('heading', { name: 'Streaming Services' }).length).toBeGreaterThan(0);
+    });
+
+    it('triggers Persistent Overspend / Excessive Slack when breached/low in >35% of selected months, but not <=35%', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        // Test with 9 months timeframe filter to test specific percentages
+        // 3 out of 9 months = 33.3% (<=35%) -> should NOT trigger
+        // 4 out of 9 months = 44.4% (>35%) -> SHOULD trigger
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_over_33', name: 'Over 33 Percent', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
+            { id: 'b_over_44', name: 'Over 44 Percent', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
+            { id: 'b_slack_33', name: 'Slack 33 Percent', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
+            { id: 'b_slack_44', name: 'Slack 44 Percent', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
+        ];
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+
+        // Target last 9 months
+        const targetMonths9 = Array.from({ length: 9 }, (_, i) => {
+            const d = new Date(currentYear, currentMonth - (8 - i), 1);
+            return { year: d.getFullYear(), monthIndex: d.getMonth() };
+        });
+
+        const transactions: any[] = [];
+
+        // Over 33%: breach cap in first 3 months only (3/9 = 33.3%)
+        targetMonths9.forEach(({ year, monthIndex }, idx) => {
+            transactions.push({
+                id: `t_o33_${idx}`,
+                budgetId: 'b_over_33',
+                accountId: 'acc_1',
+                amount: idx < 3 ? 150 : 50,
+                type: 'expense',
+                date: new Date(year, monthIndex, 10).getTime(),
+            });
+        });
+
+        // Over 44%: breach cap in first 4 months (4/9 = 44.4%)
+        targetMonths9.forEach(({ year, monthIndex }, idx) => {
+            transactions.push({
+                id: `t_o44_${idx}`,
+                budgetId: 'b_over_44',
+                accountId: 'acc_1',
+                amount: idx < 4 ? 150 : 50,
+                type: 'expense',
+                date: new Date(year, monthIndex, 10).getTime(),
+            });
+        });
+
+        // Slack 33%: low spend (<30% of £500 = <£150) in first 3 months only (3/9 = 33.3%)
+        targetMonths9.forEach(({ year, monthIndex }, idx) => {
+            transactions.push({
+                id: `t_s33_${idx}`,
+                budgetId: 'b_slack_33',
+                accountId: 'acc_1',
+                amount: idx < 3 ? 100 : 200,
+                type: 'expense',
+                date: new Date(year, monthIndex, 10).getTime(),
+            });
+        });
+
+        // Slack 44%: low spend (<30% of £500 = <£150) in first 4 months (4/9 = 44.4%)
+        targetMonths9.forEach(({ year, monthIndex }, idx) => {
+            transactions.push({
+                id: `t_s44_${idx}`,
+                budgetId: 'b_slack_44',
+                accountId: 'acc_1',
+                amount: idx < 4 ? 100 : 200,
+                type: 'expense',
+                date: new Date(year, monthIndex, 10).getTime(),
+            });
+        });
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Switch to "Last 9 Months" timeframe
+        const btn9m = screen.getByRole('button', { name: 'Last 9 Months' });
+        fireEvent.click(btn9m);
+
+        // Over 44 Percent should be in Persistent Overspend, Over 33 Percent should NOT be in Persistent Overspend card
+        expect(screen.getAllByRole('heading', { name: 'Over 44 Percent' }).length).toBe(2); // KPI card + Tuning section
+        expect(screen.getAllByRole('heading', { name: 'Over 33 Percent' }).length).toBe(1); // Tuning section only
+
+        const alertBoxes = screen.getAllByText('Persistent Overspend');
+        expect(alertBoxes.length).toBe(1);
+        expect(screen.getByText('Breached 4 of 9 mos')).toBeInTheDocument();
+
+        // Slack 44 Percent should be in Excess Slack Available, Slack 33 Percent should NOT be in Excess Slack card
+        expect(screen.getAllByRole('heading', { name: 'Slack 44 Percent' }).length).toBe(2); // KPI card + Tuning section
+        expect(screen.getAllByRole('heading', { name: 'Slack 33 Percent' }).length).toBe(1); // Tuning section only
+
+        const slackBoxes = screen.getAllByText('Excess Slack Available');
+        expect(slackBoxes.length).toBe(1);
+        expect(screen.getByText('Low 4 of 9 mos')).toBeInTheDocument();
     });
 });

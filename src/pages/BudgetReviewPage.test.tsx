@@ -676,4 +676,56 @@ describe('BudgetReviewPage', () => {
         const redDots = container.querySelectorAll('span.bg-red-600');
         expect(redDots.length).toBeGreaterThan(0);
     });
+
+    it('renders ALL monthly budgets meeting criteria under Persistent Overspend and Excess Slack Available', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_over1', name: 'Energy Bill', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
+            { id: 'b_over2', name: 'Groceries', accountId: 'acc_1', amount: 200, frequency: 'monthly' },
+            { id: 'b_slack1', name: 'Gym Membership', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
+            { id: 'b_slack2', name: 'Streaming Services', accountId: 'acc_1', amount: 300, frequency: 'monthly' },
+        ];
+        const transactions = [
+            // b_over1 breaches cap £100
+            { id: 't1', budgetId: 'b_over1', accountId: 'acc_1', amount: 150, type: 'expense', date: m1 },
+            { id: 't2', budgetId: 'b_over1', accountId: 'acc_1', amount: 150, type: 'expense', date: m2 },
+            // b_over2 breaches cap £200
+            { id: 't3', budgetId: 'b_over2', accountId: 'acc_1', amount: 300, type: 'expense', date: m1 },
+            { id: 't4', budgetId: 'b_over2', accountId: 'acc_1', amount: 300, type: 'expense', date: m2 },
+            // b_slack1 spends £10 (<20% of £500 cap)
+            { id: 't5', budgetId: 'b_slack1', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
+            // b_slack2 spends £10 (<20% of £300 cap)
+            { id: 't6', budgetId: 'b_slack2', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.getAllByText('Persistent Overspend').length).toBe(2);
+        expect(screen.getAllByText('Excess Slack Available').length).toBe(2);
+
+        expect(screen.getAllByRole('heading', { name: 'Energy Bill' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('heading', { name: 'Groceries' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('heading', { name: 'Gym Membership' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('heading', { name: 'Streaming Services' }).length).toBeGreaterThan(0);
+    });
 });

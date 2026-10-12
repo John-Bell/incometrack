@@ -338,9 +338,12 @@ export function BudgetReviewPage() {
       name: budget.name,
       icon: budget.icon || 'payments',
       cap: capText,
+      rawCap: cap,
+      totalSpent,
       statusText,
       isError: breachedCount > 0,
       isMonthly,
+      isAnnual,
       avgSpend: isMonthly ? `£${Math.round(avgSpend).toLocaleString('en-GB')}/mo` : 'N/A',
       peakMonth: peakMonthLabel,
       peakAmount: maxSpend >= 0 ? `£${Math.round(maxSpend).toLocaleString('en-GB')}` : '£0',
@@ -637,39 +640,68 @@ export function BudgetReviewPage() {
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      Avg Monthly Spend
-                    </span>
-                    <span
-                      className={`text-sm font-bold ${
-                        !cat.isMonthly
-                          ? 'text-slate-900 dark:text-white'
-                          : cat.isError
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-purple-900 dark:text-purple-300'
-                      }`}
-                    >
-                      {cat.avgSpend}
-                    </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      Peak Month
-                    </span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">
-                      {cat.isMonthly ? (
-                        <>
-                          {cat.peakAmount}{' '}
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                            ({cat.peakMonth})
-                          </span>
-                        </>
-                      ) : (
-                        'N/A'
-                      )}
-                    </span>
-                  </div>
+                  {cat.isAnnual ? (
+                    <>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Budget Cap
+                        </span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                          £{Math.round(cat.rawCap).toLocaleString('en-GB')}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Total Payments
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${
+                            cat.isError
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-purple-900 dark:text-purple-300'
+                          }`}
+                        >
+                          £{Math.round(cat.totalSpent).toLocaleString('en-GB')}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Avg Monthly Spend
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${
+                            !cat.isMonthly
+                              ? 'text-slate-900 dark:text-white'
+                              : cat.isError
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-purple-900 dark:text-purple-300'
+                          }`}
+                        >
+                          {cat.avgSpend}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          Peak Month
+                        </span>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                          {cat.isMonthly ? (
+                            <>
+                              {cat.peakAmount}{' '}
+                              <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
+                                ({cat.peakMonth})
+                              </span>
+                            </>
+                          ) : (
+                            'N/A'
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Month Dot Sequence */}

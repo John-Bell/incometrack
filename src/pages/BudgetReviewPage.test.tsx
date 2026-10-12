@@ -600,4 +600,80 @@ describe('BudgetReviewPage', () => {
 
         expect(screen.getByText(/Under-budgeted by/i)).toBeInTheDocument();
     });
+
+    it('does NOT show breached/within pill for annual budgets, and does NOT treat equal spend as exceeded', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_annual', name: 'Home Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 },
+        ];
+        // Spend equals budget cap exactly (£1200)
+        const transactions = [
+            { id: 't1', budgetId: 'b_annual', accountId: 'acc_1', amount: 1200, type: 'expense', date: currentMonthMs },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        const { container } = render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Status pill text shouldn't be rendered for annual budget
+        expect(screen.queryByText('Always within budget')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Breached:/i)).not.toBeInTheDocument();
+
+        // Check that red dot/error styling is not applied for equal spend (£1200 === £1200 cap)
+        const redDots = container.querySelectorAll('span.bg-red-600');
+        expect(redDots.length).toBe(0);
+    });
+
+    it('marks annual budget as exceeded/error when payments strictly exceed budget cap', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_annual', name: 'Home Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 },
+        ];
+        // Spend strictly exceeds budget cap (£1201 > £1200)
+        const transactions = [
+            { id: 't1', budgetId: 'b_annual', accountId: 'acc_1', amount: 1201, type: 'expense', date: currentMonthMs },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        const { container } = render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        // Red dot for exceeded month should be rendered
+        const redDots = container.querySelectorAll('span.bg-red-600');
+        expect(redDots.length).toBeGreaterThan(0);
+    });
 });

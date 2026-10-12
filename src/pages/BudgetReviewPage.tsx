@@ -279,7 +279,10 @@ export function BudgetReviewPage() {
         peakMonthLabel = label;
       }
 
-      const isError = monthlyCap > 0 ? monthSpent > monthlyCap : monthSpent > 0;
+      const isError = isAnnual
+        ? (cap > 0 ? totalSpent > cap : monthSpent > 0)
+        : (monthlyCap > 0 ? monthSpent > monthlyCap : monthSpent > 0);
+
       if (isError) {
         breachedCount++;
       }
@@ -333,6 +336,10 @@ export function BudgetReviewPage() {
       ? `£${cap.toLocaleString('en-GB')}/yr (£${Math.round(monthlyCap).toLocaleString('en-GB')}/mo)`
       : `£${cap.toLocaleString('en-GB')}/mo`;
 
+    const catIsError = isAnnual
+      ? (cap > 0 ? totalSpent > cap : totalSpent > 0)
+      : breachedCount > 0;
+
     return {
       id: budget.id,
       name: budget.name,
@@ -341,7 +348,7 @@ export function BudgetReviewPage() {
       rawCap: cap,
       totalSpent,
       statusText,
-      isError: breachedCount > 0,
+      isError: catIsError,
       isMonthly,
       isAnnual,
       avgSpend: isMonthly ? `£${Math.round(avgSpend).toLocaleString('en-GB')}/mo` : 'N/A',
@@ -627,15 +634,17 @@ export function BudgetReviewPage() {
                       </span>
                     </div>
                   </div>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                      cat.isError
-                        ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
-                        : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300'
-                    }`}
-                  >
-                    {cat.statusText}
-                  </span>
+                  {!cat.isAnnual && (
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                        cat.isError
+                          ? 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400'
+                          : 'bg-purple-100 dark:bg-purple-950/60 text-purple-900 dark:text-purple-300'
+                      }`}
+                    >
+                      {cat.statusText}
+                    </span>
+                  )}
                 </div>
 
                 {/* Stats Grid */}

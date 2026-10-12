@@ -302,23 +302,28 @@ describe('BudgetReviewPage', () => {
         expect(screen.getAllByText('£450').length).toBeGreaterThan(0);
     });
 
-    it('dynamically calculates Persistent Overspend when spend exceeds budget cap >10% of months', () => {
+    it('dynamically calculates Persistent Overspend when spend exceeds budget cap >40% of months', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
         const now = new Date();
-        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
-        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
 
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
         const budgets = [
             { id: 'b_over', name: 'Energy Bill', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
         ];
-        const transactions = [
-            { id: 't1', budgetId: 'b_over', accountId: 'acc_1', amount: 150, type: 'expense', date: m1 },
-            { id: 't2', budgetId: 'b_over', accountId: 'acc_1', amount: 150, type: 'expense', date: m2 },
-        ];
+        // Generate transactions exceeding cap for all YTD months (100% > 40%)
+        const transactions = Array.from({ length: currentMonth + 1 }, (_, m) => ({
+            id: `t_${m}`,
+            budgetId: 'b_over',
+            accountId: 'acc_1',
+            amount: 150,
+            type: 'expense',
+            date: new Date(currentYear, m, 10).getTime(),
+        }));
 
         (useLiveQuery as any).mockImplementation((cb: any) => {
             const str = cb.toString();
@@ -337,25 +342,31 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByText('Persistent Overspend')).toBeInTheDocument();
         const headings = screen.getAllByRole('heading', { name: 'Energy Bill' });
         expect(headings.length).toBeGreaterThan(0);
-        expect(screen.getByText(/Breached 2 of/i)).toBeInTheDocument();
+        expect(screen.getByText(new RegExp(`Breached ${currentMonth + 1} of`, 'i'))).toBeInTheDocument();
     });
 
-    it('dynamically calculates Excess Slack Available when spend is <20% of budget cap >10% of months for monthly budgets', () => {
+    it('dynamically calculates Excess Slack Available when spend is <30% of budget cap >40% of months for monthly budgets', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
         const now = new Date();
-        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
 
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
         const budgets = [
             { id: 'b_slack', name: 'Gym Membership', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
         ];
-        // Spend of £10 is only 2% of £500 cap (<20%)
-        const transactions = [
-            { id: 't1', budgetId: 'b_slack', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
-        ];
+        // Spend of £125 is 25% of £500 cap (<30%) for all YTD months
+        const transactions = Array.from({ length: currentMonth + 1 }, (_, m) => ({
+            id: `t_${m}`,
+            budgetId: 'b_slack',
+            accountId: 'acc_1',
+            amount: 125,
+            type: 'expense',
+            date: new Date(currentYear, m, 10).getTime(),
+        }));
 
         (useLiveQuery as any).mockImplementation((cb: any) => {
             const str = cb.toString();
@@ -417,8 +428,8 @@ describe('BudgetReviewPage', () => {
         });
 
         const now = new Date();
-        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
-        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
 
         const accounts = [
             { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
@@ -429,9 +440,22 @@ describe('BudgetReviewPage', () => {
             { id: 'b_acc2', name: 'Acc2 Utility', accountId: 'acc_2', amount: 100, frequency: 'monthly' },
         ];
         const transactions = [
-            { id: 't1', budgetId: 'b_acc1', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
-            { id: 't2', budgetId: 'b_acc2', accountId: 'acc_2', amount: 200, type: 'expense', date: m1 },
-            { id: 't3', budgetId: 'b_acc2', accountId: 'acc_2', amount: 200, type: 'expense', date: m2 },
+            ...Array.from({ length: currentMonth + 1 }, (_, m) => ({
+                id: `t_acc1_${m}`,
+                budgetId: 'b_acc1',
+                accountId: 'acc_1',
+                amount: 10,
+                type: 'expense',
+                date: new Date(currentYear, m, 10).getTime(),
+            })),
+            ...Array.from({ length: currentMonth + 1 }, (_, m) => ({
+                id: `t_acc2_${m}`,
+                budgetId: 'b_acc2',
+                accountId: 'acc_2',
+                amount: 200,
+                type: 'expense',
+                date: new Date(currentYear, m, 10).getTime(),
+            })),
         ];
 
         (useLiveQuery as any).mockImplementation((cb: any) => {
@@ -683,8 +707,8 @@ describe('BudgetReviewPage', () => {
         });
 
         const now = new Date();
-        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
-        const m2 = new Date(now.getFullYear(), now.getMonth() - 1, 10).getTime();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
 
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
         const budgets = [
@@ -695,15 +719,21 @@ describe('BudgetReviewPage', () => {
         ];
         const transactions = [
             // b_over1 breaches cap £100
-            { id: 't1', budgetId: 'b_over1', accountId: 'acc_1', amount: 150, type: 'expense', date: m1 },
-            { id: 't2', budgetId: 'b_over1', accountId: 'acc_1', amount: 150, type: 'expense', date: m2 },
+            ...Array.from({ length: currentMonth + 1 }, (_, m) => ({
+                id: `t1_${m}`, budgetId: 'b_over1', accountId: 'acc_1', amount: 150, type: 'expense', date: new Date(currentYear, m, 10).getTime(),
+            })),
             // b_over2 breaches cap £200
-            { id: 't3', budgetId: 'b_over2', accountId: 'acc_1', amount: 300, type: 'expense', date: m1 },
-            { id: 't4', budgetId: 'b_over2', accountId: 'acc_1', amount: 300, type: 'expense', date: m2 },
-            // b_slack1 spends £10 (<20% of £500 cap)
-            { id: 't5', budgetId: 'b_slack1', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
-            // b_slack2 spends £10 (<20% of £300 cap)
-            { id: 't6', budgetId: 'b_slack2', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
+            ...Array.from({ length: currentMonth + 1 }, (_, m) => ({
+                id: `t2_${m}`, budgetId: 'b_over2', accountId: 'acc_1', amount: 300, type: 'expense', date: new Date(currentYear, m, 10).getTime(),
+            })),
+            // b_slack1 spends £10 (<30% of £500 cap)
+            ...Array.from({ length: currentMonth + 1 }, (_, m) => ({
+                id: `t3_${m}`, budgetId: 'b_slack1', accountId: 'acc_1', amount: 10, type: 'expense', date: new Date(currentYear, m, 10).getTime(),
+            })),
+            // b_slack2 spends £10 (<30% of £300 cap)
+            ...Array.from({ length: currentMonth + 1 }, (_, m) => ({
+                id: `t4_${m}`, budgetId: 'b_slack2', accountId: 'acc_1', amount: 10, type: 'expense', date: new Date(currentYear, m, 10).getTime(),
+            })),
         ];
 
         (useLiveQuery as any).mockImplementation((cb: any) => {

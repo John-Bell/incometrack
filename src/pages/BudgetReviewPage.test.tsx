@@ -527,4 +527,65 @@ describe('BudgetReviewPage', () => {
         const greyBullets = Array.from(bullets).filter(b => b.className.includes('bg-slate-300'));
         expect(greyBullets.length).toBeGreaterThan(0);
     });
+
+    it('hides proposal section (Unused cushion / On target) for annual budgets when within cap or under-spent', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_annual', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.queryByText(/Unused cushion/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/On target/i)).not.toBeInTheDocument();
+    });
+
+    it('shows proposal section (Under-budgeted) for annual budgets when over cap', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_annual', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 },
+        ];
+        // Spend of £2000 ensures avg spend > monthly cap (£100/mo) across YTD months
+        const transactions = [
+            { id: 't1', budgetId: 'b_annual', accountId: 'acc_1', amount: 2000, type: 'expense', date: currentMonthMs },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.getByText(/Under-budgeted by/i)).toBeInTheDocument();
+    });
 });

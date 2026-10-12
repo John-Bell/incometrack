@@ -462,20 +462,27 @@ describe('BudgetReviewPage', () => {
         expect(screen.queryByText('Persistent Overspend')).not.toBeInTheDocument();
     });
 
-    it('displays N/A for Avg Monthly Spend and Peak Month for non-monthly budgets', () => {
+    it('displays Budget Cap and Total Payments for annual budgets instead of Avg Monthly Spend and Peak Month', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
         const budgets = [
             { id: 'b_annual', name: 'Car Insurance', accountId: 'acc_1', frequency: 'annual', amount: 1200 },
+        ];
+        const transactions = [
+            { id: 't1', budgetId: 'b_annual', accountId: 'acc_1', amount: 500, type: 'expense', date: m1 },
         ];
 
         (useLiveQuery as any).mockImplementation((cb: any) => {
             const str = cb.toString();
             if (str.includes('accounts')) return accounts;
             if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
             return [];
         });
 
@@ -485,7 +492,12 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        expect(screen.getAllByText('N/A').length).toBe(2);
+        expect(screen.getByText('Budget Cap')).toBeInTheDocument();
+        expect(screen.getByText('£1,200')).toBeInTheDocument();
+        expect(screen.getByText('Total Payments')).toBeInTheDocument();
+        expect(screen.getByText('£500')).toBeInTheDocument();
+        expect(screen.queryByText('Avg Monthly Spend')).not.toBeInTheDocument();
+        expect(screen.queryByText('Peak Month')).not.toBeInTheDocument();
     });
 
     it('renders grey bullet for months with no spend in Audit Trend', () => {

@@ -180,6 +180,7 @@ export function BudgetReviewPage() {
       for (const { year, monthIndex } of targetMonths) {
         const monthSpent = transactions
           .filter((t) => {
+            if (selectedAccountId && t.accountId && t.accountId !== selectedAccountId) return false;
             if (t.budgetId !== budget.id) return false;
             if (t.type && t.type === 'income') return false;
             const d = new Date(t.date);
@@ -193,7 +194,7 @@ export function BudgetReviewPage() {
           breachedCount++;
           breachedExcessTotal += (monthSpent - cap);
         }
-        if (monthSpent < 0.20 * cap) {
+        if (monthSpent < 0.30 * cap) {
           slackCount++;
           slackUnspentTotal += (cap - monthSpent);
         }
@@ -201,7 +202,7 @@ export function BudgetReviewPage() {
 
       const avgSpend = totalSpent / totalPeriods;
 
-      if (breachedCount / totalPeriods > 0.10) {
+      if (breachedCount / totalPeriods > 0.40) {
         const avgExcess = avgSpend > cap ? (avgSpend - cap) : (breachedExcessTotal / breachedCount);
         overspendCandidates.push({
           budget,
@@ -210,7 +211,7 @@ export function BudgetReviewPage() {
         });
       }
 
-      if (slackCount / totalPeriods > 0.10) {
+      if (slackCount / totalPeriods > 0.40) {
         const avgUnspent = cap > avgSpend ? (cap - avgSpend) : (slackUnspentTotal / slackCount);
         slackCandidates.push({
           budget,

@@ -301,6 +301,7 @@ export function BudgetReviewPage() {
     let proposalIcon = 'check_circle';
     let proposalText = `On target · Maintain current £${Math.round(monthlyCap).toLocaleString('en-GB')}/mo cap`;
     let actionLabel = 'Keep';
+    let showProposal = true;
 
     if (monthlyCap <= 0) {
       proposalIcon = 'info';
@@ -313,11 +314,19 @@ export function BudgetReviewPage() {
       proposalText = `Under-budgeted by £${diff.toLocaleString('en-GB')}/mo · Suggest adjusting cap to £${suggestedCap.toLocaleString('en-GB')}/mo`;
       actionLabel = 'Tune';
     } else if (monthlyCap - avgSpend >= 10) {
-      const cushion = Math.round(monthlyCap - avgSpend);
-      const suggestedCap = Math.round(avgSpend);
-      proposalIcon = 'check_circle';
-      proposalText = `Unused cushion: £${cushion.toLocaleString('en-GB')}/mo · Safe to trim cap to £${suggestedCap.toLocaleString('en-GB')}/mo`;
-      actionLabel = 'Trim';
+      if (isAnnual) {
+        showProposal = false;
+      } else {
+        const cushion = Math.round(monthlyCap - avgSpend);
+        const suggestedCap = Math.round(avgSpend);
+        proposalIcon = 'check_circle';
+        proposalText = `Unused cushion: £${cushion.toLocaleString('en-GB')}/mo · Safe to trim cap to £${suggestedCap.toLocaleString('en-GB')}/mo`;
+        actionLabel = 'Trim';
+      }
+    } else {
+      if (isAnnual) {
+        showProposal = false;
+      }
     }
 
     const capText = isAnnual
@@ -339,6 +348,7 @@ export function BudgetReviewPage() {
       proposalIcon,
       proposalText,
       actionLabel,
+      showProposal,
     };
   });
 
@@ -706,24 +716,26 @@ export function BudgetReviewPage() {
                 </div>
 
                 {/* Proposal Action Pill */}
-                <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg">
-                  <div className="flex items-center space-x-2 min-w-0 pr-2">
-                    <Icon
-                      name={cat.proposalIcon}
-                      className={`text-base shrink-0 ${
-                        cat.isError ? 'text-red-600 dark:text-red-400' : 'text-purple-900 dark:text-purple-300'
-                      }`}
-                    />
-                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
-                      {cat.proposalText}
-                    </span>
+                {cat.showProposal && (
+                  <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg">
+                    <div className="flex items-center space-x-2 min-w-0 pr-2">
+                      <Icon
+                        name={cat.proposalIcon}
+                        className={`text-base shrink-0 ${
+                          cat.isError ? 'text-red-600 dark:text-red-400' : 'text-purple-900 dark:text-purple-300'
+                        }`}
+                      />
+                      <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
+                        {cat.proposalText}
+                      </span>
+                    </div>
+                    <button
+                      className="px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-purple-900 text-white dark:bg-purple-700 hover:opacity-90 cursor-pointer transition-opacity"
+                    >
+                      {cat.actionLabel}
+                    </button>
                   </div>
-                  <button
-                    className="px-3 py-1 rounded-full text-xs font-semibold shrink-0 bg-purple-900 text-white dark:bg-purple-700 hover:opacity-90 cursor-pointer transition-opacity"
-                  >
-                    {cat.actionLabel}
-                  </button>
-                </div>
+                )}
               </div>
             ))
           )}

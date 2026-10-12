@@ -149,7 +149,7 @@ export function BudgetReviewPage() {
     const totalPeriods = targetMonths.length;
 
     if (totalPeriods === 0 || scopedBudgets.length === 0) {
-      return { overspendAlert: null, slackAlert: null };
+      return { overspendAlerts: [], slackAlerts: [] };
     }
 
     const overspendCandidates: {
@@ -165,6 +165,9 @@ export function BudgetReviewPage() {
     }[] = [];
 
     for (const budget of scopedBudgets) {
+      const isMonthly = budget.frequency === 'monthly' || budget.frequency === 'month' || !budget.frequency;
+      if (!isMonthly) continue;
+
       const cap = Number(budget.amount) || 0;
       if (cap <= 0) continue;
 
@@ -207,9 +210,7 @@ export function BudgetReviewPage() {
         });
       }
 
-      const isMonthly = budget.frequency === 'monthly' || budget.frequency === 'month';
-
-      if (isMonthly && slackCount / totalPeriods > 0.10) {
+      if (slackCount / totalPeriods > 0.10) {
         const avgUnspent = cap > avgSpend ? (cap - avgSpend) : (slackUnspentTotal / slackCount);
         slackCandidates.push({
           budget,
@@ -222,33 +223,28 @@ export function BudgetReviewPage() {
     overspendCandidates.sort((a, b) => b.breachedCount - a.breachedCount || b.avgExcess - a.avgExcess);
     slackCandidates.sort((a, b) => b.slackCount - a.slackCount || b.avgUnspent - a.avgUnspent);
 
-    const topOverspend = overspendCandidates[0] || null;
-    const filteredSlackCandidates = topOverspend
-      ? slackCandidates.filter((c) => c.budget.id !== topOverspend.budget.id)
-      : slackCandidates;
-    const topSlack = filteredSlackCandidates[0] || null;
+    const overspendBudgetIds = new Set(overspendCandidates.map((c) => c.budget.id));
+    const filteredSlackCandidates = slackCandidates.filter((c) => !overspendBudgetIds.has(c.budget.id));
 
     return {
-      overspendAlert: topOverspend
-        ? {
-            budgetName: topOverspend.budget.name,
-            breachedCount: topOverspend.breachedCount,
-            totalPeriods,
-            avgExcess: topOverspend.avgExcess,
-          }
-        : null,
-      slackAlert: topSlack
-        ? {
-            budgetName: topSlack.budget.name,
-            slackCount: topSlack.slackCount,
-            totalPeriods,
-            avgUnspent: topSlack.avgUnspent,
-          }
-        : null,
+      overspendAlerts: overspendCandidates.map((c) => ({
+        budgetId: c.budget.id,
+        budgetName: c.budget.name,
+        breachedCount: c.breachedCount,
+        totalPeriods,
+        avgExcess: c.avgExcess,
+      })),
+      slackAlerts: filteredSlackCandidates.map((c) => ({
+        budgetId: c.budget.id,
+        budgetName: c.budget.name,
+        slackCount: c.slackCount,
+        totalPeriods,
+        avgUnspent: c.avgUnspent,
+      })),
     };
   };
 
-  const { overspendAlert, slackAlert } = calculateBudgetAlerts();
+  const { overspendAlerts, slackAlerts } = calculateBudgetAlerts();
 
   // Dynamic Category Calibration & Tuning data
   const categoryTuningItems = sortedBudgets.map((budget) => {
@@ -527,11 +523,14 @@ export function BudgetReviewPage() {
         )}
 
         {/* Action Required KPI Cards - Only show when no budget is selected */}
-        {!selectedBudgetId && (overspendAlert || slackAlert) && (
+        {!selectedBudgetId && (overspendAlerts.length > 0 || slackAlerts.length > 0) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Persistent Overspend Alert */}
-            {overspendAlert ? (
-              <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
+            {/* Persistent Overspend Alerts */}
+            {overspendAlerts.map((overspendAlert) => (
+              <div
+                key={overspendAlert.budgetId}
+                className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0">
@@ -558,11 +557,14 @@ export function BudgetReviewPage() {
                   . Rate review strongly recommended.
                 </p>
               </div>
-            ) : null}
+            ))}
 
-            {/* Excess Slack Available Alert */}
-            {slackAlert ? (
-              <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3">
+            {/* Excess Slack Available Alerts */}
+            {slackAlerts.map((slackAlert) => (
+              <div
+                key={slackAlert.budgetId}
+                className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 p-4 rounded-xl shadow-sm flex flex-col justify-between space-y-3"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 rounded-full bg-purple-900 text-white flex items-center justify-center shrink-0">
@@ -589,7 +591,7 @@ export function BudgetReviewPage() {
                   . Ready to reallocate into reserves.
                 </p>
               </div>
-            ) : null}
+            ))}
           </div>
         )}
 

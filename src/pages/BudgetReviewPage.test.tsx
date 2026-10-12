@@ -340,7 +340,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByText(/Breached 2 of/i)).toBeInTheDocument();
     });
 
-    it('dynamically calculates Excess Slack Available when spend is <20% of budget cap >10% of months', () => {
+    it('dynamically calculates Excess Slack Available when spend is <20% of budget cap >10% of months for monthly budgets', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
@@ -375,6 +375,40 @@ describe('BudgetReviewPage', () => {
         const headings = screen.getAllByRole('heading', { name: 'Gym Membership' });
         expect(headings.length).toBeGreaterThan(0);
         expect(screen.getByText(/Low \d+ of/i)).toBeInTheDocument();
+    });
+
+    it('does NOT generate Excessive Slack for non-monthly budgets (e.g. annual)', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            { id: 'b_annual_slack', name: 'Holiday Fund', accountId: 'acc_1', amount: 1200, frequency: 'annual' },
+        ];
+        // Spend of £10 is <20% of cap (£1200)
+        const transactions = [
+            { id: 't1', budgetId: 'b_annual_slack', accountId: 'acc_1', amount: 10, type: 'expense', date: m1 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.queryByText('Excess Slack Available')).not.toBeInTheDocument();
     });
 
     it('recalculates overspend and slack based on selected account scope', () => {

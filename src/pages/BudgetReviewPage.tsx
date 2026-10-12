@@ -207,7 +207,9 @@ export function BudgetReviewPage() {
         });
       }
 
-      if (slackCount / totalPeriods > 0.10) {
+      const isMonthly = budget.frequency === 'monthly' || budget.frequency === 'month';
+
+      if (isMonthly && slackCount / totalPeriods > 0.10) {
         const avgUnspent = cap > avgSpend ? (cap - avgSpend) : (slackUnspentTotal / slackCount);
         slackCandidates.push({
           budget,

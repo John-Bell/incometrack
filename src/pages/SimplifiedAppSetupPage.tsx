@@ -2,108 +2,35 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
 import { DateInput } from '@/components/ui/DateInput';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useStore } from '@/store/useStore';
-import { db } from '@/lib/db';
-import { getTaxYearOrLatest } from '@/constants/taxConstants';
-import { decryptData, mergeData } from '@/services/remoteSyncService';
+import { useSimplifiedAppSetup } from '@/hooks/useSimplifiedAppSetup';
 
 export function SimplifiedAppSetupPage() {
-    const navigate = useNavigate();
-    const { setProfile, initStore } = useStore();
-    const [partner1Name, setPartner1Name] = useState('');
-    const [partner1Dob, setPartner1Dob] = useState('');
-    const [partner2Name, setPartner2Name] = useState('');
-    const [partner2Dob, setPartner2Dob] = useState('');
-    const [syncServerUrl, setSyncServerUrl] = useState('');
-    const [syncPassphrase, setSyncPassphrase] = useState('');
-    const [syncHeaderKey, setSyncHeaderKey] = useState('');
-
-    // For the Restore section
-    const [restoreSyncServerUrl, setRestoreSyncServerUrl] = useState('');
-    const [restoreSyncPassphrase, setRestoreSyncPassphrase] = useState('');
-    const [restoreSyncHeaderKey, setRestoreSyncHeaderKey] = useState('');
-    const [isRestoring, setIsRestoring] = useState(false);
-    const [restoreError, setRestoreError] = useState<string | null>(null);
-
-    const handleGetStarted = async () => {
-        if (!partner1Name.trim()) return; // Require at least one name
-
-        await setProfile({
-            id: 'default',
-            name: `${partner1Name.trim()} & ${partner2Name.trim() || 'Partner'}`,
-            partner1Name: partner1Name.trim(),
-            partner1Dob: partner1Dob ? new Date(partner1Dob).getTime() : undefined,
-            partner2Name: partner2Name.trim() || undefined,
-            partner2Dob: partner2Dob ? new Date(partner2Dob).getTime() : undefined,
-            createdAt: Date.now()
-        });
-
-        const existingSettings = await db.settings.get('default');
-
-        await db.settings.put({
-            id: 'default',
-            currency: existingSettings?.currency || 'GBP',
-            taxYear: existingSettings?.taxYear || getTaxYearOrLatest(),
-            icloudSync: existingSettings?.icloudSync || false,
-            syncServerUrl: syncServerUrl.trim() || undefined,
-            syncPassphrase: syncPassphrase.trim() || undefined,
-            syncHeaderKey: syncHeaderKey.trim() || undefined,
-            defaultGrowthRate: existingSettings?.defaultGrowthRate ?? 1.75,
-            updatedAt: Date.now()
-        });
-
-        navigate('/');
-    };
-
-    const handleRestore = async () => {
-        setIsRestoring(true);
-        setRestoreError(null);
-        try {
-            const customHeaders: Record<string, string> = {};
-            if (restoreSyncHeaderKey.trim()) {
-                customHeaders['x-chaser-token'] = restoreSyncHeaderKey.trim();
-            }
-
-            const response = await fetch(restoreSyncServerUrl.trim(), { headers: customHeaders });
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
-            }
-
-            const buffer = await response.arrayBuffer();
-            if (buffer.byteLength === 0) {
-                throw new Error('Remote sync data is empty.');
-            }
-
-            const decryptedData = await decryptData(buffer, restoreSyncPassphrase.trim());
-
-            await mergeData(decryptedData);
-
-            const existingSettings = await db.settings.get('default');
-
-            await db.settings.put({
-                id: 'default',
-                currency: existingSettings?.currency || 'GBP',
-                taxYear: existingSettings?.taxYear || getTaxYearOrLatest(),
-                icloudSync: existingSettings?.icloudSync || false,
-                syncServerUrl: restoreSyncServerUrl.trim() || undefined,
-                syncPassphrase: restoreSyncPassphrase.trim() || undefined,
-                syncHeaderKey: restoreSyncHeaderKey.trim() || undefined,
-                defaultGrowthRate: existingSettings?.defaultGrowthRate ?? 1.75,
-                lastSynced: Date.now(),
-                updatedAt: Date.now()
-            });
-
-            await initStore();
-            navigate('/');
-        } catch (error) {
-            console.error("Restore failed:", error);
-            setRestoreError(error instanceof Error ? error.message : "An unknown error occurred during restore.");
-        } finally {
-            setIsRestoring(false);
-        }
-    };
+    const {
+        partner1Name,
+        setPartner1Name,
+        partner1Dob,
+        setPartner1Dob,
+        partner2Name,
+        setPartner2Name,
+        partner2Dob,
+        setPartner2Dob,
+        syncServerUrl,
+        setSyncServerUrl,
+        syncPassphrase,
+        setSyncPassphrase,
+        syncHeaderKey,
+        setSyncHeaderKey,
+        restoreSyncServerUrl,
+        setRestoreSyncServerUrl,
+        restoreSyncPassphrase,
+        setRestoreSyncPassphrase,
+        restoreSyncHeaderKey,
+        setRestoreSyncHeaderKey,
+        isRestoring,
+        restoreError,
+        handleGetStarted,
+        handleRestore,
+    } = useSimplifiedAppSetup();
 
     return (
         <AppLayout hideBottomNav={true}>
@@ -214,10 +141,11 @@ export function SimplifiedAppSetupPage() {
 
                                 <div className="space-y-4">
                                     <div className="space-y-3">
-                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        <label htmlFor="syncServerUrl" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                             Sync Server URL
                                         </label>
                                         <input
+                                            id="syncServerUrl"
                                             type="text"
                                             placeholder="e.g. https://sync.yourdomain.xyz/sync"
                                             value={syncServerUrl}
@@ -226,10 +154,11 @@ export function SimplifiedAppSetupPage() {
                                         />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        <label htmlFor="syncHeaderKey" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                             Header Key
                                         </label>
                                         <input
+                                            id="syncHeaderKey"
                                             type="text"
                                             placeholder="e.g. my-secret-token"
                                             value={syncHeaderKey}
@@ -238,10 +167,11 @@ export function SimplifiedAppSetupPage() {
                                         />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        <label htmlFor="syncPassphrase" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                             Encryption Passphrase
                                         </label>
                                         <input
+                                            id="syncPassphrase"
                                             type="text"
                                             placeholder="e.g. four random words"
                                             value={syncPassphrase}
@@ -289,10 +219,11 @@ export function SimplifiedAppSetupPage() {
                             )}
                             <div className="space-y-4">
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="restoreSyncServerUrl" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                         Sync Server URL
                                     </label>
                                     <input
+                                        id="restoreSyncServerUrl"
                                         type="text"
                                         placeholder="e.g. https://sync.yourdomain.xyz/sync"
                                         value={restoreSyncServerUrl}
@@ -301,10 +232,11 @@ export function SimplifiedAppSetupPage() {
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="restoreSyncPassphrase" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                         Encryption Passphrase
                                     </label>
                                     <input
+                                        id="restoreSyncPassphrase"
                                         type="text"
                                         placeholder="e.g. four random words"
                                         value={restoreSyncPassphrase}
@@ -313,10 +245,11 @@ export function SimplifiedAppSetupPage() {
                                     />
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="restoreSyncHeaderKey" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                         Header Key
                                     </label>
                                     <input
+                                        id="restoreSyncHeaderKey"
                                         type="text"
                                         placeholder="e.g. my-secret-token"
                                         value={restoreSyncHeaderKey}

@@ -1,160 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db, getSanitizedDbData } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
-import { encryptData, decryptData, mergeData } from '@/services/remoteSyncService';
-import { useStore } from '@/store/useStore';
+import { useRemoteSyncing } from '@/hooks/useRemoteSyncing';
 import { cn } from '@/lib/utils';
 
 export function RemoteSyncingPage() {
-    const navigate = useNavigate();
-    const { initStore } = useStore();
-    const settings = useLiveQuery(() => db.settings.toArray());
-    const currentSettings = settings?.[0];
-
-    const [syncServerUrl, setSyncServerUrl] = useState('');
-    const [syncPassphrase, setSyncPassphrase] = useState('');
-    const [syncHeaderKey, setSyncHeaderKey] = useState('');
-
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
-    const hasChanges =
-        syncServerUrl.trim() !== (currentSettings?.syncServerUrl || '') ||
-        syncPassphrase.trim() !== (currentSettings?.syncPassphrase || '') ||
-        syncHeaderKey.trim() !== (currentSettings?.syncHeaderKey || '');
-
-    useEffect(() => {
-        if (currentSettings) {
-            setSyncServerUrl(currentSettings.syncServerUrl || '');
-            setSyncPassphrase(currentSettings.syncPassphrase || '');
-            setSyncHeaderKey(currentSettings.syncHeaderKey || '');
-        }
-    }, [currentSettings]);
-
-    const handleUpdate = async () => {
-        if (!currentSettings) return;
-        setIsUpdating(true);
-        setStatusMessage(null);
-        try {
-            await db.settings.update(currentSettings.id, {
-                syncServerUrl: syncServerUrl.trim() || undefined,
-                syncPassphrase: syncPassphrase.trim() || undefined,
-                syncHeaderKey: syncHeaderKey.trim() || undefined,
-            });
-            setStatusMessage({ type: 'success', text: 'Settings updated successfully.' });
-        } catch (error) {
-            setStatusMessage({ type: 'error', text: 'Failed to update settings.' });
-        } finally {
-            setIsUpdating(false);
-        }
-    };
-
-    const getHeaders = () => {
-        const headers: Record<string, string> = {};
-        if (syncHeaderKey.trim()) {
-            headers['x-chaser-token'] = syncHeaderKey.trim();
-        }
-        return headers;
-    };
-
-    const handleLoadFromRemote = async () => {
-        if (!syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()) {
-            setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
-            return;
-        }
-
-        if (!window.confirm("Are you sure you want to load data from the remote server? This will merge remote data into your local database.")) {
-            return;
-        }
-
-        setIsProcessing(true);
-        setStatusMessage(null);
-        try {
-            const response = await fetch(syncServerUrl.trim(), { headers: getHeaders(), cache: 'no-store' });
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
-            }
-
-            const buffer = await response.arrayBuffer();
-            if (buffer.byteLength === 0) {
-                throw new Error('Remote sync data is empty.');
-            }
-
-            const decryptedData = await decryptData(buffer, syncPassphrase.trim());
-            await mergeData(decryptedData);
-
-            // Update lastSynced locally
-            if (currentSettings) {
-                await db.settings.update(currentSettings.id, {
-                    lastSynced: Date.now()
-                });
-            }
-
-            await initStore();
-            setStatusMessage({ type: 'success', text: 'Data loaded from remote successfully.' });
-        } catch (error) {
-            console.error("Load from remote failed:", error);
-            setStatusMessage({ type: 'error', text: error instanceof Error ? error.message : "An unknown error occurred during load." });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleSaveToRemote = async () => {
-        if (!syncServerUrl.trim() || !syncPassphrase.trim() || !syncHeaderKey.trim()) {
-            setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
-            return;
-        }
-
-        if (!window.confirm("Are you sure you want to save your local data to the remote server? This will overwrite the remote database.")) {
-            return;
-        }
-
-        setIsProcessing(true);
-        setStatusMessage(null);
-        try {
-            // Extract full database, ensuring numeric sanitization
-            const allData = await getSanitizedDbData();
-
-            // Encrypt
-            const encryptedBlob = await encryptData(allData, syncPassphrase.trim());
-
-            // Push
-            const response = await fetch(syncServerUrl.trim(), {
-                method: 'POST',
-                headers: {
-                    ...getHeaders(),
-                    'Content-Type': 'application/octet-stream',
-                },
-                body: encryptedBlob,
-                cache: 'no-store'
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to push data: ${response.status} ${response.statusText}`);
-            }
-
-            // Update lastSynced locally
-            if (currentSettings) {
-                await db.settings.update(currentSettings.id, {
-                    lastSynced: Date.now()
-                });
-            }
-
-            setStatusMessage({ type: 'success', text: 'Data saved to remote successfully.' });
-        } catch (error) {
-            console.error("Save to remote failed:", error);
-            setStatusMessage({ type: 'error', text: error instanceof Error ? error.message : "An unknown error occurred during save." });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
+    const {
+        navigate,
+        syncServerUrl,
+        setSyncServerUrl,
+        syncPassphrase,
+        setSyncPassphrase,
+        syncHeaderKey,
+        setSyncHeaderKey,
+        isUpdating,
+        isProcessing,
+        statusMessage,
+        hasChanges,
+        handleUpdate,
+        handleLoadFromRemote,
+        handleSaveToRemote,
+    } = useRemoteSyncing();
 
     return (
         <AppLayout
@@ -185,10 +52,11 @@ export function RemoteSyncingPage() {
                 <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl p-6 space-y-6">
                     <div className="space-y-4">
                         <div className="space-y-3">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <label htmlFor="sync-server-url" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                 Sync Server URL
                             </label>
                             <input
+                                id="sync-server-url"
                                 type="text"
                                 placeholder="e.g. https://sync.yourdomain.xyz/sync"
                                 value={syncServerUrl}
@@ -197,10 +65,11 @@ export function RemoteSyncingPage() {
                             />
                         </div>
                         <div className="space-y-3">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <label htmlFor="encryption-passphrase" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                 Encryption Passphrase
                             </label>
                             <input
+                                id="encryption-passphrase"
                                 type="text"
                                 placeholder="e.g. four random words"
                                 value={syncPassphrase}
@@ -209,10 +78,11 @@ export function RemoteSyncingPage() {
                             />
                         </div>
                         <div className="space-y-3">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            <label htmlFor="header-key" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
                                 Header Key
                             </label>
                             <input
+                                id="header-key"
                                 type="text"
                                 placeholder="e.g. my-secret-token"
                                 value={syncHeaderKey}

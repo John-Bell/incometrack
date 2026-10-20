@@ -1,8 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../lib/db';
-import { useStore } from '@/store/useStore';
+import { useSettings } from '@/hooks/useSettings';
+import { formatLastSynced } from '@/utils/settingsUtils';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -10,95 +7,27 @@ import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { DateInput } from '@/components/ui/DateInput';
 
 export function SettingsPage() {
-    const navigate = useNavigate();
-    const { setTaxYear } = useStore();
-
-    const settings = useLiveQuery(() => db.settings.toArray());
-    const taxRules = useLiveQuery(() => db.taxRules.toArray());
-    const profiles = useLiveQuery(() => db.profile.toArray());
-
-    const currentSettings = settings?.[0];
-    const currentProfile = profiles?.[0];
-
-    const [isSaving, setIsSaving] = useState(false);
-    const [remoteSync, setRemoteSync] = useState(false);
-    const [defaultGrowthRate, setDefaultGrowthRate] = useState<number>(1.75);
-
-    const [partner1Name, setPartner1Name] = useState('');
-    const [partner1Dob, setPartner1Dob] = useState('');
-    const [partner2Name, setPartner2Name] = useState('');
-    const [partner2Dob, setPartner2Dob] = useState('');
-
-    useEffect(() => {
-        if (currentSettings) {
-            setRemoteSync(currentSettings.icloudSync || false);
-            setDefaultGrowthRate(currentSettings.defaultGrowthRate ?? 1.75);
-        }
-    }, [currentSettings]);
-
-    useEffect(() => {
-        if (currentProfile) {
-            setPartner1Name(currentProfile.partner1Name || '');
-            setPartner1Dob(currentProfile.partner1Dob ? new Date(currentProfile.partner1Dob).toISOString().split('T')[0] : '');
-            setPartner2Name(currentProfile.partner2Name || '');
-            setPartner2Dob(currentProfile.partner2Dob ? new Date(currentProfile.partner2Dob).toISOString().split('T')[0] : '');
-        }
-    }, [currentProfile]);
-
-    const handleTaxYearChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        if (currentSettings) {
-            await db.settings.update(currentSettings.id, { taxYear: e.target.value });
-            setTaxYear(e.target.value);
-        }
-    };
-
-    const handleSave = async () => {
-        if (currentSettings || currentProfile) {
-            setIsSaving(true);
-            try {
-                if (currentSettings) {
-                    await db.settings.update(currentSettings.id, {
-                        icloudSync: remoteSync,
-                        defaultGrowthRate: defaultGrowthRate,
-                    });
-                }
-
-                if (currentProfile) {
-                    await db.profile.update(currentProfile.id, {
-                        name: `${partner1Name.trim()} & ${partner2Name.trim() || 'Partner'}`,
-                        partner1Name: partner1Name.trim(),
-                        partner1Dob: partner1Dob ? new Date(partner1Dob).getTime() : undefined,
-                        partner2Name: partner2Name.trim() || undefined,
-                        partner2Dob: partner2Dob ? new Date(partner2Dob).getTime() : undefined,
-                    });
-                }
-                await new Promise(resolve => setTimeout(resolve, 500));
-            } finally {
-                setIsSaving(false);
-            }
-        }
-    };
-
-    const handleResetAppData = async () => {
-        if (window.confirm('Are you sure you want to permanently delete all app data? This action cannot be undone.')) {
-            await Promise.all(db.tables.map(table => table.clear()));
-            localStorage.clear();
-            const basePath = import.meta.env.BASE_URL;
-            window.location.replace(`${basePath}setup`);
-        }
-    };
-
-    const formatLastSynced = (timestamp?: number) => {
-        if (!timestamp) return 'Never';
-        return new Intl.DateTimeFormat('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }).format(new Date(timestamp));
-    };
+    const {
+        navigate,
+        currentSettings,
+        taxRules,
+        isSaving,
+        remoteSync,
+        setRemoteSync,
+        defaultGrowthRate,
+        setDefaultGrowthRate,
+        partner1Name,
+        setPartner1Name,
+        partner1Dob,
+        setPartner1Dob,
+        partner2Name,
+        setPartner2Name,
+        partner2Dob,
+        setPartner2Dob,
+        handleTaxYearChange,
+        handleSave,
+        handleResetAppData,
+    } = useSettings();
 
     return (
         <AppLayout

@@ -1,90 +1,29 @@
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '../lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
 import { Icon } from '../components/ui/Icon';
+import { usePaymentMappings } from '../hooks/usePaymentMappings';
 
 export function PaymentMappingsPage() {
-    const mappings = useLiveQuery(() => db.paymentMappings.toArray()) || [];
-    const budgets = useLiveQuery(() => db.budgets.toArray()) || [];
-
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editPaymentName, setEditPaymentName] = useState('');
-    const [editBudgetIds, setEditBudgetIds] = useState<string[]>([]);
-
-    const [newPaymentName, setNewPaymentName] = useState('');
-    const [newBudgetIds, setNewBudgetIds] = useState<string[]>([]);
-
-    const handleAdd = async () => {
-        const trimmed = newPaymentName.trim();
-        if (!trimmed || newBudgetIds.length === 0) return;
-
-        if (mappings.some(m => m.paymentName.toLowerCase() === trimmed.toLowerCase())) {
-            alert('A mapping with this payment name already exists.');
-            return;
-        }
-
-        await db.paymentMappings.add({
-            id: crypto.randomUUID(),
-            paymentName: trimmed,
-            budgetIds: newBudgetIds,
-            updatedAt: Date.now()
-        });
-        setNewPaymentName('');
-        setNewBudgetIds([]);
-    };
-
-    const handleSaveEdit = async (id: string) => {
-        const trimmed = editPaymentName.trim();
-        if (!trimmed || editBudgetIds.length === 0) {
-            setEditingId(null);
-            return;
-        }
-
-        if (mappings.some(m => m.id !== id && m.paymentName.toLowerCase() === trimmed.toLowerCase())) {
-            alert('A mapping with this payment name already exists.');
-            return;
-        }
-
-        await db.paymentMappings.update(id, {
-            paymentName: trimmed,
-            budgetIds: editBudgetIds,
-            updatedAt: Date.now()
-        });
-        setEditingId(null);
-    };
-
-    const toggleNewBudgetId = (id: string) => {
-        if (newBudgetIds.includes(id)) {
-            setNewBudgetIds(prev => prev.filter(bId => bId !== id));
-        } else {
-            setNewBudgetIds(prev => [...prev, id]);
-        }
-    };
-
-    const toggleEditBudgetId = (id: string) => {
-        if (editBudgetIds.includes(id)) {
-            setEditBudgetIds(prev => prev.filter(bId => bId !== id));
-        } else {
-            setEditBudgetIds(prev => [...prev, id]);
-        }
-    };
-
-    const handleDelete = async (id: string, name: string) => {
-        if (confirm(`Are you sure you want to delete the mapping for "${name}"?`)) {
-            await db.paymentMappings.delete(id);
-        }
-    };
-
-    // Group budgets by category for the select dropdown (Removed category grouping)
-    // We will just provide a flat list, but grouped by "All Budgets" for a consistent structure if we still use select
-    const groupedBudgets = [{
-        categoryId: 'all',
-        categoryName: 'All Budgets',
-        budgets: [...budgets].sort((a, b) => a.name.localeCompare(b.name))
-    }];
+    const {
+        mappings,
+        budgets,
+        groupedBudgets,
+        newPaymentName,
+        setNewPaymentName,
+        newBudgetIds,
+        toggleNewBudgetId,
+        handleAdd,
+        editingId,
+        editPaymentName,
+        setEditPaymentName,
+        editBudgetIds,
+        toggleEditBudgetId,
+        startEdit,
+        cancelEdit,
+        handleSaveEdit,
+        handleDelete,
+    } = usePaymentMappings();
 
     return (
         <AppLayout
@@ -207,7 +146,7 @@ export function PaymentMappingsPage() {
                                                         <Icon name="check" className="text-[18px]" />
                                                     </button>
                                                     <button
-                                                        onClick={() => setEditingId(null)}
+                                                        onClick={cancelEdit}
                                                         className="w-10 h-10 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer"
                                                         aria-label="Cancel"
                                                     >
@@ -263,11 +202,7 @@ export function PaymentMappingsPage() {
                                             <div className="flex items-center gap-2 self-end md:self-auto opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     type="button"
-                                                    onClick={() => {
-                                                        setEditingId(mapping.id);
-                                                        setEditPaymentName(mapping.paymentName);
-                                                        setEditBudgetIds(mapping.budgetIds || []);
-                                                    }}
+                                                    onClick={() => startEdit(mapping)}
                                                     className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                                                     aria-label="Edit mapping"
                                                 >

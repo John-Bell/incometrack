@@ -108,7 +108,7 @@ describe('budgetUtils', () => {
 
     it('triggers overspend alert when breached in >35% of periods', () => {
       const budgets: Budget[] = [
-        { id: 'b_over', accountId: 'acc1', name: 'Overspend Cat', amount: 100, frequency: 'monthly' },
+        { id: 'b_over', accountId: 'acc1', name: 'Overspend Cat', amount: 100, frequency: 'monthly', budgetStartDate: new Date(2025, 0, 1).getTime() },
       ];
 
       const transactions: Transaction[] = [
@@ -126,7 +126,7 @@ describe('budgetUtils', () => {
 
     it('triggers slack alert when spend is <30% of cap in >35% of periods', () => {
       const budgets: Budget[] = [
-        { id: 'b_slack', accountId: 'acc1', name: 'Slack Cat', amount: 500, frequency: 'monthly' },
+        { id: 'b_slack', accountId: 'acc1', name: 'Slack Cat', amount: 500, frequency: 'monthly', budgetStartDate: new Date(2025, 0, 1).getTime() },
       ];
 
       const transactions: Transaction[] = [
@@ -151,7 +151,7 @@ describe('budgetUtils', () => {
 
     it('handles monthly budget calculations and proposal generation', () => {
       const sortedBudgets: Budget[] = [
-        { id: 'b1', accountId: 'acc1', name: 'Groceries', amount: 200, frequency: 'monthly' },
+        { id: 'b1', accountId: 'acc1', name: 'Groceries', amount: 200, frequency: 'monthly', budgetStartDate: new Date(2025, 0, 1).getTime() },
       ];
 
       const transactions: Transaction[] = [
@@ -168,6 +168,38 @@ describe('budgetUtils', () => {
       expect(item.isError).toBe(true);
       expect(item.proposalText).toContain('Under-budgeted by £50/mo');
       expect(item.actionLabel).toBe('Tune');
+    });
+
+    it('calculates average monthly spend using budgetStartDate to filter active months', () => {
+      // 4 target months: Jan, Feb, Mar, Apr 2026
+      const fourMonths = [
+        { year: 2026, monthIndex: 0, label: 'Jan' },
+        { year: 2026, monthIndex: 1, label: 'Feb' },
+        { year: 2026, monthIndex: 2, label: 'Mar' },
+        { year: 2026, monthIndex: 3, label: 'Apr' },
+      ];
+
+      // Budget started on April 1, 2026 -> only 1 active month in targetMonths (Apr 2026)
+      const lateBudget: Budget = {
+        id: 'b_late',
+        accountId: 'acc1',
+        name: 'Late Subscription',
+        amount: 100,
+        frequency: 'monthly',
+        budgetStartDate: new Date(2026, 3, 1).getTime(),
+      };
+
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 3, 10).getTime(), payee: 'Sub Co', amount: 100, type: 'expense', budgetId: 'b_late', accountId: 'acc1' },
+      ];
+
+      const tuning = calculateCategoryTuningItems([lateBudget], fourMonths, transactions);
+
+      expect(tuning.length).toBe(1);
+      const item = tuning[0];
+      // Avg spend is £100 / 1 active month = £100/mo (NOT £100 / 4 months = £25/mo)
+      expect(item.avgSpend).toBe('£100/mo');
+      expect(item.proposalText).toContain('On target');
     });
 
     it('handles annual budget calculations and hides cushion proposals when within cap', () => {

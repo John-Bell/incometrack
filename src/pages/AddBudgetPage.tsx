@@ -15,9 +15,13 @@ export function AddBudgetPage() {
     const [frequency, setFrequency] = useState('monthly');
     const [accountId, setAccountId] = useState('');
     const [icon, setIcon] = useState('category');
+    const [budgetStartDate, setBudgetStartDate] = useState('2026-04-01');
 
     const handleSave = async () => {
         if (!name || !amount || !accountId) return;
+
+        const [y, m, d] = (budgetStartDate || '2026-04-01').split('-').map(Number);
+        const startDateTs = new Date(y, m - 1, d).getTime();
 
         await db.budgets.add({
             id: crypto.randomUUID(),
@@ -25,7 +29,8 @@ export function AddBudgetPage() {
             amount: parseFloat(amount) || 0,
             frequency,
             accountId,
-            icon: icon !== 'category' ? icon : undefined
+            icon: icon !== 'category' ? icon : undefined,
+            budgetStartDate: startDateTs
         });
         navigate('/budgets');
     };
@@ -96,6 +101,18 @@ export function AddBudgetPage() {
                         <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                             <Icon name="analytics" className="text-2xl" />
                         </div>
+                    </div>
+
+                    {/* Start Date */}
+                    <div className="space-y-2">
+                        <label htmlFor="budgetStartDate" className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Budget Start Date</label>
+                        <input
+                            id="budgetStartDate"
+                            type="date"
+                            className="w-full rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-4 text-slate-900 dark:text-slate-100 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                            value={budgetStartDate}
+                            onChange={(e) => setBudgetStartDate(e.target.value)}
+                        />
                     </div>
 
                     {/* Account */}

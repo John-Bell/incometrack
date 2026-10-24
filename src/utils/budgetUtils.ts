@@ -190,13 +190,23 @@ export function calculateBudgetAlerts(
     const cap = Number(budget.amount) || 0;
     if (cap <= 0) continue;
 
+    const budgetStart = budget.budgetStartDate ?? new Date(2026, 3, 1).getTime();
+
+    const activeTargetMonths = targetMonths.filter(({ year, monthIndex }) => {
+      const monthEndTs = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999).getTime();
+      return monthEndTs >= budgetStart;
+    });
+
+    const activePeriods = activeTargetMonths.length;
+    if (activePeriods === 0) continue;
+
     let breachedCount = 0;
     let slackCount = 0;
     let totalSpent = 0;
     let breachedExcessTotal = 0;
     let slackUnspentTotal = 0;
 
-    for (const { year, monthIndex } of targetMonths) {
+    for (const { year, monthIndex } of activeTargetMonths) {
       const monthSpent = transactions
         .filter((t) => {
           if (selectedAccountId && t.accountId && t.accountId !== selectedAccountId) return false;
@@ -219,9 +229,9 @@ export function calculateBudgetAlerts(
       }
     }
 
-    const avgSpend = totalSpent / totalPeriods;
+    const avgSpend = totalSpent / activePeriods;
 
-    if (breachedCount / totalPeriods > 0.35) {
+    if (breachedCount / activePeriods > 0.35) {
       const avgExcess = avgSpend > cap ? avgSpend - cap : breachedExcessTotal / breachedCount;
       overspendCandidates.push({
         budget,
@@ -230,7 +240,7 @@ export function calculateBudgetAlerts(
       });
     }
 
-    if (slackCount / totalPeriods > 0.35) {
+    if (slackCount / activePeriods > 0.35) {
       const avgUnspent = cap > avgSpend ? cap - avgSpend : slackUnspentTotal / slackCount;
       slackCandidates.push({
         budget,
@@ -322,7 +332,13 @@ export function calculateCategoryTuningItems(
       };
     });
 
-    const avgSpend = targetMonths.length > 0 ? totalSpent / targetMonths.length : 0;
+    const budgetStart = budget.budgetStartDate ?? new Date(2026, 3, 1).getTime();
+    const activeTargetMonths = targetMonths.filter(({ year, monthIndex }) => {
+      const monthEndTs = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999).getTime();
+      return monthEndTs >= budgetStart;
+    });
+    const activeMonthCount = activeTargetMonths.length;
+    const avgSpend = activeMonthCount > 0 ? totalSpent / activeMonthCount : (targetMonths.length > 0 ? totalSpent / targetMonths.length : 0);
 
     let statusText = 'Always within budget';
     if (breachedCount > 0) {

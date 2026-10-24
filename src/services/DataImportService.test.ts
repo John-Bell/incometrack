@@ -179,6 +179,7 @@ describe('DataImportService', () => {
             const b = budgets[0];
             expect(b.amount).toBe(50); // parsed correctly
             expect(b.frequency).toBe('monthly');
+            expect(b.budgetStartDate).toBe(new Date(2026, 3, 1).getTime());
             expect((b as any).importCategory).toBeUndefined();
             expect(b.importId).toBe('import-file-2');
         });

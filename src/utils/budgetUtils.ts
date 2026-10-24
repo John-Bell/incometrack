@@ -173,12 +173,14 @@ export function calculateBudgetAlerts(
   const overspendCandidates: {
     budget: Budget;
     breachedCount: number;
+    activePeriods: number;
     avgExcess: number;
   }[] = [];
 
   const slackCandidates: {
     budget: Budget;
     slackCount: number;
+    activePeriods: number;
     avgUnspent: number;
   }[] = [];
 
@@ -236,15 +238,17 @@ export function calculateBudgetAlerts(
       overspendCandidates.push({
         budget,
         breachedCount,
+        activePeriods,
         avgExcess,
       });
     }
 
-    if (slackCount / activePeriods > 0.35) {
+    if (breachedCount === 0 && slackCount / activePeriods > 0.35) {
       const avgUnspent = cap > avgSpend ? cap - avgSpend : slackUnspentTotal / slackCount;
       slackCandidates.push({
         budget,
         slackCount,
+        activePeriods,
         avgUnspent,
       });
     }
@@ -267,14 +271,14 @@ export function calculateBudgetAlerts(
       budgetId: c.budget.id,
       budgetName: c.budget.name,
       breachedCount: c.breachedCount,
-      totalPeriods,
+      totalPeriods: c.activePeriods,
       avgExcess: c.avgExcess,
     })),
     slackAlerts: filteredSlackCandidates.map((c) => ({
       budgetId: c.budget.id,
       budgetName: c.budget.name,
       slackCount: c.slackCount,
-      totalPeriods,
+      totalPeriods: c.activePeriods,
       avgUnspent: c.avgUnspent,
     })),
   };

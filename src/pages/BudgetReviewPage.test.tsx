@@ -313,7 +313,7 @@ describe('BudgetReviewPage', () => {
 
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
         const budgets = [
-            { id: 'b_over', name: 'Energy Bill', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
+            { id: 'b_over', name: 'Energy Bill', accountId: 'acc_1', amount: 100, frequency: 'monthly', budgetStartDate: new Date(2020, 0, 1).getTime() },
         ];
         // Generate transactions exceeding cap for all YTD months (100% > 35%)
         const transactions = Array.from({ length: currentMonth + 1 }, (_, m) => ({
@@ -769,10 +769,10 @@ describe('BudgetReviewPage', () => {
         // 4 out of 9 months = 44.4% (>35%) -> SHOULD trigger
         const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
         const budgets = [
-            { id: 'b_over_33', name: 'Over 33 Percent', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
-            { id: 'b_over_44', name: 'Over 44 Percent', accountId: 'acc_1', amount: 100, frequency: 'monthly' },
-            { id: 'b_slack_33', name: 'Slack 33 Percent', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
-            { id: 'b_slack_44', name: 'Slack 44 Percent', accountId: 'acc_1', amount: 500, frequency: 'monthly' },
+            { id: 'b_over_33', name: 'Over 33 Percent', accountId: 'acc_1', amount: 100, frequency: 'monthly', budgetStartDate: new Date(2020, 0, 1).getTime() },
+            { id: 'b_over_44', name: 'Over 44 Percent', accountId: 'acc_1', amount: 100, frequency: 'monthly', budgetStartDate: new Date(2020, 0, 1).getTime() },
+            { id: 'b_slack_33', name: 'Slack 33 Percent', accountId: 'acc_1', amount: 500, frequency: 'monthly', budgetStartDate: new Date(2020, 0, 1).getTime() },
+            { id: 'b_slack_44', name: 'Slack 44 Percent', accountId: 'acc_1', amount: 500, frequency: 'monthly', budgetStartDate: new Date(2020, 0, 1).getTime() },
         ];
 
         const now = new Date();

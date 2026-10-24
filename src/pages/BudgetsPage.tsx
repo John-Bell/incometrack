@@ -103,6 +103,9 @@ export function BudgetsPage() {
                                 const monthlyAmount = isAnnual ? budget.amount / 12 : budget.amount;
                                 const annualAmount = isAnnual ? budget.amount : budget.amount * 12;
 
+                                const startDateTs = budget.budgetStartDate ?? new Date(2026, 3, 1).getTime();
+                                const formattedStartDate = new Date(startDateTs).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
                                 const budgetTransactions = transactions.filter(t => t.budgetId === budget.id && t.type === 'expense');
 
                                 let actualAmount = 0;
@@ -173,6 +176,10 @@ export function BudgetsPage() {
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{isAnnual ? 'Annual' : 'Annualised'}</p>
                                                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400">£{annualAmount.toFixed(2)}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Starts</p>
+                                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{formattedStartDate}</p>
                                                     </div>
                                                 </div>
                                             </div>

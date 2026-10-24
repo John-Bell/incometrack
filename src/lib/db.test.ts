@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { db } from './db';
+import { db, getSanitizedDbData } from './db';
 import type { Account, Income, Profile, TaxYearRule } from './db';
 import { getTaxConstants } from '../constants/taxConstants';
 
@@ -144,5 +144,31 @@ describe('Database Schema', () => {
 
         expect(savedRule).toEqual(taxRule);
         expect(savedRule?.BasicRate).toBe(0.2);
+    });
+
+    it('should sanitize budgetStartDate in getSanitizedDbData', async () => {
+        const defaultDateTs = new Date(2026, 3, 1).getTime();
+        await db.budgets.add({
+            id: 'b1',
+            accountId: 'acc1',
+            name: 'Groceries',
+            amount: 100,
+            frequency: 'monthly',
+            budgetStartDate: new Date('2026-06-01').getTime(),
+        });
+        await db.budgets.add({
+            id: 'b2',
+            accountId: 'acc1',
+            name: 'Utilities',
+            amount: 200,
+            frequency: 'monthly',
+        });
+
+        const data = await getSanitizedDbData();
+        const b1 = data.budgets.find((b) => b.id === 'b1');
+        const b2 = data.budgets.find((b) => b.id === 'b2');
+
+        expect(b1.budgetStartDate).toBe(new Date('2026-06-01').getTime());
+        expect(b2.budgetStartDate).toBe(defaultDateTs);
     });
 });

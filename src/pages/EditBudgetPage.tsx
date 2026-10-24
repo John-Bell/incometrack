@@ -18,6 +18,7 @@ export function EditBudgetPage() {
     const [frequency, setFrequency] = useState('monthly');
     const [accountId, setAccountId] = useState('');
     const [icon, setIcon] = useState('category');
+    const [budgetStartDate, setBudgetStartDate] = useState('2026-04-01');
 
     useEffect(() => {
         if (budget) {
@@ -28,18 +29,31 @@ export function EditBudgetPage() {
             if (budget.icon) {
                 setIcon(budget.icon);
             }
+            if (budget.budgetStartDate) {
+                const dateObj = new Date(budget.budgetStartDate);
+                const y = dateObj.getFullYear();
+                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const d = String(dateObj.getDate()).padStart(2, '0');
+                setBudgetStartDate(`${y}-${m}-${d}`);
+            } else {
+                setBudgetStartDate('2026-04-01');
+            }
         }
     }, [budget]);
 
     const handleSave = async () => {
         if (!id || !name || !amount || !accountId) return;
 
+        const [y, m, d] = (budgetStartDate || '2026-04-01').split('-').map(Number);
+        const startDateTs = new Date(y, m - 1, d).getTime();
+
         await db.budgets.update(id, {
             name,
             amount: parseFloat(amount) || 0,
             frequency,
             accountId,
-            icon: icon !== 'category' ? icon : undefined
+            icon: icon !== 'category' ? icon : undefined,
+            budgetStartDate: startDateTs
         } );
         navigate('/budgets');
     };
@@ -137,6 +151,18 @@ export function EditBudgetPage() {
                                 One-off
                             </button>
                         </div>
+                    </div>
+
+                    {/* Start Date */}
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="budgetStartDate" className="text-slate-700 dark:text-slate-300 text-sm font-medium">Budget Start Date</label>
+                        <input
+                            id="budgetStartDate"
+                            type="date"
+                            className="w-full rounded-lg border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                            value={budgetStartDate}
+                            onChange={(e) => setBudgetStartDate(e.target.value)}
+                        />
                     </div>
 
                     {/* Account */}

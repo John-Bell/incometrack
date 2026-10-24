@@ -88,7 +88,7 @@ export class DataImportService {
                     if (targetKey === 'amount' || targetKey === 'balance' || targetKey === 'interestRate') {
                         const parsed = parseFloat(String(row[sourceKey]).replace(/[^0-9.-]+/g, ""));
                         mappedRow[targetKey] = isNaN(parsed) ? 0 : parsed;
-                    } else if (targetKey === 'date' || targetKey === 'bonusEndDate') {
+                    } else if (targetKey === 'date' || targetKey === 'bonusEndDate' || targetKey === 'budgetStartDate') {
                         const parsedDate = new Date(row[sourceKey]).getTime();
                         mappedRow[targetKey] = isNaN(parsedDate) ? Date.now() : parsedDate;
                     } else if (targetKey === 'bonusRateActive') {
@@ -130,6 +130,7 @@ export class DataImportService {
                 delete mappedRow.importCategory;
             } else if (targetTable === 'budgets') {
                 if (!mappedRow.frequency) mappedRow.frequency = 'monthly';
+                if (!mappedRow.budgetStartDate) mappedRow.budgetStartDate = new Date(2026, 3, 1).getTime();
 
                 // Cleanup temporary mapping field
                 delete mappedRow.importCategory;

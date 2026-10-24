@@ -124,6 +124,37 @@ describe('budgetUtils', () => {
       expect(alerts.overspendAlerts[0].avgExcess).toBe(50);
     });
 
+    it('excludes months before budgetStartDate when calculating alert averages and active periods', () => {
+      const fourMonths = [
+        { year: 2026, monthIndex: 0, label: 'Jan' },
+        { year: 2026, monthIndex: 1, label: 'Feb' },
+        { year: 2026, monthIndex: 2, label: 'Mar' },
+        { year: 2026, monthIndex: 3, label: 'Apr' },
+      ];
+
+      // Budget started March 1, 2026 -> Active months are Mar and Apr (2 active months)
+      const lateBudget: Budget = {
+        id: 'b_late_alert',
+        accountId: 'acc1',
+        name: 'Late Alert Cat',
+        amount: 100,
+        frequency: 'monthly',
+        budgetStartDate: new Date(2026, 2, 1).getTime(),
+      };
+
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 2, 10).getTime(), payee: 'P1', amount: 200, type: 'expense', budgetId: 'b_late_alert', accountId: 'acc1' },
+        { id: 't2', date: new Date(2026, 3, 10).getTime(), payee: 'P2', amount: 200, type: 'expense', budgetId: 'b_late_alert', accountId: 'acc1' },
+      ];
+
+      const alerts = calculateBudgetAlerts(fourMonths, [lateBudget], transactions, '');
+
+      expect(alerts.overspendAlerts.length).toBe(1);
+      expect(alerts.overspendAlerts[0].breachedCount).toBe(2);
+      // Total spent = 400 across 2 active months = £200 avg spend. Cap = 100, so avgExcess = £100
+      expect(alerts.overspendAlerts[0].avgExcess).toBe(100);
+    });
+
     it('triggers slack alert when spend is <30% of cap in >35% of periods', () => {
       const budgets: Budget[] = [
         { id: 'b_slack', accountId: 'acc1', name: 'Slack Cat', amount: 500, frequency: 'monthly', budgetStartDate: new Date(2025, 0, 1).getTime() },

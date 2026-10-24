@@ -564,6 +564,41 @@ describe('BudgetReviewPage', () => {
         expect(greyBullets.length).toBeGreaterThan(0);
     });
 
+    it('hides Unused cushion proposal for monthly budgets when any months have a breached budget', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const now = new Date();
+        const m1 = new Date(now.getFullYear(), now.getMonth(), 10).getTime();
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        // Monthly cap = £100
+        const budgets = [
+            { id: 'b_breached', name: 'Breached Monthly', accountId: 'acc_1', frequency: 'monthly', amount: 100 },
+        ];
+        // Spend = £150 in current month (breached)
+        const transactions = [
+            { id: 't1', budgetId: 'b_breached', accountId: 'acc_1', amount: 150, type: 'expense', date: m1 },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        expect(screen.queryByText(/Unused cushion/i)).not.toBeInTheDocument();
+    });
+
     it('hides proposal section (Unused cushion / On target) for annual budgets when within cap or under-spent', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },

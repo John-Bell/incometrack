@@ -266,6 +266,41 @@ describe('budgetUtils', () => {
       expect(item.proposalText).toContain('On target');
     });
 
+    it('hides unused cushion proposal if any months are breached even when overall avg spend is under monthly cap', () => {
+      // 3 months target
+      const threeMonths = [
+        { year: 2026, monthIndex: 0, label: 'Jan' },
+        { year: 2026, monthIndex: 1, label: 'Feb' },
+        { year: 2026, monthIndex: 2, label: 'Mar' },
+      ];
+
+      // Monthly cap = £100
+      // Jan: £0
+      // Feb: £0
+      // Mar: £150 (breached)
+      // Total = £150, avg spend across 3 active months = £50/mo.
+      // monthlyCap - avgSpend = 100 - 50 = 50 >= 10.
+      // But breachedCount = 1 > 0, so showProposal should be false (no Unused Cushion).
+      const budget: Budget = {
+        id: 'b_breached_cushion',
+        accountId: 'acc1',
+        name: 'Breached Cushion Cat',
+        amount: 100,
+        frequency: 'monthly',
+        budgetStartDate: new Date(2026, 0, 1).getTime(),
+      };
+
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 2, 10).getTime(), payee: 'P1', amount: 150, type: 'expense', budgetId: 'b_breached_cushion', accountId: 'acc1' },
+      ];
+
+      const tuning = calculateCategoryTuningItems([budget], threeMonths, transactions);
+
+      expect(tuning.length).toBe(1);
+      const item = tuning[0];
+      expect(item.showProposal).toBe(false);
+    });
+
     it('handles annual budget calculations and hides cushion proposals when within cap', () => {
       const sortedBudgets: Budget[] = [
         { id: 'b_annual', accountId: 'acc1', name: 'Car Insurance', amount: 1200, frequency: 'annual' },

@@ -365,7 +365,7 @@ export function calculateCategoryTuningItems(
       proposalText = `Under-budgeted by £${diff.toLocaleString('en-GB')}/mo · Suggest adjusting cap to £${suggestedCap.toLocaleString('en-GB')}/mo`;
       actionLabel = 'Tune';
     } else if (monthlyCap - avgSpend >= 10) {
-      if (isAnnual) {
+      if (isAnnual || breachedCount > 0) {
         showProposal = false;
       } else {
         const cushion = Math.round(monthlyCap - avgSpend);

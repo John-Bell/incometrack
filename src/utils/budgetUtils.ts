@@ -295,6 +295,13 @@ export function calculateCategoryTuningItems(
     const isMonthly = budget.frequency === 'monthly' || budget.frequency === 'month';
     const monthlyCap = isAnnual ? cap / 12 : cap;
 
+    const budgetStart = budget.budgetStartDate ?? new Date(2026, 3, 1).getTime();
+    const activeTargetMonths = targetMonths.filter(({ year, monthIndex }) => {
+      const monthEndTs = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999).getTime();
+      return monthEndTs >= budgetStart;
+    });
+    const activeMonthCount = activeTargetMonths.length;
+
     let totalSpent = 0;
     let breachedCount = 0;
     let maxSpend = -1;
@@ -325,7 +332,10 @@ export function calculateCategoryTuningItems(
         ? monthSpent > monthlyCap
         : monthSpent > 0;
 
-      if (isError) {
+      const monthEndTs = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999).getTime();
+      const isActiveMonth = monthEndTs >= budgetStart;
+
+      if (isError && isActiveMonth) {
         breachedCount++;
       }
 
@@ -336,17 +346,11 @@ export function calculateCategoryTuningItems(
       };
     });
 
-    const budgetStart = budget.budgetStartDate ?? new Date(2026, 3, 1).getTime();
-    const activeTargetMonths = targetMonths.filter(({ year, monthIndex }) => {
-      const monthEndTs = new Date(year, monthIndex + 1, 0, 23, 59, 59, 999).getTime();
-      return monthEndTs >= budgetStart;
-    });
-    const activeMonthCount = activeTargetMonths.length;
     const avgSpend = activeMonthCount > 0 ? totalSpent / activeMonthCount : (targetMonths.length > 0 ? totalSpent / targetMonths.length : 0);
 
     let statusText = 'Always within budget';
     if (breachedCount > 0) {
-      statusText = `Breached: ${breachedCount} of last ${targetMonths.length} months`;
+      statusText = `Breached: ${breachedCount} of last ${activeMonthCount} months`;
     }
 
     let proposalIcon = 'check_circle';

@@ -151,8 +151,41 @@ describe('budgetUtils', () => {
 
       expect(alerts.overspendAlerts.length).toBe(1);
       expect(alerts.overspendAlerts[0].breachedCount).toBe(2);
+      expect(alerts.overspendAlerts[0].totalPeriods).toBe(2);
       // Total spent = 400 across 2 active months = £200 avg spend. Cap = 100, so avgExcess = £100
       expect(alerts.overspendAlerts[0].avgExcess).toBe(100);
+    });
+
+    it('does NOT trigger excess slack alert if any months are breached', () => {
+      const threeMonths = [
+        { year: 2026, monthIndex: 0, label: 'Jan' },
+        { year: 2026, monthIndex: 1, label: 'Feb' },
+        { year: 2026, monthIndex: 2, label: 'Mar' },
+      ];
+
+      // Cap = 100
+      // Jan: £20 (low spend, slack)
+      // Feb: £20 (low spend, slack) -> 2/3 = 66% slack months (>35%)
+      // Mar: £150 (breached)
+      const budget: Budget = {
+        id: 'b_breached_slack',
+        accountId: 'acc1',
+        name: 'Breached Slack Cat',
+        amount: 100,
+        frequency: 'monthly',
+        budgetStartDate: new Date(2026, 0, 1).getTime(),
+      };
+
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 0, 10).getTime(), payee: 'P1', amount: 20, type: 'expense', budgetId: 'b_breached_slack', accountId: 'acc1' },
+        { id: 't2', date: new Date(2026, 1, 10).getTime(), payee: 'P2', amount: 20, type: 'expense', budgetId: 'b_breached_slack', accountId: 'acc1' },
+        { id: 't3', date: new Date(2026, 2, 10).getTime(), payee: 'P3', amount: 150, type: 'expense', budgetId: 'b_breached_slack', accountId: 'acc1' },
+      ];
+
+      const alerts = calculateBudgetAlerts(threeMonths, [budget], transactions, '');
+
+      // Because Mar is breached, Excess Slack should NOT be generated
+      expect(alerts.slackAlerts.length).toBe(0);
     });
 
     it('triggers slack alert when spend is <30% of cap in >35% of periods', () => {

@@ -319,5 +319,42 @@ describe('budgetUtils', () => {
       expect(item.isError).toBe(false); // £100 total <= £1200 annual cap
       expect(item.showProposal).toBe(false); // Cushion proposals hidden for annual
     });
+
+    it('uses budgetStartDate to calculate breached status text and excludes pre-start breaches', () => {
+      // 4 target months: Jan, Feb, Mar, Apr 2026
+      const fourMonths = [
+        { year: 2026, monthIndex: 0, label: 'Jan' },
+        { year: 2026, monthIndex: 1, label: 'Feb' },
+        { year: 2026, monthIndex: 2, label: 'Mar' },
+        { year: 2026, monthIndex: 3, label: 'Apr' },
+      ];
+
+      // Budget starts March 1, 2026 -> Active months are Mar and Apr (2 active months)
+      const lateBudget: Budget = {
+        id: 'b_status_test',
+        accountId: 'acc1',
+        name: 'Late Status Cat',
+        amount: 100,
+        frequency: 'monthly',
+        budgetStartDate: new Date(2026, 2, 1).getTime(),
+      };
+
+      const transactions: Transaction[] = [
+        // Jan spending (before budgetStartDate): £150 (would be over cap if evaluated, but before budgetStart)
+        { id: 't1', date: new Date(2026, 0, 10).getTime(), payee: 'P1', amount: 150, type: 'expense', budgetId: 'b_status_test', accountId: 'acc1' },
+        // Mar spending: £150 (active month, breached)
+        { id: 't2', date: new Date(2026, 2, 10).getTime(), payee: 'P2', amount: 150, type: 'expense', budgetId: 'b_status_test', accountId: 'acc1' },
+        // Apr spending: £50 (active month, within cap)
+        { id: 't3', date: new Date(2026, 3, 10).getTime(), payee: 'P3', amount: 50, type: 'expense', budgetId: 'b_status_test', accountId: 'acc1' },
+      ];
+
+      const tuning = calculateCategoryTuningItems([lateBudget], fourMonths, transactions);
+
+      expect(tuning.length).toBe(1);
+      const item = tuning[0];
+      // Active months = 2 (Mar, Apr). Active breached months = 1 (Mar).
+      // Pre-start month breach (Jan) is excluded.
+      expect(item.statusText).toBe('Breached: 1 of last 2 months');
+    });
   });
 });

@@ -94,4 +94,32 @@ describe('PropertyTaxService', () => {
         expect(result.taxBands[1].amount).toBe(3000);
         expect(result.taxBands[1].tax).toBe(3000 * constants.HigherRate);
     });
+
+    it('uses updated 2027-2028 property tax rates (24% basic, 44% higher)', () => {
+        const taxYear2027 = '2027-2028';
+        const service = new PropertyTaxService(TAX_YEAR_CONSTANTS, taxYear2027);
+        const constants2027 = getTaxConstants(taxYear2027);
+
+        expect(constants2027.RentalBasicRate).toBe(0.24);
+        expect(constants2027.RentalHigherRate).toBe(0.44);
+
+        const paTracker = new PersonalAllowanceTracker(0); // PA exhausted
+        const brbTracker = new BrbTracker(2000); // £2000 basic rate remaining
+
+        // Gross income £6000, £0 expenses -> £5000 taxable
+        const result = service.calculatePropertyTax(6000, 0, paTracker, brbTracker, taxYear2027);
+
+        expect(result.taxablePropertyIncome).toBe(5000);
+        expect(result.taxBands.length).toBe(2);
+
+        // £2000 basic rate at 24%
+        expect(result.taxBands[0].rate).toBe(0.24);
+        expect(result.taxBands[0].amount).toBe(2000);
+        expect(result.taxBands[0].tax).toBe(2000 * 0.24); // 480
+
+        // £3000 higher rate at 44%
+        expect(result.taxBands[1].rate).toBe(0.44);
+        expect(result.taxBands[1].amount).toBe(3000);
+        expect(result.taxBands[1].tax).toBe(3000 * 0.44); // 1320
+    });
 });

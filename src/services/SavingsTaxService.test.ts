@@ -154,4 +154,33 @@ describe('SavingsTaxService', () => {
       (brbRemainingForSavings - constants.SavingsAllowanceHigher) * constants.BasicRate + expectedHigher * constants.HigherRate
     );
   });
+
+  it('uses updated 2027-2028 savings tax rates (24% basic, 44% higher)', () => {
+    const taxYear2027 = '2027-2028';
+    const service = new SavingsTaxService(TAX_YEAR_CONSTANTS, taxYear2027);
+    const constants = getTaxConstants(taxYear2027);
+
+    expect(constants.SavingsBasicRate).toBe(0.24);
+    expect(constants.SavingsHigherRate).toBe(0.44);
+
+    const grossNonSavingsIncome = 12570; // PA exhausted
+    const savingsIncome = 10000;
+    const personalAllowance = constants.StandardPersonalAllowance;
+    const brbTracker = new BrbTracker(constants.BasicRateBand);
+
+    const result = service.calculateSavingsTax(
+      savingsIncome,
+      grossNonSavingsIncome,
+      personalAllowance,
+      brbTracker,
+      [],
+      taxYear2027
+    );
+
+    // £5000 starting rate (0%) + £1000 PSA (0%) + £4000 at basic rate (24%)
+    const basicRateBand = result.find(b => b.band === constants.BasicBand && b.rate === 0.24);
+    expect(basicRateBand).toBeDefined();
+    expect(basicRateBand?.amount).toBe(4000);
+    expect(basicRateBand?.tax).toBeCloseTo(4000 * 0.24); // £960
+  });
 });

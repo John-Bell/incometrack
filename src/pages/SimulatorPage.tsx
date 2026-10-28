@@ -1,4 +1,6 @@
 import React from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
@@ -6,9 +8,15 @@ import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { useStore } from '@/store/useStore';
 import { useSimulatorCalculations } from '@/hooks/useSimulatorCalculations';
+import { getTaxYearOrLatest, TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export function SimulatorPage() {
-    const { profile } = useStore();
+    const { profile, taxYear: storeTaxYear } = useStore();
+    const taxRules = useLiveQuery(() => db.taxRules.toArray(), []);
+
+    const [selectedTaxYear, setSelectedTaxYear] = React.useState<string | undefined>(undefined);
+    const effectiveTaxYear = selectedTaxYear || storeTaxYear || getTaxYearOrLatest();
+
     const [movableInterestP1Percent, setMovableInterestP1Percent] = React.useState<number | undefined>();
     const [propertySplits, setPropertySplits] = React.useState<Record<string, number>>({});
     const isModified = movableInterestP1Percent !== undefined || Object.keys(propertySplits).length > 0;
@@ -30,7 +38,7 @@ export function SimulatorPage() {
         p1MovableInterest,
         p2MovableInterest,
         totalMovableInterest
-    } = useSimulatorCalculations(movableInterestP1Percent, propertySplits);
+    } = useSimulatorCalculations(movableInterestP1Percent, propertySplits, effectiveTaxYear);
 
     const handlePropertySplitChange = (propertyId: string, value: number) => {
         setPropertySplits(prev => ({ ...prev, [propertyId]: value }));
@@ -69,6 +77,30 @@ export function SimulatorPage() {
             }
         >
             <div className="mx-auto p-4 space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-[#283933] shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <Icon name="calendar_today" className="text-slate-500 dark:text-primary/60 text-lg" />
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tax Year</span>
+                    </div>
+                    <div className="relative w-full sm:w-48">
+                        <select
+                            value={effectiveTaxYear}
+                            onChange={(e) => setSelectedTaxYear(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-[#283933] rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer"
+                            aria-label="Tax Year"
+                        >
+                            {(taxRules && taxRules.length > 0
+                                ? taxRules.map(rule => rule.id)
+                                : Object.keys(TAX_YEAR_CONSTANTS)
+                            ).map(year => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                        <Icon name="unfold_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
+                        <Icon name="event" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
+                    </div>
+                </div>
+
                 <section className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                         <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500 dark:text-primary/40">Detailed Breakdown</h2>

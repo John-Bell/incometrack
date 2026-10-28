@@ -61,4 +61,42 @@ describe('SimulatorPage', () => {
         fireEvent.change(select, { target: { value: '2027-2028' } });
         expect(select).toHaveValue('2027-2028');
     });
+
+    it('renders ISA sweep checkbox under tax year dropdown, handles checking and resets state on Reset click', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Alice', partner2Name: 'Bob' },
+            taxYear: '2025-2026',
+            taxRules: {
+                '2025-2026': {} as any,
+            },
+        });
+
+        (useLiveQuery as any).mockReturnValue([]);
+
+        render(
+            <BrowserRouter>
+                <SimulatorPage />
+            </BrowserRouter>
+        );
+
+        const checkbox = screen.getByRole('checkbox', { name: /ISA sweep/i });
+        expect(checkbox).toBeInTheDocument();
+        expect(checkbox).not.toBeChecked();
+
+        // Reset button should not be present initially
+        expect(screen.queryByRole('button', { name: /Reset/i })).not.toBeInTheDocument();
+
+        // Check ISA sweep checkbox
+        fireEvent.click(checkbox);
+        expect(checkbox).toBeChecked();
+
+        // Reset button should now appear
+        const resetButton = screen.getByRole('button', { name: /Reset/i });
+        expect(resetButton).toBeInTheDocument();
+
+        // Click Reset
+        fireEvent.click(resetButton);
+        expect(checkbox).not.toBeChecked();
+        expect(screen.queryByRole('button', { name: /Reset/i })).not.toBeInTheDocument();
+    });
 });

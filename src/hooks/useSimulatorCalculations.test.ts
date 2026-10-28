@@ -69,4 +69,56 @@ describe('useSimulatorCalculations', () => {
 
         expect(tax2027).toBeGreaterThan(tax2024);
     });
+
+    it('reduces taxable cash balance by £20,000 per partner when isaSweep is true', () => {
+        (useStore as any).mockReturnValue({
+            taxYear: '2025-2026',
+            taxRules: TAX_YEAR_CONSTANTS,
+        });
+
+        const accounts = [
+            {
+                id: 'acc1',
+                ownerId: 'person1',
+                name: 'P1 Savings',
+                balance: 50000,
+                interestRate: 5.0,
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            },
+            {
+                id: 'acc2',
+                ownerId: 'person2',
+                name: 'P2 Savings',
+                balance: 50000,
+                interestRate: 5.0,
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            }
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            return [];
+        });
+
+        // Without ISA sweep
+        const { result: resultWithoutSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', false)
+        );
+
+        // With ISA sweep
+        const { result: resultWithSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', true)
+        );
+
+        // Without sweep: £50,000 * 5% = £2,500 interest for each
+        expect(resultWithoutSweep.current.p1Incomes.interest).toBeCloseTo(2500, 0);
+        expect(resultWithoutSweep.current.p2Incomes.interest).toBeCloseTo(2500, 0);
+
+        // With sweep: (£50,000 - £20,000) = £30,000 * 5% = £1,500 interest for each
+        expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(1500, 0);
+        expect(resultWithSweep.current.p2Incomes.interest).toBeCloseTo(1500, 0);
+    });
 });

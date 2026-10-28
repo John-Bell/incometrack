@@ -77,17 +77,17 @@ export class SavingsTaxService {
 
     // BASIC RATE BAND
     const basicRateUsed = brbTracker.use(remainingSavings);
-    addBand(taxConstants.BasicBand, basicRateUsed, taxConstants.BasicRate);
+    addBand(taxConstants.BasicBand, basicRateUsed, taxConstants.SavingsBasicRate);
     remainingSavings -= basicRateUsed;
 
     // HIGHER RATE BAND
     const higherRateLimit = taxConstants.HigherRateBand - taxConstants.BasicRateBand;
     const higherRateUsed = Math.min(remainingSavings, higherRateLimit);
-    addBand(taxConstants.HigherBand, higherRateUsed, taxConstants.HigherRate);
+    addBand(taxConstants.HigherBand, higherRateUsed, taxConstants.SavingsHigherRate);
     remainingSavings -= higherRateUsed;
 
     // ADDITIONAL RATE BAND
-    addBand(taxConstants.AdditionalBand, remainingSavings, taxConstants.AdditionalRate);
+    addBand(taxConstants.AdditionalBand, remainingSavings, taxConstants.SavingsAdditionalRate);
 
     // Now apply savings allowance based on max rate seen
     let savingsAllowance =

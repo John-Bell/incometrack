@@ -146,6 +146,18 @@ describe('Database Schema', () => {
         expect(savedRule?.BasicRate).toBe(0.2);
     });
 
+    it('should sync updated tax rules into taxRules table via syncTaxRules', async () => {
+        const { syncTaxRules } = await import('./seed');
+        await syncTaxRules();
+
+        const rule2027 = await db.taxRules.get('2027-2028');
+        expect(rule2027).toBeDefined();
+        expect(rule2027?.SavingsBasicRate).toBe(0.24);
+        expect(rule2027?.SavingsHigherRate).toBe(0.44);
+        expect(rule2027?.RentalBasicRate).toBe(0.24);
+        expect(rule2027?.RentalHigherRate).toBe(0.44);
+    });
+
     it('should sanitize budgetStartDate in getSanitizedDbData', async () => {
         const defaultDateTs = new Date(2026, 3, 1).getTime();
         await db.budgets.add({

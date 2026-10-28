@@ -234,12 +234,12 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     DividendHigherRate: 0.3575,
     DividendAdditionalRate: 0.3935,
 
-    SavingsBasicRate: 0.22,
-    SavingsHigherRate: 0.42,
+    SavingsBasicRate: 0.24,
+    SavingsHigherRate: 0.44,
     SavingsAdditionalRate: 0.47,
 
-    RentalBasicRate: 0.22,
-    RentalHigherRate: 0.42,
+    RentalBasicRate: 0.24,
+    RentalHigherRate: 0.44,
     RentalAdditionalRate: 0.47,
 
     PropertyAllowance: 1000,

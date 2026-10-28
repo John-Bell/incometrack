@@ -19,11 +19,13 @@ export function SimulatorPage() {
 
     const [movableInterestP1Percent, setMovableInterestP1Percent] = React.useState<number | undefined>();
     const [propertySplits, setPropertySplits] = React.useState<Record<string, number>>({});
-    const isModified = movableInterestP1Percent !== undefined || Object.keys(propertySplits).length > 0;
+    const [isaSweep, setIsaSweep] = React.useState<boolean>(false);
+    const isModified = movableInterestP1Percent !== undefined || Object.keys(propertySplits).length > 0 || isaSweep;
 
     const handleReset = () => {
         setMovableInterestP1Percent(undefined);
         setPropertySplits({});
+        setIsaSweep(false);
     };
 
     const p1Name = profile?.partner1Name || 'Person 1';
@@ -38,7 +40,7 @@ export function SimulatorPage() {
         p1MovableInterest,
         p2MovableInterest,
         totalMovableInterest
-    } = useSimulatorCalculations(movableInterestP1Percent, propertySplits, effectiveTaxYear);
+    } = useSimulatorCalculations(movableInterestP1Percent, propertySplits, effectiveTaxYear, isaSweep);
 
     const handlePropertySplitChange = (propertyId: string, value: number) => {
         setPropertySplits(prev => ({ ...prev, [propertyId]: value }));
@@ -77,27 +79,41 @@ export function SimulatorPage() {
             }
         >
             <div className="mx-auto p-4 space-y-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-[#283933] shadow-sm">
-                    <div className="flex items-center gap-2">
-                        <Icon name="calendar_today" className="text-slate-500 dark:text-primary/60 text-lg" />
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tax Year</span>
+                <div className="flex flex-col gap-4 bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-[#283933] shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <Icon name="calendar_today" className="text-slate-500 dark:text-primary/60 text-lg" />
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">Tax Year</span>
+                        </div>
+                        <div className="relative w-full sm:w-48">
+                            <select
+                                value={effectiveTaxYear}
+                                onChange={(e) => setSelectedTaxYear(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-[#283933] rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer"
+                                aria-label="Tax Year"
+                            >
+                                {(taxRules && taxRules.length > 0
+                                    ? taxRules.map(rule => rule.id)
+                                    : Object.keys(TAX_YEAR_CONSTANTS)
+                                ).map(year => (
+                                    <option key={year} value={year}>{year}</option>
+                                ))}
+                            </select>
+                            <Icon name="unfold_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
+                            <Icon name="event" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
+                        </div>
                     </div>
-                    <div className="relative w-full sm:w-48">
-                        <select
-                            value={effectiveTaxYear}
-                            onChange={(e) => setSelectedTaxYear(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-[#283933] rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-primary focus:border-transparent appearance-none cursor-pointer"
-                            aria-label="Tax Year"
-                        >
-                            {(taxRules && taxRules.length > 0
-                                ? taxRules.map(rule => rule.id)
-                                : Object.keys(TAX_YEAR_CONSTANTS)
-                            ).map(year => (
-                                <option key={year} value={year}>{year}</option>
-                            ))}
-                        </select>
-                        <Icon name="unfold_more" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
-                        <Icon name="event" className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none" />
+                    <div className="pt-2 border-t border-slate-100 dark:border-[#283933] flex items-center gap-2">
+                        <label htmlFor="isa-sweep-checkbox" className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                            <input
+                                id="isa-sweep-checkbox"
+                                type="checkbox"
+                                checked={isaSweep}
+                                onChange={(e) => setIsaSweep(e.target.checked)}
+                                className="w-4 h-4 rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-600 dark:bg-black/20 cursor-pointer"
+                            />
+                            <span>ISA sweep</span>
+                        </label>
                     </div>
                 </div>
 

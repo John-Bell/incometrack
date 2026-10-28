@@ -39,7 +39,8 @@ export interface UseSimulatorCalculationsResult {
 export function useSimulatorCalculations(
     movableInterestP1Percent?: number,
     propertySplits?: Record<string, number>,
-    taxYearOverride?: string
+    taxYearOverride?: string,
+    isaSweep?: boolean
 ): UseSimulatorCalculationsResult {
     const { taxYear: storeTaxYear, taxRules } = useStore();
     const effectiveTaxYear = taxYearOverride || storeTaxYear || undefined;
@@ -154,7 +155,59 @@ export function useSimulatorCalculations(
         }
 
         if (dbAccounts) {
-            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
+            let accountsToUse = dbAccounts;
+            if (isaSweep) {
+                accountsToUse = dbAccounts.map(acc => ({ ...acc }));
+                const SWEEP_AMOUNT = 20000;
+
+                // Deduct up to 20,000 for Person 1
+                let p1Remaining = SWEEP_AMOUNT;
+                // Sole accounts first
+                for (const acc of accountsToUse) {
+                    if (p1Remaining <= 0) break;
+                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
+                    if (isTaxable && acc.ownerId === 'person1' && acc.balance > 0) {
+                        const deduct = Math.min(acc.balance, p1Remaining);
+                        acc.balance -= deduct;
+                        p1Remaining -= deduct;
+                    }
+                }
+                // Joint accounts second
+                for (const acc of accountsToUse) {
+                    if (p1Remaining <= 0) break;
+                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
+                    if (isTaxable && acc.ownerId === 'joint' && acc.balance > 0) {
+                        const deduct = Math.min(acc.balance, p1Remaining);
+                        acc.balance -= deduct;
+                        p1Remaining -= deduct;
+                    }
+                }
+
+                // Deduct up to 20,000 for Person 2
+                let p2Remaining = SWEEP_AMOUNT;
+                // Sole accounts first
+                for (const acc of accountsToUse) {
+                    if (p2Remaining <= 0) break;
+                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
+                    if (isTaxable && acc.ownerId === 'person2' && acc.balance > 0) {
+                        const deduct = Math.min(acc.balance, p2Remaining);
+                        acc.balance -= deduct;
+                        p2Remaining -= deduct;
+                    }
+                }
+                // Joint accounts second
+                for (const acc of accountsToUse) {
+                    if (p2Remaining <= 0) break;
+                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
+                    if (isTaxable && acc.ownerId === 'joint' && acc.balance > 0) {
+                        const deduct = Math.min(acc.balance, p2Remaining);
+                        acc.balance -= deduct;
+                        p2Remaining -= deduct;
+                    }
+                }
+            }
+
+            const taxableAccounts = accountsToUse.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
 
             const movableAccounts = taxableAccounts.filter(acc => {
                 const frequency = acc.interestPayoutFrequency || 'monthly';
@@ -264,5 +317,5 @@ export function useSimulatorCalculations(
             isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyExpenses && !!dbPropertyOwnerships
         };
 
-    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, startTs, endTs, movableInterestP1Percent, propertySplits]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, startTs, endTs, movableInterestP1Percent, propertySplits, isaSweep]);
 }

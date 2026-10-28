@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
-import { useTaxService } from '@/hooks/useTaxService';
+import { TaxCalculationService } from '@/services/TaxCalculationService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
@@ -36,11 +36,20 @@ export interface UseSimulatorCalculationsResult {
     isReady: boolean;
 }
 
-export function useSimulatorCalculations(movableInterestP1Percent?: number, propertySplits?: Record<string, number>): UseSimulatorCalculationsResult {
-    const { taxYear } = useStore();
-    const taxService = useTaxService();
+export function useSimulatorCalculations(
+    movableInterestP1Percent?: number,
+    propertySplits?: Record<string, number>,
+    taxYearOverride?: string
+): UseSimulatorCalculationsResult {
+    const { taxYear: storeTaxYear, taxRules } = useStore();
+    const effectiveTaxYear = taxYearOverride || storeTaxYear || undefined;
 
-    const { startTs, endTs } = useMemo(() => getTaxYearDates(taxYear || undefined), [taxYear]);
+    const taxService = useMemo(() => {
+        if (!taxRules) return null;
+        return new TaxCalculationService(taxRules, effectiveTaxYear);
+    }, [taxRules, effectiveTaxYear]);
+
+    const { startTs, endTs } = useMemo(() => getTaxYearDates(effectiveTaxYear), [effectiveTaxYear]);
 
     const dbAccounts = useLiveQuery(() => db.accounts.toArray());
     const dbIncomes = useLiveQuery(() => db.incomes.toArray());
@@ -221,8 +230,8 @@ export function useSimulatorCalculations(movableInterestP1Percent?: number, prop
         let p2TaxResult: TaxCalculationResult | null = null;
 
         if (taxService) {
-            p1TaxResult = taxService.calculateTax(p1Input, taxYear || undefined);
-            p2TaxResult = taxService.calculateTax(p2Input, taxYear || undefined);
+            p1TaxResult = taxService.calculateTax(p1Input, effectiveTaxYear);
+            p2TaxResult = taxService.calculateTax(p2Input, effectiveTaxYear);
         }
 
         const p1TotalIncome = p1Incomes.employment + p1Incomes.pension + p1Incomes.propertyIncome + p1Incomes.dividends + p1Incomes.interest;

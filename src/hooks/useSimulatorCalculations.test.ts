@@ -121,4 +121,177 @@ describe('useSimulatorCalculations', () => {
         expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(1500, 0);
         expect(resultWithSweep.current.p2Incomes.interest).toBeCloseTo(1500, 0);
     });
+
+    it('never sweeps 0% interest accounts or manual tracking accounts', () => {
+        (useStore as any).mockReturnValue({
+            taxYear: '2025-2026',
+            taxRules: TAX_YEAR_CONSTANTS,
+        });
+
+        const accounts = [
+            {
+                id: 'acc0percent',
+                ownerId: 'person1',
+                name: 'Current Account (0%)',
+                balance: 20000,
+                interestRate: 0,
+                category: 'Current Account',
+                interestPayoutFrequency: 'monthly'
+            },
+            {
+                id: 'accManual',
+                ownerId: 'person1',
+                name: 'Manual Account',
+                balance: 20000,
+                interestRate: 5.0,
+                interestTrackingMethod: 'manual',
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            },
+            {
+                id: 'acc5percent',
+                ownerId: 'person1',
+                name: 'Savings 5%',
+                balance: 20000,
+                interestRate: 5.0,
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            }
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            return [];
+        });
+
+        // Without sweep: Savings 5% (£1,000) + Manual account (£1,000) = £2,000 total interest
+        const { result: resultWithoutSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', false)
+        );
+        expect(resultWithoutSweep.current.p1Incomes.interest).toBeCloseTo(2000, 0);
+
+        // With sweep: The 0% account and manual account are ignored, so the £20k sweep sweeps the 5% account.
+        // The 5% account balance becomes 0 (0 interest), while the manual account remains unswept (£1,000 interest).
+        // Total P1 interest becomes £1,000. (If 0% account was swept instead, total interest would be £2,000).
+        const { result: resultWithSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', true)
+        );
+        expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(1000, 0);
+    });
+
+    it('sweeps movable savings first before non-movable savings, and ignores non-paying fixed accounts for selected tax year', () => {
+        (useStore as any).mockReturnValue({
+            taxYear: '2025-2026',
+            taxRules: TAX_YEAR_CONSTANTS,
+        });
+
+        // Tax year 2025-2026: 06-Apr-2025 to 05-Apr-2026
+        const payoutIn2027 = new Date(2027, 8, 1).getTime(); // Sep 2027 (outside 2025-2026)
+        const payoutIn2025 = new Date(2025, 10, 1).getTime(); // Nov 2025 (inside 2025-2026)
+
+        const accounts = [
+            {
+                id: 'nonPayingFixed',
+                ownerId: 'person1',
+                name: 'Fixed Bond 2027',
+                balance: 20000,
+                interestRate: 8.0, // High rate, but doesn't pay out in 2025-2026
+                category: 'Fixed Term Savings',
+                interestPayoutFrequency: 'at_maturity',
+                interestPayoutDate: payoutIn2027,
+                bondTermYears: 2
+            },
+            {
+                id: 'payingFixed',
+                ownerId: 'person1',
+                name: 'Fixed Bond 2025',
+                balance: 20000,
+                interestRate: 6.0,
+                category: 'Fixed Term Savings',
+                interestPayoutFrequency: 'at_maturity',
+                interestPayoutDate: payoutIn2025,
+                bondTermYears: 1
+            },
+            {
+                id: 'movableSavings',
+                ownerId: 'person1',
+                name: 'Easy Access 4%',
+                balance: 20000,
+                interestRate: 4.0,
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            }
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            return [];
+        });
+
+        // Without sweep:
+        // nonPayingFixed: £0
+        // payingFixed: £20,000 * 6% = £1,200
+        // movableSavings: £20,000 * 4% = £800
+        // Total P1 interest = £2,000
+        const { result: resultWithoutSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', false)
+        );
+        expect(resultWithoutSweep.current.p1Incomes.interest).toBeCloseTo(2000, 0);
+
+        // With sweep:
+        // nonPayingFixed is ignored because projected interest in 2025-2026 is 0.
+        // Movable savings (Easy Access 4%) is prioritized over non-movable payingFixed (6%) because movable comes first!
+        // £20,000 sweep targets Easy Access 4% completely (reducing interest by £800).
+        // Remaining P1 interest = £1,200 (from payingFixed).
+        const { result: resultWithSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', true)
+        );
+        expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(1200, 0);
+    });
+
+    it('isolates joint accounts so sweeping for Person 2 only reduces Person 2 interest share', () => {
+        (useStore as any).mockReturnValue({
+            taxYear: '2025-2026',
+            taxRules: TAX_YEAR_CONSTANTS,
+        });
+
+        // Joint account with £40,000 (£20k P1 share, £20k P2 share) at 5% rate => £1,000 interest per person
+        // Person 1 has no sole accounts
+        // Person 2 has no sole accounts
+        const accounts = [
+            {
+                id: 'jointAcc',
+                ownerId: 'joint',
+                name: 'Joint Savings',
+                balance: 40000,
+                interestRate: 5.0,
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            }
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            return [];
+        });
+
+        // Without sweep: each gets £1,000 interest (5% on £20,000 share)
+        const { result: resultWithoutSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', false)
+        );
+        expect(resultWithoutSweep.current.p1Incomes.interest).toBeCloseTo(1000, 0);
+        expect(resultWithoutSweep.current.p2Incomes.interest).toBeCloseTo(1000, 0);
+
+        // With sweep:
+        // P1 sweeps £20,000 from P1's virtual share (£20,000 balance -> £0). P1 interest = £0.
+        // P2 sweeps £20,000 from P2's virtual share (£20,000 balance -> £0). P2 interest = £0.
+        const { result: resultWithSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', true)
+        );
+        expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(0, 0);
+        expect(resultWithSweep.current.p2Incomes.interest).toBeCloseTo(0, 0);
+    });
 });

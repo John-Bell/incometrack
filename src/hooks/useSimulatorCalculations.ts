@@ -5,8 +5,9 @@ import { useStore } from '@/store/useStore';
 import { TaxCalculationService } from '@/services/TaxCalculationService';
 import type { TaxCalculationInput } from '@/models/TaxCalculationInput';
 import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
-import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
+import { calculateProjectedTaxableInterest, calculateProjectedTaxableInterestForAccount } from '@/services/accountCalculations';
 import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
+import type { Account, InterestAccrual } from '@/lib/db';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
 import { isIncomeValidInTaxYear } from '@/utils/incomeCalculations';
 
@@ -155,59 +156,117 @@ export function useSimulatorCalculations(
         }
 
         if (dbAccounts) {
-            let accountsToUse = dbAccounts;
-            if (isaSweep) {
-                accountsToUse = dbAccounts.map(acc => ({ ...acc }));
-                const SWEEP_AMOUNT = 20000;
+            type WorkingAccount = Account & { isVirtualJointShare?: boolean };
+            const workingAccounts: WorkingAccount[] = [];
+            const workingAccruals: InterestAccrual[] = [];
 
-                // Deduct up to 20,000 for Person 1
-                let p1Remaining = SWEEP_AMOUNT;
-                // Sole accounts first
-                for (const acc of accountsToUse) {
-                    if (p1Remaining <= 0) break;
-                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
-                    if (isTaxable && acc.ownerId === 'person1' && acc.balance > 0) {
-                        const deduct = Math.min(acc.balance, p1Remaining);
-                        acc.balance -= deduct;
-                        p1Remaining -= deduct;
-                    }
-                }
-                // Joint accounts second
-                for (const acc of accountsToUse) {
-                    if (p1Remaining <= 0) break;
-                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
-                    if (isTaxable && acc.ownerId === 'joint' && acc.balance > 0) {
-                        const deduct = Math.min(acc.balance, p1Remaining);
-                        acc.balance -= deduct;
-                        p1Remaining -= deduct;
-                    }
-                }
+            const jointAccountIds = new Set(dbAccounts.filter(a => a.ownerId === 'joint').map(a => a.id));
 
-                // Deduct up to 20,000 for Person 2
-                let p2Remaining = SWEEP_AMOUNT;
-                // Sole accounts first
-                for (const acc of accountsToUse) {
-                    if (p2Remaining <= 0) break;
-                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
-                    if (isTaxable && acc.ownerId === 'person2' && acc.balance > 0) {
-                        const deduct = Math.min(acc.balance, p2Remaining);
-                        acc.balance -= deduct;
-                        p2Remaining -= deduct;
-                    }
-                }
-                // Joint accounts second
-                for (const acc of accountsToUse) {
-                    if (p2Remaining <= 0) break;
-                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
-                    if (isTaxable && acc.ownerId === 'joint' && acc.balance > 0) {
-                        const deduct = Math.min(acc.balance, p2Remaining);
-                        acc.balance -= deduct;
-                        p2Remaining -= deduct;
-                    }
+            for (const accrual of allAccruals) {
+                if (jointAccountIds.has(accrual.accountId)) {
+                    workingAccruals.push({
+                        ...accrual,
+                        id: `${accrual.id}_p1`,
+                        accountId: `${accrual.accountId}_p1`,
+                        interestAccrued: (accrual.interestAccrued || 0) / 2
+                    });
+                    workingAccruals.push({
+                        ...accrual,
+                        id: `${accrual.id}_p2`,
+                        accountId: `${accrual.accountId}_p2`,
+                        interestAccrued: (accrual.interestAccrued || 0) / 2
+                    });
+                } else {
+                    workingAccruals.push(accrual);
                 }
             }
 
-            const taxableAccounts = accountsToUse.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
+            for (const acc of dbAccounts) {
+                if (acc.ownerId === 'joint') {
+                    const p1Share: WorkingAccount = {
+                        ...acc,
+                        id: `${acc.id}_p1`,
+                        ownerId: 'person1',
+                        balance: (acc.balance || 0) / 2,
+                        isVirtualJointShare: true
+                    };
+                    const p2Share: WorkingAccount = {
+                        ...acc,
+                        id: `${acc.id}_p2`,
+                        ownerId: 'person2',
+                        balance: (acc.balance || 0) / 2,
+                        isVirtualJointShare: true
+                    };
+                    workingAccounts.push(p1Share, p2Share);
+                } else {
+                    workingAccounts.push({ ...acc });
+                }
+            }
+
+            if (isaSweep) {
+                const SWEEP_AMOUNT = 20000;
+
+                const isCandidate = (acc: Account) => {
+                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
+                    if (!isTaxable) return false;
+                    if (acc.interestTrackingMethod === 'manual') return false;
+                    if ((acc.balance || 0) <= 0) return false;
+                    if ((acc.interestRate || 0) <= 0) return false;
+                    const projectedInterest = calculateProjectedTaxableInterestForAccount(acc, workingAccruals, startTs, endTs);
+                    if (projectedInterest <= 0) return false;
+                    return true;
+                };
+
+                const sortCandidates = (a: WorkingAccount, b: WorkingAccount) => {
+                    const isMovableA = (a.interestPayoutFrequency || 'monthly') !== 'annually' && (a.interestPayoutFrequency || 'monthly') !== 'at_maturity' && !a.interestPayoutDate;
+                    const isMovableB = (b.interestPayoutFrequency || 'monthly') !== 'annually' && (b.interestPayoutFrequency || 'monthly') !== 'at_maturity' && !b.interestPayoutDate;
+                    if (isMovableA !== isMovableB) {
+                        return isMovableA ? -1 : 1;
+                    }
+
+                    const rateA = a.interestRate || 0;
+                    const rateB = b.interestRate || 0;
+                    if (rateB !== rateA) {
+                        return rateB - rateA;
+                    }
+
+                    const isJointA = !!a.isVirtualJointShare;
+                    const isJointB = !!b.isVirtualJointShare;
+                    if (isJointA !== isJointB) {
+                        return isJointA ? 1 : -1;
+                    }
+
+                    return 0;
+                };
+
+                // Sweep for Person 1
+                const p1Candidates = workingAccounts
+                    .filter(acc => acc.ownerId === 'person1' && isCandidate(acc))
+                    .sort(sortCandidates);
+
+                let p1Remaining = SWEEP_AMOUNT;
+                for (const acc of p1Candidates) {
+                    if (p1Remaining <= 0) break;
+                    const deduct = Math.min(acc.balance, p1Remaining);
+                    acc.balance -= deduct;
+                    p1Remaining -= deduct;
+                }
+
+                // Sweep for Person 2
+                const p2Candidates = workingAccounts
+                    .filter(acc => acc.ownerId === 'person2' && isCandidate(acc))
+                    .sort(sortCandidates);
+
+                let p2Remaining = SWEEP_AMOUNT;
+                for (const acc of p2Candidates) {
+                    if (p2Remaining <= 0) break;
+                    const deduct = Math.min(acc.balance, p2Remaining);
+                    acc.balance -= deduct;
+                    p2Remaining -= deduct;
+                }
+            }
+
+            const taxableAccounts = workingAccounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
 
             const movableAccounts = taxableAccounts.filter(acc => {
                 const frequency = acc.interestPayoutFrequency || 'monthly';
@@ -223,26 +282,16 @@ export function useSimulatorCalculations(
             // Movable
             const p1Movable = movableAccounts.filter(acc => acc.ownerId === 'person1');
             const p2Movable = movableAccounts.filter(acc => acc.ownerId === 'person2');
-            const jointMovable = movableAccounts.filter(acc => acc.ownerId === 'joint');
 
-            p1MovableInterest += calculateProjectedTaxableInterest(p1Movable, allAccruals, startTs, endTs);
-            p2MovableInterest += calculateProjectedTaxableInterest(p2Movable, allAccruals, startTs, endTs);
-
-            const jointMovableInterest = calculateProjectedTaxableInterest(jointMovable, allAccruals, startTs, endTs);
-            p1MovableInterest += jointMovableInterest / 2;
-            p2MovableInterest += jointMovableInterest / 2;
+            p1MovableInterest += calculateProjectedTaxableInterest(p1Movable, workingAccruals, startTs, endTs);
+            p2MovableInterest += calculateProjectedTaxableInterest(p2Movable, workingAccruals, startTs, endTs);
 
             // Non-movable
             const p1NonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'person1');
             const p2NonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'person2');
-            const jointNonMovable = nonMovableAccounts.filter(acc => acc.ownerId === 'joint');
 
-            p1Incomes.interest += calculateProjectedTaxableInterest(p1NonMovable, allAccruals, startTs, endTs);
-            p2Incomes.interest += calculateProjectedTaxableInterest(p2NonMovable, allAccruals, startTs, endTs);
-
-            const jointNonMovableInterest = calculateProjectedTaxableInterest(jointNonMovable, allAccruals, startTs, endTs);
-            p1Incomes.interest += jointNonMovableInterest / 2;
-            p2Incomes.interest += jointNonMovableInterest / 2;
+            p1Incomes.interest += calculateProjectedTaxableInterest(p1NonMovable, workingAccruals, startTs, endTs);
+            p2Incomes.interest += calculateProjectedTaxableInterest(p2NonMovable, workingAccruals, startTs, endTs);
         }
 
         const totalMovableInterest = p1MovableInterest + p2MovableInterest;

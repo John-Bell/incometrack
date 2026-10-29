@@ -29,7 +29,7 @@ export class TaxCalculationService {
   calculateTax(input: TaxCalculationInput, taxYear?: string): TaxCalculationResult {
     const resolvedTaxYear = getTaxYearOrLatest(taxYear ?? this.taxYear);
     const taxConstants = this.taxRules[resolvedTaxYear];
-    const incomeBreakdown: IncomeBreakdown = this.calculateIncomeBreakdown(input);
+    const incomeBreakdown: IncomeBreakdown = this.calculateIncomeBreakdown(input, resolvedTaxYear);
     const taxByBand: TaxBandResult[] = [];
 
     // Calculate personal allowance

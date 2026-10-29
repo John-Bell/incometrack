@@ -261,11 +261,11 @@ export function BudgetReviewPage() {
           </div>
         )}
 
-        {/* Category Calibration & Tuning List */}
+        {/* Spend Details List */}
         <div className="flex flex-col space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Category Calibration & Tuning
+              Spend Details
             </h3>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               {categoryTuningItems.length} Budgets Monitored

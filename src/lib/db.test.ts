@@ -156,6 +156,20 @@ describe('Database Schema', () => {
         expect(rule2027?.SavingsHigherRate).toBe(0.44);
         expect(rule2027?.RentalBasicRate).toBe(0.24);
         expect(rule2027?.RentalHigherRate).toBe(0.44);
+
+        const rule2028 = await db.taxRules.get('2028-2029');
+        expect(rule2028).toBeDefined();
+        expect(rule2028?.SavingsBasicRate).toBe(0.24);
+        expect(rule2028?.SavingsHigherRate).toBe(0.44);
+        expect(rule2028?.RentalBasicRate).toBe(0.24);
+        expect(rule2028?.RentalHigherRate).toBe(0.44);
+
+        const rule2029 = await db.taxRules.get('2029-2030');
+        expect(rule2029).toBeDefined();
+        expect(rule2029?.SavingsBasicRate).toBe(0.24);
+        expect(rule2029?.SavingsHigherRate).toBe(0.44);
+        expect(rule2029?.RentalBasicRate).toBe(0.24);
+        expect(rule2029?.RentalHigherRate).toBe(0.44);
     });
 
     it('should sanitize budgetStartDate in getSanitizedDbData', async () => {

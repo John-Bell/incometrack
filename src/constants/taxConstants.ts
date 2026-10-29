@@ -261,6 +261,100 @@ export const TAX_YEAR_CONSTANTS: TaxRulesByYear = {
     HigherBand: 'Higher',
     AdditionalBand: 'Additional',
     StartingBand: 'Starting',
+  },
+  '2028-2029': {
+    StandardPersonalAllowance: 12570,
+    PersonalAllowanceThreshold: 100000,
+    PersonalAllowanceRemovalThreshold: 125140,
+    PersonalAllowanceReductionRate: 0.5,
+
+    BasicRateBand: 37700,
+    BasicRate: 0.2,
+
+    HigherRateBand: 125140,
+    HigherRate: 0.4,
+
+    AdditionalRate: 0.45,
+
+    DividendAllowance: 500,
+    DividendBasicRate: 0.1075,
+    DividendHigherRate: 0.3575,
+    DividendAdditionalRate: 0.3935,
+
+    SavingsBasicRate: 0.24,
+    SavingsHigherRate: 0.44,
+    SavingsAdditionalRate: 0.47,
+
+    RentalBasicRate: 0.24,
+    RentalHigherRate: 0.44,
+    RentalAdditionalRate: 0.47,
+
+    PropertyAllowance: 1000,
+
+    SavingsAllowanceBasic: 1000,
+    SavingsAllowanceHigher: 500,
+    SavingsAllowanceAdditional: 0,
+
+    StartingRateForSavingsThreshold: 5000,
+    StartingRateForSavings: 0,
+
+    GeneralBandType: 'General',
+    SavingsBandType: 'Savings',
+    DividendsBandType: 'Dividends',
+    PropertyBandType: 'Property',
+
+    AllowanceBand: 'Allowance',
+    BasicBand: 'Basic',
+    HigherBand: 'Higher',
+    AdditionalBand: 'Additional',
+    StartingBand: 'Starting',
+  },
+  '2029-2030': {
+    StandardPersonalAllowance: 12570,
+    PersonalAllowanceThreshold: 100000,
+    PersonalAllowanceRemovalThreshold: 125140,
+    PersonalAllowanceReductionRate: 0.5,
+
+    BasicRateBand: 37700,
+    BasicRate: 0.2,
+
+    HigherRateBand: 125140,
+    HigherRate: 0.4,
+
+    AdditionalRate: 0.45,
+
+    DividendAllowance: 500,
+    DividendBasicRate: 0.1075,
+    DividendHigherRate: 0.3575,
+    DividendAdditionalRate: 0.3935,
+
+    SavingsBasicRate: 0.24,
+    SavingsHigherRate: 0.44,
+    SavingsAdditionalRate: 0.47,
+
+    RentalBasicRate: 0.24,
+    RentalHigherRate: 0.44,
+    RentalAdditionalRate: 0.47,
+
+    PropertyAllowance: 1000,
+
+    SavingsAllowanceBasic: 1000,
+    SavingsAllowanceHigher: 500,
+    SavingsAllowanceAdditional: 0,
+
+    StartingRateForSavingsThreshold: 5000,
+    StartingRateForSavings: 0,
+
+    GeneralBandType: 'General',
+    SavingsBandType: 'Savings',
+    DividendsBandType: 'Dividends',
+    PropertyBandType: 'Property',
+
+    AllowanceBand: 'Allowance',
+    BasicBand: 'Basic',
+    HigherBand: 'Higher',
+    AdditionalBand: 'Additional',
+    StartingBand: 'Starting',
   }
 };
 

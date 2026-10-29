@@ -88,7 +88,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getByRole('option', { name: 'Utilities' })).toBeInTheDocument();
     });
 
-    it('filters displayed categories in Category Calibration & Tuning when a budget is selected', () => {
+    it('filters displayed categories in Spend Details when a budget is selected', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
@@ -112,7 +112,7 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        // Both budgets shown initially in Category Calibration & Tuning (or KPI cards)
+        // Both budgets shown initially in Spend Details (or KPI cards)
         expect(screen.getAllByRole('heading', { name: 'Groceries' }).length).toBeGreaterThan(0);
         expect(screen.getAllByRole('heading', { name: 'Utilities' }).length).toBeGreaterThan(0);
 
@@ -120,12 +120,12 @@ describe('BudgetReviewPage', () => {
         const budgetSelect = screen.getAllByRole('combobox')[1];
         fireEvent.change(budgetSelect, { target: { value: 'b1' } });
 
-        // Only Groceries should be shown in Category Calibration & Tuning
+        // Only Groceries should be shown in Spend Details
         expect(screen.getAllByRole('heading', { name: 'Groceries' }).length).toBeGreaterThan(0);
         expect(screen.queryByRole('heading', { name: 'Utilities' })).not.toBeInTheDocument();
     });
 
-    it('calculates Category Calibration & Tuning for filtered budgets and selected timeframe', () => {
+    it('calculates Spend Details for filtered budgets and selected timeframe', () => {
         (useStore as any).mockReturnValue({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });

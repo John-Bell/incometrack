@@ -209,7 +209,7 @@ export function useSimulatorCalculations(
                 const isCandidate = (acc: Account) => {
                     const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
                     if (!isTaxable) return false;
-                    if (acc.interestTrackingMethod === 'manual') return false;
+                    if (acc.category === 'Current Account' || acc.category === 'Stocks & Shares') return false;
                     if ((acc.balance || 0) <= 0) return false;
                     if ((acc.interestRate || 0) <= 0) return false;
                     const projectedInterest = calculateProjectedTaxableInterestForAccount(acc, workingAccruals, startTs, endTs);
@@ -247,9 +247,19 @@ export function useSimulatorCalculations(
                 let p1Remaining = SWEEP_AMOUNT;
                 for (const acc of p1Candidates) {
                     if (p1Remaining <= 0) break;
+                    const originalBalance = acc.balance;
                     const deduct = Math.min(acc.balance, p1Remaining);
-                    acc.balance -= deduct;
-                    p1Remaining -= deduct;
+                    if (deduct > 0 && originalBalance > 0) {
+                        const factor = (originalBalance - deduct) / originalBalance;
+                        acc.balance -= deduct;
+                        p1Remaining -= deduct;
+
+                        for (const accrual of workingAccruals) {
+                            if (accrual.accountId === acc.id) {
+                                accrual.interestAccrued = (accrual.interestAccrued || 0) * factor;
+                            }
+                        }
+                    }
                 }
 
                 // Sweep for Person 2
@@ -260,9 +270,19 @@ export function useSimulatorCalculations(
                 let p2Remaining = SWEEP_AMOUNT;
                 for (const acc of p2Candidates) {
                     if (p2Remaining <= 0) break;
+                    const originalBalance = acc.balance;
                     const deduct = Math.min(acc.balance, p2Remaining);
-                    acc.balance -= deduct;
-                    p2Remaining -= deduct;
+                    if (deduct > 0 && originalBalance > 0) {
+                        const factor = (originalBalance - deduct) / originalBalance;
+                        acc.balance -= deduct;
+                        p2Remaining -= deduct;
+
+                        for (const accrual of workingAccruals) {
+                            if (accrual.accountId === acc.id) {
+                                accrual.interestAccrued = (accrual.interestAccrued || 0) * factor;
+                            }
+                        }
+                    }
                 }
             }
 

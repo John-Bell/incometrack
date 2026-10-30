@@ -4,8 +4,11 @@ import {
   calculateGraphData,
   calculateBudgetAlerts,
   calculateCategoryTuningItems,
+  filterAndSortBudgets,
+  getBudgetAccounts,
+  calculateBudgetItemDetails,
 } from './budgetUtils';
-import type { Budget, Transaction } from '@/lib/db';
+import type { Account, Budget, Transaction } from '@/lib/db';
 
 describe('budgetUtils', () => {
   describe('getTargetMonths', () => {
@@ -355,6 +358,134 @@ describe('budgetUtils', () => {
       // Active months = 2 (Mar, Apr). Active breached months = 1 (Mar).
       // Pre-start month breach (Jan) is excluded.
       expect(item.statusText).toBe('Breached: 1 of last 2 months');
+    });
+  });
+
+  describe('filterAndSortBudgets', () => {
+    const budgets: Budget[] = [
+      { id: 'b1', accountId: 'acc1', name: 'Utilities', amount: 100, frequency: 'monthly' },
+      { id: 'b2', accountId: 'acc2', name: 'Groceries', amount: 200, frequency: 'monthly' },
+      { id: 'b3', accountId: 'acc1', name: 'Entertainment', amount: 50, frequency: 'monthly' },
+    ];
+
+    it('returns all budgets sorted alphabetically by name when selectedAccountId is empty', () => {
+      const result = filterAndSortBudgets(budgets, '');
+      expect(result.map((b) => b.name)).toEqual(['Entertainment', 'Groceries', 'Utilities']);
+    });
+
+    it('returns only budgets matching selectedAccountId sorted alphabetically by name', () => {
+      const result = filterAndSortBudgets(budgets, 'acc1');
+      expect(result.map((b) => b.name)).toEqual(['Entertainment', 'Utilities']);
+    });
+  });
+
+  describe('getBudgetAccounts', () => {
+    const accounts: Account[] = [
+      { id: 'a1', ownerId: 'p1', name: 'Current Account B', balance: 1000, interestRate: 0, updatedAt: 0, category: 'Current Account', budgetOrder: 2 },
+      { id: 'a2', ownerId: 'p1', name: 'Current Account A', balance: 500, interestRate: 0, updatedAt: 0, category: 'Current Account', budgetOrder: 1 },
+      { id: 'a3', ownerId: 'p1', name: 'Savings Account', balance: 2000, interestRate: 5, updatedAt: 0, category: 'Savings' },
+    ];
+
+    it('filters out accounts without budgetOrder and sorts remaining accounts alphabetically by name', () => {
+      const result = getBudgetAccounts(accounts);
+      expect(result.length).toBe(2);
+      expect(result.map((a) => a.name)).toEqual(['Current Account A', 'Current Account B']);
+    });
+  });
+
+  describe('calculateBudgetItemDetails', () => {
+    const refDate = new Date(2026, 4, 15); // May 15, 2026
+
+    it('calculates monthly budget details correctly', () => {
+      const budget: Budget = {
+        id: 'b_m',
+        accountId: 'acc1',
+        name: 'Dining',
+        amount: 200,
+        frequency: 'monthly',
+        budgetStartDate: new Date(2026, 3, 1).getTime(), // Apr 1 2026
+      };
+
+      const transactions: Transaction[] = [
+        // Current month (May 2026) expense
+        { id: 't1', date: new Date(2026, 4, 10).getTime(), payee: 'Bistro', amount: 100, type: 'expense', budgetId: 'b_m', accountId: 'acc1' },
+        // Previous month expense (ignored for monthly actual)
+        { id: 't2', date: new Date(2026, 3, 10).getTime(), payee: 'Cafe', amount: 150, type: 'expense', budgetId: 'b_m', accountId: 'acc1' },
+        // Income transaction (ignored)
+        { id: 't3', date: new Date(2026, 4, 12).getTime(), payee: 'Refund', amount: 50, type: 'income', budgetId: 'b_m', accountId: 'acc1' },
+      ];
+
+      const details = calculateBudgetItemDetails(budget, transactions, refDate);
+
+      expect(details.isAnnual).toBe(false);
+      expect(details.monthlyAmount).toBe(200);
+      expect(details.annualAmount).toBe(2400);
+      expect(details.actualAmount).toBe(100);
+      expect(details.targetNum).toBe(200);
+      expect(details.ratio).toBe(0.5);
+      expect(details.percent).toBe(50);
+      expect(details.status).toBe('PLENTY OF CAPACITY');
+      expect(details.barColor).toBe('bg-emerald-500');
+    });
+
+    it('calculates annual budget details correctly across the full current year', () => {
+      const budget: Budget = {
+        id: 'b_a',
+        accountId: 'acc1',
+        name: 'Car Insurance',
+        amount: 1200,
+        frequency: 'annual',
+      };
+
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 0, 10).getTime(), payee: 'Insurer', amount: 600, type: 'expense', budgetId: 'b_a', accountId: 'acc1' },
+        { id: 't2', date: new Date(2026, 4, 10).getTime(), payee: 'Insurer', amount: 600, type: 'expense', budgetId: 'b_a', accountId: 'acc1' },
+      ];
+
+      const details = calculateBudgetItemDetails(budget, transactions, refDate);
+
+      expect(details.isAnnual).toBe(true);
+      expect(details.monthlyAmount).toBe(100);
+      expect(details.annualAmount).toBe(1200);
+      expect(details.actualAmount).toBe(1200);
+      expect(details.status).toBe('FULLY SPENT');
+      expect(details.barColor).toBe('bg-orange-500');
+    });
+
+    it('returns OVERSPENT status when actual exceeds target', () => {
+      const budget: Budget = { id: 'b1', accountId: 'acc1', name: 'Tech', amount: 100, frequency: 'monthly' };
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 4, 10).getTime(), payee: 'Store', amount: 120, type: 'expense', budgetId: 'b1', accountId: 'acc1' },
+      ];
+
+      const details = calculateBudgetItemDetails(budget, transactions, refDate);
+
+      expect(details.status).toBe('OVERSPENT');
+      expect(details.barColor).toBe('bg-red-500');
+    });
+
+    it('returns OVERSPEND RISK status when ratio is >= 0.90 but <= 1.0', () => {
+      const budget: Budget = { id: 'b1', accountId: 'acc1', name: 'Food', amount: 100, frequency: 'monthly' };
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 4, 10).getTime(), payee: 'Store', amount: 95, type: 'expense', budgetId: 'b1', accountId: 'acc1' },
+      ];
+
+      const details = calculateBudgetItemDetails(budget, transactions, refDate);
+
+      expect(details.status).toBe('OVERSPEND RISK');
+      expect(details.barColor).toBe('bg-orange-500');
+    });
+
+    it('returns ON TRACK status when ratio is between 0.75 and 0.90', () => {
+      const budget: Budget = { id: 'b1', accountId: 'acc1', name: 'Food', amount: 100, frequency: 'monthly' };
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2026, 4, 10).getTime(), payee: 'Store', amount: 80, type: 'expense', budgetId: 'b1', accountId: 'acc1' },
+      ];
+
+      const details = calculateBudgetItemDetails(budget, transactions, refDate);
+
+      expect(details.status).toBe('ON TRACK');
+      expect(details.barColor).toBe('bg-blue-500');
     });
   });
 });

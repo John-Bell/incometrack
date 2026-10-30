@@ -1,4 +1,4 @@
-import type { Budget, Transaction } from '@/lib/db';
+import type { Account, Budget, Transaction } from '@/lib/db';
 
 export interface TargetMonth {
   year: number;
@@ -66,6 +66,116 @@ export interface CategoryTuningItem {
   proposalText: string;
   actionLabel: string;
   showProposal: boolean;
+}
+
+export interface BudgetItemDetails {
+  isAnnual: boolean;
+  monthlyAmount: number;
+  annualAmount: number;
+  startDateTs: number;
+  formattedStartDate: string;
+  actualAmount: number;
+  targetNum: number;
+  ratio: number;
+  percent: number;
+  status: string;
+  barColor: string;
+  chipClass: string;
+}
+
+export function filterAndSortBudgets(budgets: Budget[], selectedAccountId: string): Budget[] {
+  const filtered = selectedAccountId
+    ? budgets.filter((b) => b.accountId === selectedAccountId)
+    : budgets;
+  return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getBudgetAccounts(accounts: Account[]): Account[] {
+  return accounts
+    .filter((acc) => acc.budgetOrder !== undefined && acc.budgetOrder !== null)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function calculateBudgetItemDetails(
+  budget: Budget,
+  transactions: Transaction[],
+  currentDate: Date = new Date()
+): BudgetItemDetails {
+  const isAnnual = budget.frequency === 'annual';
+  const monthlyAmount = isAnnual ? budget.amount / 12 : budget.amount;
+  const annualAmount = isAnnual ? budget.amount : budget.amount * 12;
+
+  const startDateTs = budget.budgetStartDate ?? new Date(2026, 3, 1).getTime();
+  const formattedStartDate = new Date(startDateTs).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  const budgetTransactions = transactions.filter(
+    (t) => t.budgetId === budget.id && t.type === 'expense'
+  );
+
+  let actualAmount = 0;
+  if (!isAnnual) {
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    actualAmount = budgetTransactions
+      .filter((t) => {
+        const d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+  } else {
+    const currentYear = currentDate.getFullYear();
+    actualAmount = budgetTransactions
+      .filter((t) => new Date(t.date).getFullYear() === currentYear)
+      .reduce((sum, t) => sum + t.amount, 0);
+  }
+
+  const targetNum = budget.amount;
+  const ratio = targetNum > 0 ? actualAmount / targetNum : 0;
+  const percent = Math.min(ratio * 100, 100);
+
+  const actualRound = Math.round(actualAmount * 100);
+  const targetRound = Math.round(targetNum * 100);
+
+  let status = 'ON TRACK';
+  let barColor = 'bg-blue-500';
+  let chipClass = 'bg-blue-500/10 text-blue-500';
+
+  if (actualRound > targetRound) {
+    status = 'OVERSPENT';
+    barColor = 'bg-red-500';
+    chipClass = 'bg-red-500/10 text-red-500';
+  } else if (actualRound === targetRound && targetRound > 0) {
+    status = 'FULLY SPENT';
+    barColor = 'bg-orange-500';
+    chipClass = 'bg-orange-500/10 text-orange-500';
+  } else if (ratio >= 0.90) {
+    status = 'OVERSPEND RISK';
+    barColor = 'bg-orange-500';
+    chipClass = 'bg-orange-500/10 text-orange-500';
+  } else if (ratio <= 0.75) {
+    status = 'PLENTY OF CAPACITY';
+    barColor = 'bg-emerald-500';
+    chipClass = 'bg-emerald-500/10 text-emerald-500';
+  }
+
+  return {
+    isAnnual,
+    monthlyAmount,
+    annualAmount,
+    startDateTs,
+    formattedStartDate,
+    actualAmount,
+    targetNum,
+    ratio,
+    percent,
+    status,
+    barColor,
+    chipClass,
+  };
 }
 
 export function getTargetMonths(

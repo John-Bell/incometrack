@@ -1,12 +1,5 @@
-
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
-import { useStore } from '@/store/useStore';
-import { formatRelativeTime } from '@/lib/utils';
-import { calculateTotalSavings, calculateNonPensionSavings, calculateTaxableSavings, calculateProjectedTaxableInterest, calculateProjectedInterestForAccount } from '@/services/accountCalculations';
-import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
+import { useAccountsPage } from '@/hooks/useAccountsPage';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -17,99 +10,19 @@ import { ForecastWidget } from '../components/accounts/ForecastWidget';
 
 export function AccountsPage() {
     const navigate = useNavigate();
-    const { profile, activeAccountsTab, setActiveAccountsTab, taxYear } = useStore();
-    const p1Name = profile?.partner1Name || 'Partner 1';
-    const p2Name = profile?.partner2Name || 'Partner 2';
-
-    const [sortBy, setSortBy] = useState<'rate' | 'name'>('name');
-
-    const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
-
-    const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
-    const allAccruals = useLiveQuery(
-        () => db.interestAccruals
-            .where('date')
-            .between(startTs, endTs, true, true)
-            .toArray(),
-        [startTs, endTs]
-    ) || [];
-
-    const sortedRawAccounts = [...rawAccounts].sort((a, b) => {
-        if (sortBy === 'rate') {
-            return (a.interestRate || 0) - (b.interestRate || 0);
-        } else {
-            return (a.name || '').localeCompare(b.name || '');
-        }
-    });
-
-    const mappedAccounts = sortedRawAccounts.map(acc => {
-        let ownerTagColor: 'blue' | 'pink' | 'purple' = 'purple';
-
-        if (acc.ownerId === 'person1') {
-            ownerTagColor = 'blue';
-        } else if (acc.ownerId === 'person2') {
-            ownerTagColor = 'pink';
-        }
-
-        const accountIcon = acc.name ? acc.name.charAt(0).toUpperCase() : '?';
-        let iconColor: 'red' | 'blue' | 'gray' | 'green' = 'gray';
-        if (accountIcon === 'S') iconColor = 'red';
-        else if (accountIcon === 'B') iconColor = 'blue';
-        else if (accountIcon === 'L') iconColor = 'green';
-
-        const projectedInterestValue = calculateProjectedInterestForAccount(acc, allAccruals, startTs, endTs);
-        const projectedInterest = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(projectedInterestValue);
-
-        const isTaxFree = acc.category && TAX_FREE_CATEGORIES.includes(acc.category as any);
-
-        return {
-            id: acc.id,
-            ownerId: acc.ownerId, // used for filtering
-            accountIcon,
-            iconColor,
-            accountName: acc.name,
-            nickname: acc.nickname,
-            last4Digits: acc.last4Digits,
-            category: acc.category,
-            ownerTag: acc.ownerId === 'joint' ? 'Joint' : (acc.ownerId === 'person1' ? p1Name : p2Name),
-            ownerTagColor,
-            balance: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(acc.balance),
-            projectedInterest: projectedInterestValue > 0 ? projectedInterest : undefined,
-            isTaxable: !isTaxFree,
-            rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
-            interestPayoutFrequency: acc.interestPayoutFrequency,
-            interestPayoutDate: acc.interestPayoutDate,
-            updatedAt: formatRelativeTime(acc.updatedAt),
-            alertText: acc.alertText,
-            alertType: acc.alertType as any,
-        };
-    });
-
-    const totalSavingsValue = calculateTotalSavings(rawAccounts);
-    const formattedTotalSavings = new Intl.NumberFormat('en-GB', {
-        style: 'currency',
-        currency: 'GBP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(totalSavingsValue);
-
-    const nonPensionSavingsValue = calculateNonPensionSavings(rawAccounts);
-    const formattedNonPensionSavings = new Intl.NumberFormat('en-GB', {
-        style: 'currency',
-        currency: 'GBP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(nonPensionSavingsValue);
-
-    const taxableSavingsValue = calculateTaxableSavings(rawAccounts);
-    const formattedTaxableSavings = new Intl.NumberFormat('en-GB', {
-        style: 'currency',
-        currency: 'GBP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(taxableSavingsValue);
-
-    const filteredAccounts = mappedAccounts.filter(acc => acc.ownerId === activeAccountsTab);
+    const {
+        sortBy,
+        setSortBy,
+        activeAccountsTab,
+        setActiveAccountsTab,
+        startTs,
+        endTs,
+        formattedTotalSavings,
+        formattedNonPensionSavings,
+        formattedTaxableSavings,
+        tabSummaries,
+        filteredAccounts,
+    } = useAccountsPage();
 
     return (
         <AppLayout
@@ -129,7 +42,11 @@ export function AccountsPage() {
             }
         >
             <div className="px-4 pb-4">
-                <PortfolioOverview totalSavings={formattedTotalSavings} nonPensionSavings={formattedNonPensionSavings} taxableSavings={formattedTaxableSavings} />
+                <PortfolioOverview
+                    totalSavings={formattedTotalSavings}
+                    nonPensionSavings={formattedNonPensionSavings}
+                    taxableSavings={formattedTaxableSavings}
+                />
 
                 <div className="my-6">
                     <ForecastWidget startTs={startTs} endTs={endTs} />
@@ -144,30 +61,22 @@ export function AccountsPage() {
                 </button>
 
                 <div className="flex bg-slate-100 dark:bg-black/20 p-1 rounded-xl mb-4 text-sm font-medium border border-black/5 dark:border-white/5">
-                    {['person1', 'person2', 'joint'].map((tab) => {
-                        const tabAccounts = rawAccounts.filter(acc => acc.ownerId === tab);
-                        const tabTaxableInterest = calculateProjectedTaxableInterest(tabAccounts, allAccruals, startTs, endTs);
-                        const formattedTabTaxableInterest = new Intl.NumberFormat('en-GB', {
-                            style: 'currency',
-                            currency: 'GBP',
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        }).format(tabTaxableInterest);
-
-                        return (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveAccountsTab(tab)}
-                                className={`flex-1 py-1.5 rounded-lg text-center transition-all ${activeAccountsTab === tab
+                    {tabSummaries.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveAccountsTab(tab.id)}
+                            className={`flex-1 py-1.5 rounded-lg text-center transition-all ${
+                                activeAccountsTab === tab.id
                                     ? 'bg-white dark:bg-[#1a2b25] text-slate-900 dark:text-white shadow-sm ring-1 ring-black/5 dark:ring-white/10'
                                     : 'text-slate-500 dark:text-[#7d998f] hover:text-slate-700 dark:hover:text-[#9db9b0]'
-                                    }`}
-                            >
-                                <div className="font-semibold">{tab === 'joint' ? 'Joint' : (tab === 'person1' ? p1Name : p2Name)}</div>
-                                <div className="text-xs font-normal opacity-80 mt-0.5">{formattedTabTaxableInterest}</div>
-                            </button>
-                        );
-                    })}
+                            }`}
+                        >
+                            <div className="font-semibold">{tab.label}</div>
+                            <div className="text-xs font-normal opacity-80 mt-0.5">
+                                {tab.formattedTaxableInterest}
+                            </div>
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -175,7 +84,7 @@ export function AccountsPage() {
                 <div className="flex items-center justify-between mb-4 mt-2">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">Active Accounts</h2>
                     <button
-                        onClick={() => setSortBy(prev => prev === 'rate' ? 'name' : 'rate')}
+                        onClick={() => setSortBy((prev) => (prev === 'rate' ? 'name' : 'rate'))}
                         className="text-sm font-medium text-primary flex items-center gap-1 hover:opacity-80 transition-opacity"
                     >
                         Sort by {sortBy === 'rate' ? 'Rate' : 'Name'}
@@ -185,14 +94,10 @@ export function AccountsPage() {
 
                 <div className="space-y-3 relative">
                     {filteredAccounts.map((account) => (
-                        <AccountCard
-                            key={account.id}
-                            {...account}
-                        />
+                        <AccountCard key={account.id} {...account} />
                     ))}
                 </div>
             </div>
-
         </AppLayout>
     );
 }

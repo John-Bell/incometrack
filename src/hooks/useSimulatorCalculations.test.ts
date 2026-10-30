@@ -122,7 +122,7 @@ describe('useSimulatorCalculations', () => {
         expect(resultWithSweep.current.p2Incomes.interest).toBeCloseTo(1500, 0);
     });
 
-    it('never sweeps 0% interest accounts or manual tracking accounts', () => {
+    it('sweeps manual tracking accounts with positive interest rate and ignores 0% interest or excluded accounts', () => {
         (useStore as any).mockReturnValue({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
@@ -130,7 +130,7 @@ describe('useSimulatorCalculations', () => {
 
         const accounts = [
             {
-                id: 'acc0percent',
+                id: 'accCurrent',
                 ownerId: 'person1',
                 name: 'Current Account (0%)',
                 balance: 20000,
@@ -139,21 +139,21 @@ describe('useSimulatorCalculations', () => {
                 interestPayoutFrequency: 'monthly'
             },
             {
-                id: 'accManual',
+                id: 'accStocks',
                 ownerId: 'person1',
-                name: 'Manual Account',
+                name: 'Stocks & Shares',
                 balance: 20000,
                 interestRate: 5.0,
-                interestTrackingMethod: 'manual',
-                category: 'Easy Access Savings',
+                category: 'Stocks & Shares',
                 interestPayoutFrequency: 'monthly'
             },
             {
-                id: 'acc5percent',
+                id: 'accManual',
                 ownerId: 'person1',
-                name: 'Savings 5%',
+                name: 'Manual Easy Access 5%',
                 balance: 20000,
                 interestRate: 5.0,
+                interestTrackingMethod: 'manual',
                 category: 'Easy Access Savings',
                 interestPayoutFrequency: 'monthly'
             }
@@ -165,19 +165,73 @@ describe('useSimulatorCalculations', () => {
             return [];
         });
 
-        // Without sweep: Savings 5% (£1,000) + Manual account (£1,000) = £2,000 total interest
+        // Without sweep: Stocks & Shares (£1,000) + Manual Easy Access (£1,000) = £2,000 total interest
         const { result: resultWithoutSweep } = renderHook(() =>
             useSimulatorCalculations(undefined, undefined, '2025-2026', false)
         );
         expect(resultWithoutSweep.current.p1Incomes.interest).toBeCloseTo(2000, 0);
 
-        // With sweep: The 0% account and manual account are ignored, so the £20k sweep sweeps the 5% account.
-        // The 5% account balance becomes 0 (0 interest), while the manual account remains unswept (£1,000 interest).
-        // Total P1 interest becomes £1,000. (If 0% account was swept instead, total interest would be £2,000).
+        // With sweep: Current Account and Stocks & Shares are excluded candidates.
+        // Manual Easy Access is eligible despite interestTrackingMethod: 'manual'.
+        // The £20k ISA sweep targets Manual Easy Access (£20,000 -> £0), leaving 0 interest from it.
+        // Remaining P1 interest comes only from Stocks & Shares (£1,000).
         const { result: resultWithSweep } = renderHook(() =>
             useSimulatorCalculations(undefined, undefined, '2025-2026', true)
         );
         expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(1000, 0);
+    });
+
+    it('scales workingAccruals proportionally when deducting balance during ISA sweep', () => {
+        (useStore as any).mockReturnValue({
+            taxYear: '2025-2026',
+            taxRules: TAX_YEAR_CONSTANTS,
+        });
+
+        const startTs = new Date(2025, 3, 6).getTime();
+
+        const accounts = [
+            {
+                id: 'acc1',
+                ownerId: 'person1',
+                name: 'P1 Savings',
+                balance: 50000,
+                interestRate: 5.0,
+                category: 'Easy Access Savings',
+                interestPayoutFrequency: 'monthly'
+            }
+        ];
+
+        const interestAccruals = [
+            {
+                id: 'accrual1',
+                accountId: 'acc1',
+                date: startTs + 1000 * 3600 * 24 * 30, // 30 days after tax year start
+                interestAccrued: 500
+            }
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('interestAccruals')) return interestAccruals;
+            return [];
+        });
+
+        // Without ISA sweep
+        const { result: resultWithoutSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', false)
+        );
+
+        // With ISA sweep (£20,000 deducted from £50,000 = 60% balance remaining)
+        const { result: resultWithSweep } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', true)
+        );
+
+        // Interest with sweep should be exactly 60% of interest without sweep
+        expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(
+            resultWithoutSweep.current.p1Incomes.interest * 0.6,
+            1
+        );
     });
 
     it('sweeps movable savings first before non-movable savings, and ignores non-paying fixed accounts for selected tax year', () => {

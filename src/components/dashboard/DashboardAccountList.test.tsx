@@ -102,4 +102,81 @@ describe('DashboardAccountList', () => {
         expect(screen.getAllByText('One-off Repair').length).toBeGreaterThan(0);
         expect(screen.getAllByLabelText('One-off budget').length).toBeGreaterThan(0);
     });
+
+    it('shows Monthly Allocated against account if there are only annual budgets', () => {
+        const annualBudgets: Budget[] = [
+            {
+                id: 'b-annual-1',
+                accountId: 'acc-1',
+                name: 'Car Insurance',
+                amount: 1200,
+                frequency: 'annual',
+                updatedAt: Date.now()
+            },
+            {
+                id: 'b-annual-2',
+                accountId: 'acc-1',
+                name: 'Home Insurance',
+                amount: 600,
+                frequency: 'annual',
+                updatedAt: Date.now()
+            }
+        ];
+
+        render(
+            <MemoryRouter>
+                <DashboardAccountList
+                    accounts={mockAccounts}
+                    budgets={annualBudgets}
+                    transactions={[]}
+                />
+            </MemoryRouter>
+        );
+
+        // Account total allocated: 1200 + 600 = 1,800.00
+        const allocatedElements = screen.getAllByText('Allocated: £1,800.00');
+        expect(allocatedElements.length).toBeGreaterThan(0);
+
+        // Account monthly allocated: 1,800 / 12 = 150.00
+        const monthlyAllocatedElements = screen.getAllByText('Monthly Allocated: £150.00');
+        expect(monthlyAllocatedElements.length).toBeGreaterThan(0);
+    });
+
+    it('does not show Monthly Allocated against account if there are monthly budgets', () => {
+        const mixedBudgets: Budget[] = [
+            {
+                id: 'b-monthly',
+                accountId: 'acc-1',
+                name: 'Groceries',
+                amount: 400,
+                frequency: 'monthly',
+                updatedAt: Date.now()
+            },
+            {
+                id: 'b-annual',
+                accountId: 'acc-1',
+                name: 'Insurance',
+                amount: 1200,
+                frequency: 'annual',
+                updatedAt: Date.now()
+            }
+        ];
+
+        render(
+            <MemoryRouter>
+                <DashboardAccountList
+                    accounts={mockAccounts}
+                    budgets={mixedBudgets}
+                    transactions={[]}
+                />
+            </MemoryRouter>
+        );
+
+        // Allocated should exist
+        const allocatedElements = screen.getAllByText('Allocated: £1,600.00');
+        expect(allocatedElements.length).toBeGreaterThan(0);
+
+        // Monthly Allocated should not exist for account
+        expect(screen.queryByText(/Monthly Allocated:/)).not.toBeInTheDocument();
+    });
 });

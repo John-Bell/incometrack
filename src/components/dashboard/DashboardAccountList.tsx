@@ -64,6 +64,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
         const accountTotalAllocated = accountBudgets
             .filter(budget => !budget.oneOffBudget)
             .reduce((sum, budget) => sum + budget.amount, 0);
+        const isOnlyAnnual = accountBudgets.length > 0 && accountBudgets.every(budget => budget.frequency === 'annual');
         let totalSpent = 0;
         accountBudgets.forEach(budget => {
             const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
@@ -74,6 +75,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
             account,
             accountBudgets,
             accountTotalAllocated,
+            isOnlyAnnual,
             totalSpent
         };
     });
@@ -123,7 +125,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
                 {/* Rows */}
                 <div className="flex flex-col">
-                    {accountsData.map(({ account, accountBudgets, accountTotalAllocated, totalSpent }) => {
+                    {accountsData.map(({ account, accountBudgets, accountTotalAllocated, isOnlyAnnual, totalSpent }) => {
                         return (
                             <div key={account.id} className="flex flex-col border-b border-slate-200 dark:border-slate-800 last:border-0">
                                 {/* Account Row */}
@@ -136,7 +138,12 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                     </div>
                                     <div></div>
                                     <div className="text-right text-slate-500 dark:text-slate-400 font-medium">
-                                        Allocated: {formatCurrency(accountTotalAllocated)}
+                                        <div>Allocated: {formatCurrency(accountTotalAllocated)}</div>
+                                        {isOnlyAnnual && (
+                                            <div className="text-xs text-slate-400 dark:text-slate-500">
+                                                Monthly Allocated: {formatCurrency(accountTotalAllocated / 12)}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="text-right font-bold text-slate-900 dark:text-white text-lg">
                                         Total Remaining: {formatCurrency(accountTotalAllocated - totalSpent)}
@@ -219,7 +226,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
             {/* Mobile View */}
             <div className="md:hidden flex flex-col gap-6">
-                {accountsData.map(({ account, accountBudgets, accountTotalAllocated, totalSpent }) => {
+                {accountsData.map(({ account, accountBudgets, accountTotalAllocated, isOnlyAnnual, totalSpent }) => {
                     return (
                         <div key={account.id} className="flex flex-col gap-2">
                             {/* Account Header */}
@@ -244,6 +251,11 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                     {accountTotalAllocated > 0 && (
                                         <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
                                             Allocated: {formatCurrency(accountTotalAllocated)}
+                                        </span>
+                                    )}
+                                    {isOnlyAnnual && (
+                                        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                                            Monthly Allocated: {formatCurrency(accountTotalAllocated / 12)}
                                         </span>
                                     )}
                                 </div>

@@ -94,6 +94,11 @@ export function BudgetsPage() {
                                                 <div className="flex items-center gap-2">
                                                     <Icon name={budget.icon || "label"} className="text-[#1DAF61] text-lg" />
                                                     <p className="font-semibold text-slate-900 dark:text-slate-100">{budget.name}</p>
+                                                    {budget.oneOffBudget && (
+                                                        <span title="One-off budget" aria-label="One-off budget" className="flex items-center text-amber-500">
+                                                            <Icon name="event_upcoming" className="text-base" />
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${details.chipClass}`}>
                                                     {details.status}

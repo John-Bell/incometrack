@@ -131,6 +131,7 @@ export class DataImportService {
             } else if (targetTable === 'budgets') {
                 if (!mappedRow.frequency) mappedRow.frequency = 'monthly';
                 if (!mappedRow.budgetStartDate) mappedRow.budgetStartDate = new Date(2026, 3, 1).getTime();
+                if (mappedRow.oneOffBudget === undefined) mappedRow.oneOffBudget = false;
 
                 // Cleanup temporary mapping field
                 delete mappedRow.importCategory;

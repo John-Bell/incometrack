@@ -150,6 +150,7 @@ export interface Budget {
     icon?: string;
     updatedAt?: number;
     budgetStartDate?: number; // timestamp (ms)
+    oneOffBudget?: boolean;
     // --- Import Fields ---
     importId?: string;
     externalRef?: string;
@@ -559,6 +560,33 @@ db.version(18).stores({
     });
 });
 
+db.version(19).stores({
+    profile: '&id',
+    accounts: '&id, ownerId, name, category, importId, updatedAt',
+    incomes: '&id, ownerId, name, frequency, type, taxCategory, updatedAt',
+    scenarios: '&id, name, updatedAt',
+    settings: '&id',
+    monthlyArchives: '&id, month, year, updatedAt',
+    notifications: '&id, date, read, updatedAt',
+    taxRules: '&id, updatedAt',
+    budgets: '&id, accountId, name, importId, updatedAt',
+    transactions: '&id, date, type, budgetId, accountId, importId, updatedAt',
+    paymentMappings: '&id, paymentName, *budgetIds, updatedAt',
+    interestAccruals: '&id, accountId, date, updatedAt',
+    properties: '&id, name, updatedAt',
+    propertyExpenses: '&id, propertyId, date, updatedAt',
+    propertyIncomes: '&id, propertyId, date, updatedAt',
+    propertyOwnership: '&id, propertyId, startDate, updatedAt',
+    milestones: '&id, date, updatedAt',
+    deletedRows: '&id, tableName, deletedAt'
+}).upgrade(tx => {
+    return tx.table('budgets').toCollection().modify(budget => {
+        if (budget.oneOffBudget === undefined || budget.oneOffBudget === null) {
+            budget.oneOffBudget = false;
+        }
+    });
+});
+
 export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
@@ -604,6 +632,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
             ...b,
             amount: Number(b.amount) || 0,
             budgetStartDate: b.budgetStartDate !== undefined ? Number(b.budgetStartDate) : new Date(2026, 3, 1).getTime(),
+            oneOffBudget: Boolean(b.oneOffBudget),
         }));
     }
 

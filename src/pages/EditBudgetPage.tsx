@@ -19,6 +19,7 @@ export function EditBudgetPage() {
     const [accountId, setAccountId] = useState('');
     const [icon, setIcon] = useState('category');
     const [budgetStartDate, setBudgetStartDate] = useState('2026-04-01');
+    const [oneOffBudget, setOneOffBudget] = useState(false);
 
     useEffect(() => {
         if (budget) {
@@ -38,6 +39,7 @@ export function EditBudgetPage() {
             } else {
                 setBudgetStartDate('2026-04-01');
             }
+            setOneOffBudget(budget.oneOffBudget ?? false);
         }
     }, [budget]);
 
@@ -53,7 +55,8 @@ export function EditBudgetPage() {
             frequency,
             accountId,
             icon: icon !== 'category' ? icon : undefined,
-            budgetStartDate: startDateTs
+            budgetStartDate: startDateTs,
+            oneOffBudget
         } );
         navigate('/budgets');
     };
@@ -144,13 +147,22 @@ export function EditBudgetPage() {
                             >
                                 Annual
                             </button>
-                            <button
-                                onClick={() => setFrequency('one-off')}
-                                className={`px-4 py-2 rounded-full text-sm font-medium ${frequency === 'one-off' ? 'border-2 border-primary bg-primary/10 text-primary' : 'border border-slate-300 dark:border-primary/20 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400'}`}
-                            >
-                                One-off
-                            </button>
                         </div>
+                    </div>
+
+                    {/* One-off Budget Toggle */}
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-primary/20 bg-white dark:bg-slate-900/50">
+                        <div>
+                            <label htmlFor="oneOffBudget" className="font-semibold text-slate-900 dark:text-slate-100 cursor-pointer text-sm block">One-off budget</label>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Mark this budget as a one-off item.</p>
+                        </div>
+                        <input
+                            id="oneOffBudget"
+                            type="checkbox"
+                            checked={oneOffBudget}
+                            onChange={(e) => setOneOffBudget(e.target.checked)}
+                            className="w-5 h-5 rounded text-primary focus:ring-primary border-slate-300 dark:border-slate-600 cursor-pointer accent-primary"
+                        />
                     </div>
 
                     {/* Start Date */}

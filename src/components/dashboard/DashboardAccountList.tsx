@@ -237,7 +237,14 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                         <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] dark:bg-emerald-900/20 flex items-center justify-center text-[#1DAF61] dark:text-emerald-400">
                                                             <Icon name={budget.icon || getBudgetIcon(budget.name)} className="w-6 h-6" />
                                                         </div>
-                                                        <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">{budget.name}</h3>
+                                                        <div className="flex items-center gap-2">
+                                                            <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">{budget.name}</h3>
+                                                            {budget.oneOffBudget && (
+                                                                <span title="One-off budget" aria-label="One-off budget" className="flex items-center text-amber-500">
+                                                                    <Icon name="event_upcoming" className="text-base" />
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center gap-6 text-slate-500 dark:text-slate-400">
                                                         <div

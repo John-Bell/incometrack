@@ -30,6 +30,11 @@ export function calculateSpendingGraphData(
     ? new Set(scopedBudgets.map((b) => b.id))
     : null;
 
+  // Set of budget IDs marked as one-off
+  const oneOffBudgetIds = scopedBudgets
+    ? new Set(scopedBudgets.filter((b) => Boolean(b.oneOffBudget)).map((b) => b.id))
+    : new Set<string>();
+
   // Filter eligible transactions
   const eligibleTransactions = transactions.filter((t) => {
     // Only expenses
@@ -43,10 +48,17 @@ export function calculateSpendingGraphData(
     // Filter by budget if specified
     if (selectedBudgetId) {
       if (t.budgetId !== selectedBudgetId) return false;
-    } else if (allowedBudgetIds !== null) {
-      // If no specific budget selected, limit to scoped budgets (or unbudgeted if we allow, but scopedBudgets are within account)
-      if (t.budgetId && !allowedBudgetIds.has(t.budgetId)) {
+    } else {
+      // If no specific budget is selected, exclude transactions from one-off budgets
+      if (t.budgetId && oneOffBudgetIds.has(t.budgetId)) {
         return false;
+      }
+
+      if (allowedBudgetIds !== null) {
+        // If no specific budget selected, limit to scoped budgets (or unbudgeted if we allow, but scopedBudgets are within account)
+        if (t.budgetId && !allowedBudgetIds.has(t.budgetId)) {
+          return false;
+        }
       }
     }
 

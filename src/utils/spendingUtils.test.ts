@@ -106,4 +106,53 @@ describe('spendingUtils', () => {
     expect(result.peakAmount).toBe(0);
     expect(result.barData.every((b) => b.heightPct === 0)).toBe(true);
   });
+
+  it('excludes one-off budgets from totals unless a one-off budget is explicitly selected', () => {
+    const mixedBudgets: Budget[] = [
+      { id: 'b_regular', accountId: 'acc1', name: 'Groceries', amount: 500, oneOffBudget: false },
+      { id: 'b_oneoff', accountId: 'acc1', name: 'Holiday', amount: 1500, oneOffBudget: true },
+    ];
+
+    const transactions: Transaction[] = [
+      { id: 't1', date: new Date(2026, 0, 5).getTime(), amount: 200, type: 'expense', budgetId: 'b_regular', accountId: 'acc1' },
+      { id: 't2', date: new Date(2026, 0, 10).getTime(), amount: 1200, type: 'expense', budgetId: 'b_oneoff', accountId: 'acc1' },
+      { id: 't3', date: new Date(2026, 1, 15).getTime(), amount: 100, type: 'expense', budgetId: 'b_regular', accountId: 'acc1' },
+      { id: 't4', date: new Date(2026, 1, 20).getTime(), amount: 50, type: 'expense', accountId: 'acc1' }, // unbudgeted expense
+    ];
+
+    // Case 1: All budgets (no selectedBudgetId) -> exclude b_oneoff
+    const allBudgetsResult = calculateSpendingGraphData(
+      targetMonths,
+      transactions,
+      undefined,
+      undefined,
+      mixedBudgets
+    );
+
+    // Jan should have t1 (200), excluding t2 (1200) -> 200
+    // Feb should have t3 (100) + t4 (50) -> 150
+    // Total should be 200 + 150 = 350
+    expect(allBudgetsResult.totalSpend).toBe(350);
+    expect(allBudgetsResult.avgMonthlySpend).toBe(350 / 3);
+    expect(allBudgetsResult.barData[0].rawAmount).toBe(200);
+    expect(allBudgetsResult.barData[1].rawAmount).toBe(150);
+    expect(allBudgetsResult.peakMonth).toBe('Jan');
+    expect(allBudgetsResult.peakAmount).toBe(200);
+
+    // Case 2: One-off budget explicitly selected -> include b_oneoff transactions
+    const oneOffBudgetResult = calculateSpendingGraphData(
+      targetMonths,
+      transactions,
+      undefined,
+      'b_oneoff',
+      mixedBudgets
+    );
+
+    // Only t2 (1200) in Jan
+    expect(oneOffBudgetResult.totalSpend).toBe(1200);
+    expect(oneOffBudgetResult.barData[0].rawAmount).toBe(1200);
+    expect(oneOffBudgetResult.barData[1].rawAmount).toBe(0);
+    expect(oneOffBudgetResult.peakMonth).toBe('Jan');
+    expect(oneOffBudgetResult.peakAmount).toBe(1200);
+  });
 });

@@ -146,7 +146,7 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
         partner2Dob: activeProfile.partner2Dob
       },
       incomes: dbIncomes,
-      budgets: dbBudgets,
+      budgets: dbBudgets.filter(b => !b.oneOffBudget),
       properties: dbProperties,
       propertyOwnership: dbPropertyOwnership,
       milestones: dbMilestones,

@@ -58,7 +58,9 @@ describe('DashboardAccountList', () => {
         );
 
         // Top Allocated summary: 300 (monthly) + 1200 / 12 (annual) = 400.00. One-off 1000 is excluded.
-        expect(screen.getByText('£400.00')).toBeInTheDocument();
+        // It appears in the top allocated total and in the account breakdown
+        const fourHundredElements = screen.getAllByText('£400.00');
+        expect(fourHundredElements.length).toBeGreaterThanOrEqual(1);
         expect(screen.getByText('Monthly allocated spending')).toBeInTheDocument();
 
         // Account allocated total should be 300 + 1200 = 1,500.00 (excluding 1000 one-off)
@@ -178,5 +180,102 @@ describe('DashboardAccountList', () => {
 
         // Monthly Allocated should not exist for account
         expect(screen.queryByText(/Monthly Allocated:/)).not.toBeInTheDocument();
+    });
+
+    it('renders the accounts summary directly underneath top allocated with matching monthly allocated per account excluding one-off budgets', () => {
+        const multipleAccounts: Account[] = [
+            {
+                id: 'acc-1',
+                ownerId: 'default',
+                name: 'Current Account',
+                nickname: 'Everyday Checking',
+                last4Digits: '1234',
+                balance: 5000,
+                interestRate: 0,
+                category: 'Current Account',
+                budgetOrder: 1,
+                updatedAt: Date.now()
+            },
+            {
+                id: 'acc-2',
+                ownerId: 'default',
+                name: 'Bills Account',
+                balance: 3000,
+                interestRate: 0,
+                category: 'Current Account',
+                budgetOrder: 2,
+                updatedAt: Date.now()
+            }
+        ];
+
+        const testBudgets: Budget[] = [
+            // Account 1: 250 monthly + 1200 annual (= 100/mo) + 500 one-off (excluded) = 350/mo
+            {
+                id: 'b-1',
+                accountId: 'acc-1',
+                name: 'Groceries',
+                amount: 250,
+                frequency: 'monthly',
+                updatedAt: Date.now()
+            },
+            {
+                id: 'b-2',
+                accountId: 'acc-1',
+                name: 'Car Insurance',
+                amount: 1200,
+                frequency: 'annual',
+                updatedAt: Date.now()
+            },
+            {
+                id: 'b-3',
+                accountId: 'acc-1',
+                name: 'Holiday Trip',
+                amount: 500,
+                frequency: 'monthly',
+                oneOffBudget: true,
+                updatedAt: Date.now()
+            },
+            // Account 2: 150 monthly + 600 annual (= 50/mo) = 200/mo
+            {
+                id: 'b-4',
+                accountId: 'acc-2',
+                name: 'Broadband',
+                amount: 150,
+                frequency: 'monthly',
+                updatedAt: Date.now()
+            },
+            {
+                id: 'b-5',
+                accountId: 'acc-2',
+                name: 'Home Insurance',
+                amount: 600,
+                frequency: 'annual',
+                updatedAt: Date.now()
+            }
+        ];
+
+        render(
+            <MemoryRouter>
+                <DashboardAccountList
+                    accounts={multipleAccounts}
+                    budgets={testBudgets}
+                    transactions={[]}
+                />
+            </MemoryRouter>
+        );
+
+        // Overall Monthly Allocated: 350 + 200 = 550.00
+        expect(screen.getByText('£550.00')).toBeInTheDocument();
+
+        // Check account breakdown section exists
+        expect(screen.getByText('Account Breakdown')).toBeInTheDocument();
+
+        // Everyday Checking ..1234 should have monthly allocated £350.00
+        expect(screen.getAllByText(/Everyday Checking/).length).toBeGreaterThan(0);
+        expect(screen.getByText('£350.00')).toBeInTheDocument();
+
+        // Bills Account should have monthly allocated £200.00
+        expect(screen.getAllByText('Bills Account').length).toBeGreaterThan(0);
+        expect(screen.getByText('£200.00')).toBeInTheDocument();
     });
 });

@@ -64,6 +64,12 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
         const accountTotalAllocated = accountBudgets
             .filter(budget => !budget.oneOffBudget)
             .reduce((sum, budget) => sum + budget.amount, 0);
+        const accountMonthlyAllocated = accountBudgets
+            .filter(budget => !budget.oneOffBudget)
+            .reduce((sum, budget) => {
+                const monthlyValue = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
+                return sum + monthlyValue;
+            }, 0);
         const isOnlyAnnual = accountBudgets.length > 0 && accountBudgets.every(budget => budget.frequency === 'annual');
         let totalSpent = 0;
         accountBudgets.forEach(budget => {
@@ -75,6 +81,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
             account,
             accountBudgets,
             accountTotalAllocated,
+            accountMonthlyAllocated,
             isOnlyAnnual,
             totalSpent
         };
@@ -103,6 +110,36 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                     {formatCurrency(totalMonthlyAllocated)}
                 </div>
             </div>
+
+            {/* Accounts Monthly Allocated Summary */}
+            {accountsData.length > 0 && (
+                <div className="bg-white dark:bg-slate-900/50 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+                        Account Breakdown
+                    </h3>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {accountsData.map(({ account, accountMonthlyAllocated }) => (
+                            <div
+                                key={account.id}
+                                className="flex items-center justify-between py-2 first:pt-0 last:pb-0 cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => navigate(`/accounts/edit/${account.id}`)}
+                            >
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    {account.nickname || account.name}
+                                    {account.last4Digits && (
+                                        <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">
+                                            ..{account.last4Digits}
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                                    {formatCurrency(accountMonthlyAllocated)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {sortedAccounts.length === 0 && (
                 <div className="text-center text-slate-500 dark:text-slate-400 py-8">

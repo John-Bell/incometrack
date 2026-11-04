@@ -61,7 +61,9 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
     const accountsData = sortedAccounts.map(account => {
         const accountBudgets = getBudgetsForAccount(account.id);
-        const accountTotalAllocated = accountBudgets.reduce((sum, budget) => sum + budget.amount, 0);
+        const accountTotalAllocated = accountBudgets
+            .filter(budget => !budget.oneOffBudget)
+            .reduce((sum, budget) => sum + budget.amount, 0);
         let totalSpent = 0;
         accountBudgets.forEach(budget => {
             const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
@@ -76,8 +78,30 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
         };
     });
 
+    const totalMonthlyAllocated = budgets
+        .filter(budget => !budget.oneOffBudget)
+        .reduce((sum, budget) => {
+            const monthlyValue = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
+            return sum + monthlyValue;
+        }, 0);
+
     return (
         <div className="w-full max-w-7xl mx-auto pt-4 px-4 pb-24">
+            {/* Top Monthly Allocated Card */}
+            <div className="bg-white dark:bg-slate-900/50 rounded-xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        Allocated
+                    </h2>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                        Monthly allocated spending
+                    </p>
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    {formatCurrency(totalMonthlyAllocated)}
+                </div>
+            </div>
+
             {sortedAccounts.length === 0 && (
                 <div className="text-center text-slate-500 dark:text-slate-400 py-8">
                     <Icon name="account_balance" className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
@@ -130,8 +154,13 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                         <div key={budget.id} className="flex flex-col border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                                             {/* Budget Row */}
                                             <div className="grid grid-cols-[3fr_1fr_1fr_1fr_100px] gap-4 p-4 items-center hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                                                <div className="font-bold text-slate-800 dark:text-slate-200 text-[15px] pl-4">
-                                                    {budget.name}
+                                                <div className="font-bold text-slate-800 dark:text-slate-200 text-[15px] pl-4 flex items-center gap-2">
+                                                    <span>{budget.name}</span>
+                                                    {budget.oneOffBudget && (
+                                                        <span title="One-off budget" aria-label="One-off budget" className="flex items-center text-amber-500">
+                                                            <Icon name="event_upcoming" className="text-base" />
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div></div>
                                                 <div className="text-right text-slate-700 dark:text-slate-300 font-medium">

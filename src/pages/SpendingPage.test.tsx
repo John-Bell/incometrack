@@ -241,4 +241,48 @@ describe('SpendingPage', () => {
     // Budget select should reset to empty
     expect(screen.getAllByRole('combobox')[1]).toHaveValue('');
   });
+
+  it('excludes one-off budgets from totals on the spending screen unless the one-off budget is selected', () => {
+    (useStore as any).mockReturnValue({
+      profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+    });
+
+    const now = new Date();
+    const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+
+    const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+    const budgets = [
+      { id: 'b_regular', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 500, oneOffBudget: false },
+      { id: 'b_oneoff', name: 'Holiday', accountId: 'acc_1', frequency: 'monthly', amount: 2000, oneOffBudget: true },
+    ];
+    const transactions = [
+      { id: 't1', budgetId: 'b_regular', accountId: 'acc_1', amount: 300, type: 'expense', date: currentMonthMs },
+      { id: 't2', budgetId: 'b_oneoff', accountId: 'acc_1', amount: 1500, type: 'expense', date: currentMonthMs },
+    ];
+
+    (useLiveQuery as any).mockImplementation((cb: any) => {
+      const str = cb.toString();
+      if (str.includes('accounts')) return accounts;
+      if (str.includes('budgets')) return budgets;
+      if (str.includes('transactions')) return transactions;
+      return [];
+    });
+
+    render(
+      <BrowserRouter>
+        <SpendingPage />
+      </BrowserRouter>
+    );
+
+    // Initial state: "All Budgets" selected -> One-off budget t2 (£1500) excluded, only t1 (£300) included
+    expect(screen.getAllByText(/£300/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/£1,800/)).not.toBeInTheDocument();
+
+    // Now select the one-off budget "Holiday" in the budget dropdown
+    const budgetSelect = screen.getAllByRole('combobox')[1];
+    fireEvent.change(budgetSelect, { target: { value: 'b_oneoff' } });
+
+    // When the one-off budget is selected, its total should be shown (£1500)
+    expect(screen.getAllByText(/£1,500/).length).toBeGreaterThanOrEqual(1);
+  });
 });

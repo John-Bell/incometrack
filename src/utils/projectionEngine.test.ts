@@ -591,4 +591,51 @@ describe('calculateLifetimeProjection', () => {
     expect(r2030?.liquidAssets).toBe(150000);
     expect(r2030?.milestones).toContain('Inheritance');
   });
+
+  it('TEST CASE 14: Excludes one-off budgets from outgoings and cashflow calculations', () => {
+    const input: ProjectionEngineInput = {
+      ...baseInput,
+      currentBalances: 100000,
+      realGrowthRate: 0,
+      budgets: [
+        {
+          id: 'budg-recurring-monthly',
+          accountId: 'acc-1',
+          name: 'Monthly Living',
+          amount: 2000, // £24,000 / year
+          frequency: 'monthly',
+          oneOffBudget: false,
+          updatedAt: Date.now(),
+        },
+        {
+          id: 'budg-recurring-annual',
+          accountId: 'acc-1',
+          name: 'Annual Insurance',
+          amount: 6000, // £6,000 / year
+          frequency: 'annual',
+          oneOffBudget: false,
+          updatedAt: Date.now(),
+        },
+        {
+          id: 'budg-one-off',
+          accountId: 'acc-1',
+          name: 'Home Renovation One-Off',
+          amount: 50000,
+          frequency: 'annually',
+          oneOffBudget: true,
+          updatedAt: Date.now(),
+        },
+      ],
+    };
+
+    const results = calculateLifetimeProjection(input);
+
+    // Expected annual outgoings: 24,000 + 6,000 = 30,000 (oneOffBudget of 50,000 is excluded)
+    expect(results[0].annualBudget).toBe(30000);
+    expect(results[0].netCashFlow).toBe(-30000);
+
+    // Year 0 (2025): 100,000 - 30,000 = 70,000 (not 20,000)
+    expect(results[0].liquidAssets).toBe(70000);
+    expect(results[0].isRunwayBroken).toBe(false);
+  });
 });

@@ -196,6 +196,9 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
     let totalBudgetsForYear = 0;
     for (const budget of input.budgets) {
+      if (budget.oneOffBudget) {
+        continue;
+      }
       const baseBudgetAnnual = budget.frequency === 'monthly' ? budget.amount * 12 : budget.amount;
       totalBudgetsForYear += baseBudgetAnnual;
     }

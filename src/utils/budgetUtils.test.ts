@@ -7,6 +7,8 @@ import {
   filterAndSortBudgets,
   getBudgetAccounts,
   calculateBudgetItemDetails,
+  getAvailableBudgetYears,
+  filterBudgetsByYear,
 } from './budgetUtils';
 import type { Account, Budget, Transaction } from '@/lib/db';
 
@@ -39,6 +41,56 @@ describe('budgetUtils', () => {
       expect(months.length).toBe(5); // Jan to May
       expect(months[0].label).toBe('Jan');
       expect(months[4].label).toBe('May');
+    });
+
+    it('returns all 12 months for a past selected year with YTD timeframe', () => {
+      const baseDate = new Date(2026, 4, 15); // May 2026
+      const months = getTargetMonths('ytd', false, baseDate, 2025);
+
+      expect(months.length).toBe(12);
+      expect(months[0]).toEqual({ year: 2025, monthIndex: 0, label: 'Jan' });
+      expect(months[11]).toEqual({ year: 2025, monthIndex: 11, label: 'Dec' });
+    });
+
+    it('returns months ending at anchor month for a past selected year with rolling timeframe', () => {
+      const baseDate = new Date(2026, 4, 15);
+      const months = getTargetMonths('3m', false, baseDate, 2025);
+
+      expect(months.length).toBe(3);
+      expect(months[0]).toEqual({ year: 2025, monthIndex: 9, label: 'Oct' });
+      expect(months[1]).toEqual({ year: 2025, monthIndex: 10, label: 'Nov' });
+      expect(months[2]).toEqual({ year: 2025, monthIndex: 11, label: 'Dec' });
+    });
+  });
+
+  describe('getAvailableBudgetYears', () => {
+    it('returns unique years sorted in descending order including fallback year', () => {
+      const budgets: Budget[] = [
+        { id: 'b1', name: 'B1', amount: 100, frequency: 'monthly', accountId: 'acc1', budgetStartDate: new Date(2025, 3, 1).getTime() },
+        { id: 'b2', name: 'B2', amount: 200, frequency: 'monthly', accountId: 'acc1', budgetStartDate: new Date(2027, 0, 1).getTime() },
+      ];
+      const transactions: Transaction[] = [
+        { id: 't1', date: new Date(2024, 5, 10).getTime(), payee: 'Shop', amount: 50, type: 'expense', accountId: 'acc1' },
+        { id: 't2', date: new Date(2025, 8, 10).getTime(), payee: 'Shop', amount: 50, type: 'expense', accountId: 'acc1' },
+      ];
+
+      const years = getAvailableBudgetYears(budgets, transactions, 2026);
+      expect(years).toEqual([2027, 2026, 2025, 2024]);
+    });
+  });
+
+  describe('filterBudgetsByYear', () => {
+    it('filters out budgets whose budgetStartDate is strictly after the given calendar year', () => {
+      const budgets: Budget[] = [
+        { id: 'b1', name: 'Past/Current', amount: 100, frequency: 'monthly', accountId: 'acc1', budgetStartDate: new Date(2025, 5, 1).getTime() },
+        { id: 'b2', name: 'Future', amount: 100, frequency: 'monthly', accountId: 'acc1', budgetStartDate: new Date(2027, 0, 1).getTime() },
+      ];
+
+      const result2025 = filterBudgetsByYear(budgets, 2025);
+      expect(result2025.map((b) => b.id)).toEqual(['b1']);
+
+      const result2027 = filterBudgetsByYear(budgets, 2027);
+      expect(result2027.map((b) => b.id)).toEqual(['b1', 'b2']);
     });
   });
 

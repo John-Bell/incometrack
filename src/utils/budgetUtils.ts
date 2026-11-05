@@ -83,6 +83,37 @@ export interface BudgetItemDetails {
   chipClass: string;
 }
 
+export function getAvailableBudgetYears(
+  budgets: Budget[],
+  transactions: Transaction[],
+  fallbackYear: number = new Date().getFullYear()
+): number[] {
+  const yearsSet = new Set<number>();
+  yearsSet.add(fallbackYear);
+
+  for (const b of budgets) {
+    if (b.budgetStartDate) {
+      yearsSet.add(new Date(b.budgetStartDate).getFullYear());
+    }
+  }
+
+  for (const t of transactions) {
+    if (t.date) {
+      yearsSet.add(new Date(t.date).getFullYear());
+    }
+  }
+
+  return Array.from(yearsSet).sort((a, b) => b - a);
+}
+
+export function filterBudgetsByYear(budgets: Budget[], year: number): Budget[] {
+  const yearEndTs = new Date(year, 11, 31, 23, 59, 59, 999).getTime();
+  return budgets.filter((b) => {
+    const budgetStart = b.budgetStartDate ?? new Date(2026, 3, 1).getTime();
+    return budgetStart <= yearEndTs;
+  });
+}
+
 export function filterAndSortBudgets(budgets: Budget[], selectedAccountId: string): Budget[] {
   const filtered = selectedAccountId
     ? budgets.filter((b) => b.accountId === selectedAccountId)
@@ -181,28 +212,32 @@ export function calculateBudgetItemDetails(
 export function getTargetMonths(
   selectedTimeframe: string,
   hasAnnualBudget: boolean,
-  baseDate: Date = new Date()
+  baseDate: Date = new Date(),
+  selectedYear?: number
 ): TargetMonth[] {
-  const currentYear = baseDate.getFullYear();
-  const currentMonth = baseDate.getMonth();
+  const baseYear = baseDate.getFullYear();
+  const baseMonth = baseDate.getMonth();
+  const effectiveYear = selectedYear ?? baseYear;
 
   const activeTimeframe = hasAnnualBudget && selectedTimeframe !== 'ytd' ? 'ytd' : selectedTimeframe;
 
   const targetMonths: TargetMonth[] = [];
 
   if (activeTimeframe === 'ytd') {
-    for (let m = 0; m <= currentMonth; m++) {
-      const d = new Date(currentYear, m, 1);
+    const endMonth = effectiveYear === baseYear ? baseMonth : (effectiveYear < baseYear ? 11 : baseMonth);
+    for (let m = 0; m <= endMonth; m++) {
+      const d = new Date(effectiveYear, m, 1);
       targetMonths.push({
-        year: currentYear,
+        year: effectiveYear,
         monthIndex: m,
         label: d.toLocaleString('en-GB', { month: 'short' }),
       });
     }
   } else {
     const count = activeTimeframe === '3m' ? 3 : activeTimeframe === '9m' ? 9 : 6;
+    const anchorMonth = effectiveYear === baseYear ? baseMonth : 11;
     for (let i = count - 1; i >= 0; i--) {
-      const d = new Date(currentYear, currentMonth - i, 1);
+      const d = new Date(effectiveYear, anchorMonth - i, 1);
       targetMonths.push({
         year: d.getFullYear(),
         monthIndex: d.getMonth(),

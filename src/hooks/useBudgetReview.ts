@@ -7,6 +7,8 @@ import {
   calculateGraphData,
   calculateBudgetAlerts,
   calculateCategoryTuningItems,
+  getAvailableBudgetYears,
+  filterBudgetsByYear,
 } from '@/utils/budgetUtils';
 
 export function useBudgetReview() {
@@ -23,18 +25,29 @@ export function useBudgetReview() {
     .filter((account) => account.category === 'Current Account')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [selectedBudgetId, setSelectedBudgetId] = useState<string>('');
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>('ytd');
 
+  const availableYears = getAvailableBudgetYears(budgets, transactions, new Date().getFullYear());
+
+  // Filter budgets based on the selected year
+  const yearBudgets = filterBudgetsByYear(budgets, selectedYear);
+
   // Filter budgets based on the selected account scope
   const scopedBudgets = selectedAccountId
-    ? budgets.filter((b) => b.accountId === selectedAccountId)
-    : budgets;
+    ? yearBudgets.filter((b) => b.accountId === selectedAccountId)
+    : yearBudgets;
+
+  // If a budget was selected that is no longer in scope for the active year/account, clear it
+  const activeSelectedBudgetId = scopedBudgets.some((b) => b.id === selectedBudgetId)
+    ? selectedBudgetId
+    : '';
 
   // Filter budgets based on account scope AND selected budget filter
-  const filteredBudgets = selectedBudgetId
-    ? scopedBudgets.filter((b) => b.id === selectedBudgetId)
+  const filteredBudgets = activeSelectedBudgetId
+    ? scopedBudgets.filter((b) => b.id === activeSelectedBudgetId)
     : scopedBudgets;
 
   const sortedBudgets = [...filteredBudgets].sort((a, b) => a.name.localeCompare(b.name));
@@ -42,8 +55,23 @@ export function useBudgetReview() {
   const handleAccountChange = (newAccountId: string) => {
     setSelectedAccountId(newAccountId);
     if (selectedBudgetId) {
-      const budget = budgets.find((b) => b.id === selectedBudgetId);
+      const budget = yearBudgets.find((b) => b.id === selectedBudgetId);
       if (budget && newAccountId && budget.accountId !== newAccountId) {
+        setSelectedBudgetId('');
+      }
+    }
+  };
+
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year);
+    if (selectedBudgetId) {
+      const remainingBudgets = filterBudgetsByYear(budgets, year);
+      const isBudgetStillValid = remainingBudgets.some((b) => {
+        if (b.id !== selectedBudgetId) return false;
+        if (selectedAccountId && b.accountId !== selectedAccountId) return false;
+        return true;
+      });
+      if (!isBudgetStillValid) {
         setSelectedBudgetId('');
       }
     }
@@ -60,41 +88,51 @@ export function useBudgetReview() {
         { id: 'ytd', label: 'YTD' },
       ];
 
-  const selectedBudget = budgets.find((b) => b.id === selectedBudgetId);
+  const selectedBudget = yearBudgets.find((b) => b.id === activeSelectedBudgetId);
 
   const isMonthlyBudgetSelected = Boolean(
     selectedBudget &&
       (selectedBudget.frequency === 'monthly' || selectedBudget.frequency === 'month')
   );
 
-  const targetMonths = getTargetMonths(selectedTimeframe, hasAnnualBudget);
+  const targetMonths = getTargetMonths(selectedTimeframe, hasAnnualBudget, new Date(), selectedYear);
+
+  // Filter transactions to only those matching the selected year
+  const yearTransactions = transactions.filter((t) => {
+    if (!t.date) return false;
+    return new Date(t.date).getFullYear() === selectedYear;
+  });
 
   const graphData = calculateGraphData(
     isMonthlyBudgetSelected,
     selectedBudget,
     targetMonths,
-    transactions
+    yearTransactions
   );
 
   const { overspendAlerts, slackAlerts } = calculateBudgetAlerts(
     targetMonths,
     scopedBudgets,
-    transactions,
+    yearTransactions,
     selectedAccountId
   );
 
   const categoryTuningItems = calculateCategoryTuningItems(
     sortedBudgets,
     targetMonths,
-    transactions
+    yearTransactions
   );
 
   return {
     namesLabel,
     currentAccounts,
+    selectedYear,
+    setSelectedYear,
+    handleYearChange,
+    availableYears,
     selectedAccountId,
     setSelectedAccountId,
-    selectedBudgetId,
+    selectedBudgetId: activeSelectedBudgetId,
     setSelectedBudgetId,
     selectedTimeframe,
     setSelectedTimeframe,

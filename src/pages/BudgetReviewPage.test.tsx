@@ -41,9 +41,13 @@ describe('BudgetReviewPage', () => {
         );
 
         const selectElements = screen.getAllByRole('combobox');
-        expect(selectElements.length).toBe(2);
+        expect(selectElements.length).toBe(3);
 
-        // Accounts select (first combobox)
+        // Year select (first combobox)
+        expect(screen.getByRole('combobox', { name: 'Year' })).toBeInTheDocument();
+
+        // Accounts select (second combobox)
+        expect(screen.getByRole('combobox', { name: 'Account' })).toBeInTheDocument();
         expect(screen.getByRole('option', { name: 'All Accounts' })).toBeInTheDocument();
         expect(screen.getByRole('option', { name: 'Barclays Main (x1234)' })).toBeInTheDocument();
         expect(screen.getByRole('option', { name: 'Joint Monzo' })).toBeInTheDocument();
@@ -117,7 +121,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getAllByRole('heading', { name: 'Utilities' }).length).toBeGreaterThan(0);
 
         // Select Groceries from budget dropdown
-        const budgetSelect = screen.getAllByRole('combobox')[1];
+        const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
         fireEvent.change(budgetSelect, { target: { value: 'b1' } });
 
         // Only Groceries should be shown in Spend Details
@@ -250,8 +254,7 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        const selects = screen.getAllByRole('combobox');
-        const budgetSelect = selects[1];
+        const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
 
         // Select the annual budget
         fireEvent.change(budgetSelect, { target: { value: 'b_annual' } });
@@ -289,8 +292,7 @@ describe('BudgetReviewPage', () => {
             </BrowserRouter>
         );
 
-        const selects = screen.getAllByRole('combobox');
-        const budgetSelect = selects[1];
+        const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
 
         // Select monthly budget
         fireEvent.change(budgetSelect, { target: { value: 'b_monthly' } });
@@ -477,7 +479,7 @@ describe('BudgetReviewPage', () => {
         expect(screen.getAllByRole('heading', { name: 'Acc1 Luxury' }).length).toBeGreaterThan(0);
 
         // Filter to acc_1 only
-        const accountSelect = screen.getAllByRole('combobox')[0];
+        const accountSelect = screen.getByRole('combobox', { name: 'Account' });
         fireEvent.change(accountSelect, { target: { value: 'acc_1' } });
 
         // Now only acc_1's budget (Acc1 Luxury - slack) should be visible, overspend should be hidden
@@ -903,5 +905,83 @@ describe('BudgetReviewPage', () => {
         const slackBoxes = screen.getAllByText('Excess Slack Available');
         expect(slackBoxes.length).toBe(1);
         expect(screen.getByText('Low 4 of 9 mos')).toBeInTheDocument();
+    });
+
+    it('renders year dropdown defaulting to current year, and filters budgets and payments when year changes', () => {
+        (useStore as any).mockReturnValue({
+            profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+        });
+
+        const currentYear = new Date().getFullYear();
+        const pastYear = currentYear - 1;
+
+        const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+        const budgets = [
+            {
+                id: 'b_past',
+                name: 'Past Budget',
+                amount: 100,
+                frequency: 'monthly',
+                accountId: 'acc_1',
+                budgetStartDate: new Date(pastYear, 0, 1).getTime(),
+            },
+            {
+                id: 'b_current_only',
+                name: 'Current Year Only Budget',
+                amount: 200,
+                frequency: 'monthly',
+                accountId: 'acc_1',
+                budgetStartDate: new Date(currentYear, 0, 1).getTime(),
+            },
+        ];
+
+        const transactions = [
+            // Transaction in past year
+            {
+                id: 't_past',
+                budgetId: 'b_past',
+                accountId: 'acc_1',
+                amount: 80,
+                type: 'expense',
+                date: new Date(pastYear, 5, 10).getTime(),
+            },
+            // Transaction in current year
+            {
+                id: 't_current',
+                budgetId: 'b_past',
+                accountId: 'acc_1',
+                amount: 90,
+                type: 'expense',
+                date: new Date(currentYear, 2, 10).getTime(),
+            },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('accounts')) return accounts;
+            if (str.includes('budgets')) return budgets;
+            if (str.includes('transactions')) return transactions;
+            return [];
+        });
+
+        render(
+            <BrowserRouter>
+                <BudgetReviewPage />
+            </BrowserRouter>
+        );
+
+        const yearSelect = screen.getByRole('combobox', { name: 'Year' });
+        expect(yearSelect).toHaveValue(String(currentYear));
+
+        // In current year, both b_past and b_current_only are visible
+        expect(screen.getAllByRole('heading', { name: 'Past Budget' }).length).toBeGreaterThan(0);
+        expect(screen.getAllByRole('heading', { name: 'Current Year Only Budget' }).length).toBeGreaterThan(0);
+
+        // Switch to past year
+        fireEvent.change(yearSelect, { target: { value: String(pastYear) } });
+
+        // In past year, b_current_only should not be visible because its budgetStartDate is in currentYear
+        expect(screen.getAllByRole('heading', { name: 'Past Budget' }).length).toBeGreaterThan(0);
+        expect(screen.queryByRole('heading', { name: 'Current Year Only Budget' })).not.toBeInTheDocument();
     });
 });

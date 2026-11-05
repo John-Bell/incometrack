@@ -39,15 +39,27 @@ describe('TransactionsPage', () => {
     ],
   };
 
+  const mockHandleStartDateChange = vi.fn();
+  const mockHandleEndDateChange = vi.fn();
+  const mockHandleSearchQueryChange = vi.fn();
+  const mockHandleClearFilters = vi.fn();
+
   const defaultHookReturn = {
     selectedAccountId: '',
     selectedBudgetId: '',
+    startDate: '',
+    endDate: '',
+    searchQuery: '',
     currentAccounts: sampleCurrentAccounts,
     availableBudgets: sampleAvailableBudgets,
     groupedTransactions: sampleGroupedTransactions,
     budgetsMap: sampleBudgetsMap,
     handleAccountChange: mockHandleAccountChange,
     handleBudgetChange: mockHandleBudgetChange,
+    handleStartDateChange: mockHandleStartDateChange,
+    handleEndDateChange: mockHandleEndDateChange,
+    handleSearchQueryChange: mockHandleSearchQueryChange,
+    handleClearFilters: mockHandleClearFilters,
     handleAddPayment: mockHandleAddPayment,
     getEditUrl: mockGetEditUrl,
   };
@@ -65,12 +77,15 @@ describe('TransactionsPage', () => {
       </BrowserRouter>
     );
 
-    // Header & dropdowns
+    // Header & dropdowns & search & date inputs
     expect(screen.getByText('Recent Transactions')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search payments...')).toHaveValue('');
+    expect(screen.getByLabelText('Filter from date')).toHaveValue('');
+    expect(screen.getByLabelText('Filter to date')).toHaveValue('');
+
     expect(screen.getByRole('option', { name: 'All Accounts' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Barclays Main' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Monzo Joint' })).toBeInTheDocument();
-
     expect(screen.getByRole('option', { name: 'All Budgets' })).toBeInTheDocument();
 
     // Group labels and transactions
@@ -128,5 +143,62 @@ describe('TransactionsPage', () => {
     fireEvent.click(addButton);
 
     expect(mockHandleAddPayment).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls search and date change handlers on input change', () => {
+    (useTransactionsPage as any).mockReturnValue(defaultHookReturn);
+
+    render(
+      <BrowserRouter>
+        <TransactionsPage />
+      </BrowserRouter>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Search payments...');
+    fireEvent.change(searchInput, { target: { value: 'tesco' } });
+    expect(mockHandleSearchQueryChange).toHaveBeenCalledWith('tesco');
+
+    const fromDateInput = screen.getByLabelText('Filter from date');
+    fireEvent.change(fromDateInput, { target: { value: '2025-05-01' } });
+    expect(mockHandleStartDateChange).toHaveBeenCalledWith('2025-05-01');
+
+    const toDateInput = screen.getByLabelText('Filter to date');
+    fireEvent.change(toDateInput, { target: { value: '2025-05-31' } });
+    expect(mockHandleEndDateChange).toHaveBeenCalledWith('2025-05-31');
+  });
+
+  it('renders Reset button and calls handleClearFilters when active filter is present', () => {
+    (useTransactionsPage as any).mockReturnValue({
+      ...defaultHookReturn,
+      searchQuery: 'groceries',
+    });
+
+    render(
+      <BrowserRouter>
+        <TransactionsPage />
+      </BrowserRouter>
+    );
+
+    const resetButton = screen.getByRole('button', { name: /Reset/i });
+    expect(resetButton).toBeInTheDocument();
+    fireEvent.click(resetButton);
+    expect(mockHandleClearFilters).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders empty state when there are no transactions matching filters', () => {
+    (useTransactionsPage as any).mockReturnValue({
+      ...defaultHookReturn,
+      groupedTransactions: {},
+      searchQuery: 'non-existent',
+    });
+
+    render(
+      <BrowserRouter>
+        <TransactionsPage />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText('No Payments Found')).toBeInTheDocument();
+    expect(screen.getByText(/No payments match your active filters/i)).toBeInTheDocument();
   });
 });

@@ -20,17 +20,66 @@ export function getAvailableBudgets(budgets: Budget[], selectedAccountId: string
 }
 
 /**
- * Filters transactions based on selected account ID and budget ID filters.
+ * Filters transactions based on selected account ID, budget ID, date timeframe, and text search query.
+ * Start and end dates are strings in 'YYYY-MM-DD' format (or empty string if not filtered).
+ * Dates are inclusive for the entire start day (from 00:00:00) through end day (to 23:59:59.999).
  */
 export function filterTransactions(
   transactions: Transaction[],
   selectedAccountId: string,
-  selectedBudgetId: string
+  selectedBudgetId: string,
+  startDate: string = '',
+  endDate: string = '',
+  searchQuery: string = '',
+  budgetsMap: Record<string, Budget> = {}
 ): Transaction[] {
+  let startTs: number | null = null;
+  if (startDate) {
+    const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+    if (!isNaN(sYear) && !isNaN(sMonth) && !isNaN(sDay)) {
+      startTs = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0).getTime();
+    }
+  }
+
+  let endTs: number | null = null;
+  if (endDate) {
+    const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+    if (!isNaN(eYear) && !isNaN(eMonth) && !isNaN(eDay)) {
+      endTs = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999).getTime();
+    }
+  }
+
+  const query = searchQuery.trim().toLowerCase();
+
   return transactions.filter((tx) => {
     const matchesAccount = !selectedAccountId || tx.accountId === selectedAccountId;
+    if (!matchesAccount) return false;
+
     const matchesBudget = !selectedBudgetId || tx.budgetId === selectedBudgetId;
-    return matchesAccount && matchesBudget;
+    if (!matchesBudget) return false;
+
+    const txDate = typeof tx.date === 'string' ? new Date(tx.date).getTime() : tx.date;
+
+    if (startTs !== null && txDate < startTs) {
+      return false;
+    }
+
+    if (endTs !== null && txDate > endTs) {
+      return false;
+    }
+
+    if (query) {
+      const payeeMatch = tx.payee.toLowerCase().includes(query);
+      const budgetName = tx.budgetId ? budgetsMap[tx.budgetId]?.name : '';
+      const budgetMatch = budgetName ? budgetName.toLowerCase().includes(query) : false;
+      const uncategorizedMatch = !tx.budgetId && 'uncategorized'.includes(query);
+
+      if (!payeeMatch && !budgetMatch && !uncategorizedMatch) {
+        return false;
+      }
+    }
+
+    return true;
   });
 }
 

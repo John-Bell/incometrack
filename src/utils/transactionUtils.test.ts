@@ -55,6 +55,8 @@ describe('transactionUtils', () => {
   });
 
   describe('filterTransactions', () => {
+    const budgetsMap = createBudgetsMap(sampleBudgets);
+
     it('returns all transactions when no filters selected', () => {
       const result = filterTransactions(sampleTransactions, '', '');
       expect(result).toHaveLength(3);
@@ -75,6 +77,73 @@ describe('transactionUtils', () => {
     it('returns empty array when account and budget filters do not match any transaction', () => {
       const result = filterTransactions(sampleTransactions, 'acc2', 'b1');
       expect(result).toHaveLength(0);
+    });
+
+    it('filters transactions by startDate (inclusive)', () => {
+      const result = filterTransactions(sampleTransactions, '', '', '2025-05-15', '');
+      expect(result).toHaveLength(2);
+      expect(result.map((t) => t.id)).toEqual(['tx1', 'tx3']);
+    });
+
+    it('filters transactions by endDate (inclusive)', () => {
+      const result = filterTransactions(sampleTransactions, '', '', '', '2025-05-14');
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('tx2');
+    });
+
+    it('filters transactions within a date range', () => {
+      const result = filterTransactions(sampleTransactions, '', '', '2025-05-14', '2025-05-15');
+      expect(result).toHaveLength(3);
+
+      const pastResult = filterTransactions(sampleTransactions, '', '', '2025-05-01', '2025-05-10');
+      expect(pastResult).toHaveLength(0);
+    });
+
+    it('filters transactions by text search on payee (case-insensitive)', () => {
+      const result = filterTransactions(sampleTransactions, '', '', '', '', 'tesco');
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('tx1');
+
+      const upperResult = filterTransactions(sampleTransactions, '', '', '', '', 'BRITISH');
+      expect(upperResult).toHaveLength(1);
+      expect(upperResult[0].id).toBe('tx2');
+    });
+
+    it('filters transactions by text search on budget name', () => {
+      const result = filterTransactions(sampleTransactions, '', '', '', '', 'groceries', budgetsMap);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('tx1');
+    });
+
+    it('filters transactions by text search matching uncategorized', () => {
+      const result = filterTransactions(sampleTransactions, '', '', '', '', 'uncat', budgetsMap);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('tx3');
+    });
+
+    it('combines account, budget, date range, and search query filters', () => {
+      const result = filterTransactions(
+        sampleTransactions,
+        'acc1',
+        'b1',
+        '2025-05-14',
+        '2025-05-15',
+        'tesco',
+        budgetsMap
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('tx1');
+
+      const noMatch = filterTransactions(
+        sampleTransactions,
+        'acc1',
+        'b1',
+        '2025-05-14',
+        '2025-05-15',
+        'british',
+        budgetsMap
+      );
+      expect(noMatch).toHaveLength(0);
     });
   });
 

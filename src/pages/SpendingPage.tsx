@@ -7,6 +7,9 @@ export function SpendingPage() {
   const {
     namesLabel,
     currentAccounts,
+    selectedYear,
+    handleYearChange,
+    availableYears,
     selectedAccountId,
     selectedBudgetId,
     setSelectedBudgetId,
@@ -54,11 +57,31 @@ export function SpendingPage() {
             </p>
           </div>
 
+          {/* Year Selector Dropdown */}
+          <div className="relative w-full">
+            <select
+              value={selectedYear}
+              onChange={(e) => handleYearChange(Number(e.target.value))}
+              aria-label="Year"
+              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm cursor-pointer text-sm"
+            >
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
+              <Icon name="expand_more" className="text-xl" />
+            </div>
+          </div>
+
           {/* Account Selector Dropdown */}
           <div className="relative w-full">
             <select
               value={selectedAccountId}
               onChange={(e) => handleAccountChange(e.target.value)}
+              aria-label="Account"
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm cursor-pointer text-sm"
             >
               <option value="">All Accounts</option>
@@ -79,6 +102,7 @@ export function SpendingPage() {
             <select
               value={selectedBudgetId}
               onChange={(e) => setSelectedBudgetId(e.target.value)}
+              aria-label="Budget"
               className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors appearance-none font-semibold shadow-sm cursor-pointer text-sm"
             >
               <option value="">All Budgets</option>
@@ -94,6 +118,7 @@ export function SpendingPage() {
               <Icon name="expand_more" className="text-xl" />
             </div>
           </div>
+
 
           {/* Horizontal Timeframe Selector Pills */}
           <div className="flex items-center space-x-2 overflow-x-auto py-1 no-scrollbar">

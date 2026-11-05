@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { useStore } from '@/store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { getTargetMonths } from '@/utils/budgetUtils';
+import {
+  getTargetMonths,
+  getAvailableBudgetYears,
+  filterBudgetsByYear,
+} from '@/utils/budgetUtils';
 import { calculateSpendingGraphData } from '@/utils/spendingUtils';
 
 export function useSpendingPage() {
@@ -19,20 +23,46 @@ export function useSpendingPage() {
     .filter((account) => account.category === 'Current Account')
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [selectedBudgetId, setSelectedBudgetId] = useState<string>('');
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>('ytd');
 
+  const availableYears = getAvailableBudgetYears(budgets, transactions, new Date().getFullYear());
+
+  // Filter budgets based on the selected year
+  const yearBudgets = filterBudgetsByYear(budgets, selectedYear);
+
   // Filter budgets based on the selected account scope
   const scopedBudgets = selectedAccountId
-    ? budgets.filter((b) => b.accountId === selectedAccountId)
-    : budgets;
+    ? yearBudgets.filter((b) => b.accountId === selectedAccountId)
+    : yearBudgets;
+
+  // If a budget was selected that is no longer in scope for the active year/account, clear it
+  const activeSelectedBudgetId = scopedBudgets.some((b) => b.id === selectedBudgetId)
+    ? selectedBudgetId
+    : '';
 
   const handleAccountChange = (newAccountId: string) => {
     setSelectedAccountId(newAccountId);
     if (selectedBudgetId) {
-      const budget = budgets.find((b) => b.id === selectedBudgetId);
+      const budget = yearBudgets.find((b) => b.id === selectedBudgetId);
       if (budget && newAccountId && budget.accountId !== newAccountId) {
+        setSelectedBudgetId('');
+      }
+    }
+  };
+
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year);
+    if (selectedBudgetId) {
+      const remainingBudgets = filterBudgetsByYear(budgets, year);
+      const isBudgetStillValid = remainingBudgets.some((b) => {
+        if (b.id !== selectedBudgetId) return false;
+        if (selectedAccountId && b.accountId !== selectedAccountId) return false;
+        return true;
+      });
+      if (!isBudgetStillValid) {
         setSelectedBudgetId('');
       }
     }
@@ -49,25 +79,35 @@ export function useSpendingPage() {
         { id: 'ytd', label: 'YTD' },
       ];
 
-  const selectedBudget = budgets.find((b) => b.id === selectedBudgetId);
+  const selectedBudget = yearBudgets.find((b) => b.id === activeSelectedBudgetId);
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
 
-  const targetMonths = getTargetMonths(selectedTimeframe, hasAnnualBudget);
+  const targetMonths = getTargetMonths(selectedTimeframe, hasAnnualBudget, new Date(), selectedYear);
+
+  // Filter transactions to only those matching the selected year
+  const yearTransactions = transactions.filter((t) => {
+    if (!t.date) return false;
+    return new Date(t.date).getFullYear() === selectedYear;
+  });
 
   const spendingData = calculateSpendingGraphData(
     targetMonths,
-    transactions,
+    yearTransactions,
     selectedAccountId,
-    selectedBudgetId,
+    activeSelectedBudgetId,
     scopedBudgets
   );
 
   return {
     namesLabel,
     currentAccounts,
+    selectedYear,
+    setSelectedYear,
+    handleYearChange,
+    availableYears,
     selectedAccountId,
     setSelectedAccountId,
-    selectedBudgetId,
+    selectedBudgetId: activeSelectedBudgetId,
     setSelectedBudgetId,
     selectedTimeframe,
     setSelectedTimeframe,

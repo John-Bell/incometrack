@@ -42,9 +42,10 @@ describe('SpendingPage', () => {
     );
 
     const selectElements = screen.getAllByRole('combobox');
-    expect(selectElements.length).toBe(2);
+    expect(selectElements.length).toBe(3);
 
-    // Accounts select (first combobox)
+    // Accounts select (second combobox, or by aria-label)
+    expect(screen.getByRole('combobox', { name: 'Account' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'All Accounts' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Barclays Main (x1234)' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Joint Monzo' })).toBeInTheDocument();
@@ -85,7 +86,7 @@ describe('SpendingPage', () => {
     expect(screen.getByRole('option', { name: 'Utilities' })).toBeInTheDocument();
 
     // Select Barclays Main
-    const accountSelect = screen.getAllByRole('combobox')[0];
+    const accountSelect = screen.getByRole('combobox', { name: 'Account' });
     fireEvent.change(accountSelect, { target: { value: 'acc_1' } });
 
     expect(screen.getByRole('option', { name: 'Groceries' })).toBeInTheDocument();
@@ -227,9 +228,8 @@ describe('SpendingPage', () => {
       </BrowserRouter>
     );
 
-    const selects = screen.getAllByRole('combobox');
-    const accountSelect = selects[0];
-    const budgetSelect = selects[1];
+    const accountSelect = screen.getByRole('combobox', { name: 'Account' });
+    const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
 
     // Select budget b1
     fireEvent.change(budgetSelect, { target: { value: 'b1' } });
@@ -239,7 +239,7 @@ describe('SpendingPage', () => {
     fireEvent.change(accountSelect, { target: { value: 'acc_2' } });
 
     // Budget select should reset to empty
-    expect(screen.getAllByRole('combobox')[1]).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Budget' })).toHaveValue('');
   });
 
   it('excludes one-off budgets from totals on the spending screen unless the one-off budget is selected', () => {
@@ -279,10 +279,150 @@ describe('SpendingPage', () => {
     expect(screen.queryByText(/£1,800/)).not.toBeInTheDocument();
 
     // Now select the one-off budget "Holiday" in the budget dropdown
-    const budgetSelect = screen.getAllByRole('combobox')[1];
+    const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
     fireEvent.change(budgetSelect, { target: { value: 'b_oneoff' } });
 
     // When the one-off budget is selected, its total should be shown (£1500)
     expect(screen.getAllByText(/£1,500/).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders year dropdown defaulting to current year, and filters payments when year changes', () => {
+    (useStore as any).mockReturnValue({
+      profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+    });
+
+    const currentYear = new Date().getFullYear();
+    const prevYear = currentYear - 1;
+
+    const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+    const budgets = [
+      {
+        id: 'b1',
+        name: 'Groceries',
+        accountId: 'acc_1',
+        frequency: 'monthly',
+        amount: 500,
+        budgetStartDate: new Date(prevYear, 0, 1).getTime(),
+      },
+    ];
+    const transactions = [
+      {
+        id: 't_curr',
+        budgetId: 'b1',
+        accountId: 'acc_1',
+        amount: 200,
+        type: 'expense',
+        date: new Date(currentYear, 2, 10).getTime(),
+      },
+      {
+        id: 't_prev',
+        budgetId: 'b1',
+        accountId: 'acc_1',
+        amount: 450,
+        type: 'expense',
+        date: new Date(prevYear, 5, 10).getTime(),
+      },
+    ];
+
+    (useLiveQuery as any).mockImplementation((cb: any) => {
+      const str = cb.toString();
+      if (str.includes('accounts')) return accounts;
+      if (str.includes('budgets')) return budgets;
+      if (str.includes('transactions')) return transactions;
+      return [];
+    });
+
+    render(
+      <BrowserRouter>
+        <SpendingPage />
+      </BrowserRouter>
+    );
+
+    const yearSelect = screen.getByRole('combobox', { name: 'Year' });
+    expect(yearSelect).toBeInTheDocument();
+    expect(yearSelect).toHaveValue(String(currentYear));
+
+    // Options should contain both currentYear and prevYear
+    expect(screen.getByRole('option', { name: String(currentYear) })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: String(prevYear) })).toBeInTheDocument();
+
+    // Initially for current year, only t_curr (£200) is counted
+    expect(screen.getAllByText(/£200/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/£450/)).not.toBeInTheDocument();
+
+    // Change year to prevYear
+    fireEvent.change(yearSelect, { target: { value: String(prevYear) } });
+
+    // Now prevYear transactions (£450) should be displayed, and currentYear (£200) not displayed
+    expect(screen.getAllByText(/£450/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/£200/)).not.toBeInTheDocument();
+  });
+
+  it('resets budget filter when selected budget is not available in the newly selected year', () => {
+    (useStore as any).mockReturnValue({
+      profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+    });
+
+    const currentYear = 2026;
+    const prevYear = 2025;
+
+    const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
+    // Budget b1 only starts in 2026
+    const budgets = [
+      {
+        id: 'b1',
+        name: 'Future Budget',
+        accountId: 'acc_1',
+        frequency: 'monthly',
+        amount: 500,
+        budgetStartDate: new Date(2026, 0, 1).getTime(),
+      },
+    ];
+    const transactions = [
+      {
+        id: 't_curr',
+        budgetId: 'b1',
+        accountId: 'acc_1',
+        amount: 100,
+        type: 'expense',
+        date: new Date(2026, 2, 10).getTime(),
+      },
+      {
+        id: 't_prev',
+        budgetId: 'b1',
+        accountId: 'acc_1',
+        amount: 100,
+        type: 'expense',
+        date: new Date(2025, 2, 10).getTime(),
+      },
+    ];
+
+    (useLiveQuery as any).mockImplementation((cb: any) => {
+      const str = cb.toString();
+      if (str.includes('accounts')) return accounts;
+      if (str.includes('budgets')) return budgets;
+      if (str.includes('transactions')) return transactions;
+      return [];
+    });
+
+    render(
+      <BrowserRouter>
+        <SpendingPage />
+      </BrowserRouter>
+    );
+
+    const yearSelect = screen.getByRole('combobox', { name: 'Year' });
+    const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
+
+    // If available, select b1
+    if (screen.queryByRole('option', { name: 'Future Budget' })) {
+      fireEvent.change(budgetSelect, { target: { value: 'b1' } });
+      expect(budgetSelect).toHaveValue('b1');
+    }
+
+    // Change year to prevYear (2025), where b1 with start date 2026 is filtered out
+    fireEvent.change(yearSelect, { target: { value: String(prevYear) } });
+
+    expect(screen.getByRole('combobox', { name: 'Budget' })).toHaveValue('');
   });
 });

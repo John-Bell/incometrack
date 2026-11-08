@@ -726,6 +726,7 @@ export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
 };
 
 export const initDb = async () => {
+    dbHooks.isSyncing = true;
     try {
         await db.open();
     } catch (err: any) {
@@ -736,6 +737,8 @@ export const initDb = async () => {
         } else {
             throw err;
         }
+    } finally {
+        dbHooks.isSyncing = false;
     }
 };
 
@@ -743,6 +746,13 @@ export const dbHooks = {
     onLocalChange: () => { },
     isSyncing: false
 };
+
+// Ensure Dexie's root PSD has a valid transless reference so Dexie.ignoreTransaction()
+// works inside implicit tempTransactions (Dexie 4.x leaves PSD.transless undefined in tempTransaction).
+const rootPSD = (Dexie as any).Promise?.PSD;
+if (rootPSD && !rootPSD.transless) {
+    rootPSD.transless = rootPSD;
+}
 
 // Add hooks to automatically update the updatedAt timestamp
 const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership', 'milestones'];
@@ -760,11 +770,9 @@ tablesToHook.forEach(tableName => {
     (db as any)[tableName].hook('updating', function (modifications: any, _primKey: any, _obj: any, _transaction: any) {
         if (!dbHooks.isSyncing) {
             dbHooks.onLocalChange();
+            return { ...modifications, updatedAt: Date.now() };
         }
-        if (modifications.hasOwnProperty('updatedAt')) {
-            return modifications;
-        }
-        return { ...modifications, updatedAt: Date.now() };
+        return modifications;
     });
 
     (db as any)[tableName].hook('deleting', function (_primKey: any, _obj: any, _transaction: any) {
@@ -772,14 +780,15 @@ tablesToHook.forEach(tableName => {
             dbHooks.onLocalChange();
 
             const idToUse = typeof _primKey === 'string' ? _primKey : _obj?.id;
+            const deletedAt = Math.max(Date.now(), (_obj?.updatedAt || 0) + 1);
             if (idToUse) {
-                setTimeout(() => {
+                Dexie.ignoreTransaction(() => {
                     (db as any).deletedRows.put({
                         id: idToUse,
                         tableName,
-                        deletedAt: Date.now()
+                        deletedAt
                     }).catch(console.error);
-                }, 0);
+                });
             }
         }
     });

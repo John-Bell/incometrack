@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { db, getSanitizedDbData } from './db';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { db, dbHooks, initDb, getSanitizedDbData } from './db';
 import type { Account, Income, Profile, TaxYearRule } from './db';
 import { getTaxConstants } from '../constants/taxConstants';
 
@@ -146,9 +146,14 @@ describe('Database Schema', () => {
         expect(savedRule?.BasicRate).toBe(0.2);
     });
 
-    it('should sync updated tax rules into taxRules table via syncTaxRules', async () => {
+    it('should sync updated tax rules into taxRules table via syncTaxRules without triggering onLocalChange', async () => {
+        const onLocalChangeSpy = vi.spyOn(dbHooks, 'onLocalChange');
         const { syncTaxRules } = await import('./seed');
         await syncTaxRules();
+
+        expect(onLocalChangeSpy).not.toHaveBeenCalled();
+        expect(dbHooks.isSyncing).toBe(false);
+        onLocalChangeSpy.mockRestore();
 
         const rule2027 = await db.taxRules.get('2027-2028');
         expect(rule2027).toBeDefined();
@@ -196,5 +201,82 @@ describe('Database Schema', () => {
 
         expect(b1.budgetStartDate).toBe(new Date('2026-06-01').getTime());
         expect(b2.budgetStartDate).toBe(defaultDateTs);
+    });
+
+    it('updating hook always refreshes updatedAt when !isSyncing, even via .put() with existing updatedAt', async () => {
+        const initialTs = 1000;
+        dbHooks.isSyncing = true;
+        await db.accounts.put({
+            id: 'acc-hook-1',
+            ownerId: 'user1',
+            name: 'Initial',
+            category: 'Cash',
+            balance: 100,
+            interestRate: 1,
+            updatedAt: initialTs
+        });
+        dbHooks.isSyncing = false;
+
+        const savedBefore = await db.accounts.get('acc-hook-1');
+        expect(savedBefore?.updatedAt).toBe(initialTs);
+
+        // Save existing record via .put() passing the old updatedAt
+        await db.accounts.put({
+            ...savedBefore!,
+            balance: 200,
+            updatedAt: initialTs
+        });
+
+        const savedAfter = await db.accounts.get('acc-hook-1');
+        expect(savedAfter?.balance).toBe(200);
+        expect(savedAfter?.updatedAt).toBeGreaterThan(initialTs);
+    });
+
+    it('updating hook does not overwrite updatedAt when isSyncing is true', async () => {
+        const initialTs = 1000;
+        dbHooks.isSyncing = true;
+        await db.accounts.put({
+            id: 'acc-hook-2',
+            ownerId: 'user1',
+            name: 'Initial',
+            category: 'Cash',
+            balance: 100,
+            interestRate: 1,
+            updatedAt: initialTs
+        });
+
+        await db.accounts.update('acc-hook-2', { balance: 300 });
+        dbHooks.isSyncing = false;
+
+        const saved = await db.accounts.get('acc-hook-2');
+        expect(saved?.balance).toBe(300);
+        expect(saved?.updatedAt).toBe(initialTs);
+    });
+
+    it('deleting hook ensures deletedAt is strictly greater than record updatedAt', async () => {
+        const futureTs = Date.now() + 60_000;
+        dbHooks.isSyncing = true;
+        await db.accounts.put({
+            id: 'acc-del-1',
+            ownerId: 'user1',
+            name: 'Future Stamp',
+            category: 'Cash',
+            balance: 100,
+            interestRate: 1,
+            updatedAt: futureTs
+        });
+        dbHooks.isSyncing = false;
+
+        await db.accounts.delete('acc-del-1');
+
+        const tombstone = await db.deletedRows.get('acc-del-1');
+        expect(tombstone).toBeDefined();
+        expect(tombstone!.deletedAt).toBeGreaterThan(futureTs);
+        expect(tombstone!.deletedAt).toBe(futureTs + 1);
+    });
+
+    it('initDb resets dbHooks.isSyncing to false after opening', async () => {
+        await initDb();
+        expect(dbHooks.isSyncing).toBe(false);
     });
 });

@@ -47,13 +47,38 @@ function AppRoutes() {
   const location = useLocation();
 
   useEffect(() => {
+    let isReady = false;
+
     initStore().then(() => {
+      isReady = true;
       // Attempt to reconnect to cloud sync after store is hydrated
       remoteSyncService.reconnect();
 
       // Wire up auto-sync on local DB changes
       dbHooks.onLocalChange = () => remoteSyncService.autoSync();
     });
+
+    const handleVisibilityChange = () => {
+      if (isReady && document.visibilityState === 'visible') {
+        remoteSyncService.reconnect();
+      }
+    };
+
+    const handleWakeSync = () => {
+      if (isReady) {
+        remoteSyncService.reconnect();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWakeSync);
+    window.addEventListener('online', handleWakeSync);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWakeSync);
+      window.removeEventListener('online', handleWakeSync);
+    };
   }, [initStore]);
 
   if (!isHydrated) {

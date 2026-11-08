@@ -1,6 +1,8 @@
 import { db, dbHooks, getSanitizedDbData } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 
+export const GRAVEYARD_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+
 /**
  * Derives a key from a passphrase using PBKDF2
  */
@@ -34,130 +36,155 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 
 export async function mergeData(cloudData: Record<string, any[]>): Promise<boolean> {
     let hasLocalChanges = false;
-    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership'];
+    const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership', 'milestones'];
 
-    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.paymentMappings, db.interestAccruals, db.properties, db.propertyExpenses, db.propertyIncomes, db.propertyOwnership, db.deletedRows];
+    const tableList = [db.profile, db.accounts, db.incomes, db.scenarios, db.settings, db.monthlyArchives, db.notifications, db.taxRules, db.transactions, db.budgets, db.paymentMappings, db.interestAccruals, db.properties, db.propertyExpenses, db.propertyIncomes, db.propertyOwnership, db.milestones, db.deletedRows];
 
     dbHooks.isSyncing = true;
-    await db.transaction('rw', tableList, async () => {
-        // Step A: Pre-load local tombstones
-        const localTombstones = await db.deletedRows.toArray();
-        const tombstoneMap = new Map(localTombstones.map((r: any) => [r.id, r]));
+    try {
+        await db.transaction('rw', tableList, async () => {
+            // Step A: Pre-load local tombstones
+            const localTombstones = await db.deletedRows.toArray();
+            const tombstoneMap = new Map(localTombstones.map((r: any) => [r.id, r]));
 
-        // Step B: Merge Graveyards
-        const cloudTombstones = cloudData['deletedRows'] || [];
-        const tombstonesToPut: any[] = [];
-
-        for (let i = 0; i < cloudTombstones.length; i++) {
-            const cloudTombstone = cloudTombstones[i];
-            const localTombstone = tombstoneMap.get(cloudTombstone.id);
-            if (!localTombstone || cloudTombstone.deletedAt > localTombstone.deletedAt) {
-                tombstonesToPut.push(cloudTombstone);
-                tombstoneMap.set(cloudTombstone.id, cloudTombstone);
-            }
-        }
-
-        if (tombstonesToPut.length > 0) {
-            await db.deletedRows.bulkPut(tombstonesToPut);
-        }
-
-        // Step C: Execute Remote Deletes
-        const deletesByTable = new Map<string, any[]>();
-        for (let i = 0; i < tombstonesToPut.length; i++) {
-            const tombstone = tombstonesToPut[i];
-            if (!deletesByTable.has(tombstone.tableName)) {
-                deletesByTable.set(tombstone.tableName, []);
-            }
-            deletesByTable.get(tombstone.tableName)!.push(tombstone);
-        }
-
-        for (const [tableName, tombstones] of deletesByTable.entries()) {
-            if (tables.includes(tableName)) {
-                const dexieTable = (db as any)[tableName];
-                const idsToCheck = tombstones.map((t: any) => t.id);
-                const localRecords = await dexieTable.bulkGet(idsToCheck);
-
-                const idsToDelete: string[] = [];
-                for (let i = 0; i < tombstones.length; i++) {
-                    const localRecord = localRecords[i];
-                    if (localRecord) {
-                        const localUpdatedAt = localRecord.updatedAt || 0;
-                        if (tombstones[i].deletedAt >= localUpdatedAt) {
-                            idsToDelete.push(tombstones[i].id);
-                        }
-                    }
-                }
-
-                if (idsToDelete.length > 0) {
-                    await dexieTable.bulkDelete(idsToDelete);
-                }
-            }
-        }
-
-        // Step D: Process Standard Tables
-        for (let t = 0; t < tables.length; t++) {
-            const table = tables[t];
-            const dexieTable = (db as any)[table];
-            const localRecords = await dexieTable.toArray();
-            const cloudRecords = cloudData[table] || [];
-
-            const localMap = new Map(localRecords.map((r: any) => [r.id, r]));
-
-            const recordsToPut: any[] = [];
-
-            for (let i = 0; i < cloudRecords.length; i++) {
-                const cloudRecord = cloudRecords[i] as any;
-                const cloudTime = cloudRecord.updatedAt || 0;
-
-                const tombstone = tombstoneMap.get(cloudRecord.id);
-
-                if (tombstone) {
-                    if (cloudTime > tombstone.deletedAt) {
-                        // Resurrected
-                        recordsToPut.push(cloudRecord);
-                        await db.deletedRows.delete(tombstone.id);
-                        tombstoneMap.delete(tombstone.id);
-                        hasLocalChanges = true;
-                    }
-                    // else: tombstone is newer, ignore the cloudRecord entirely
-                } else {
-                    const localRecord = localMap.get(cloudRecord.id);
-
-                    if (!localRecord) {
-                        // Record exists in cloud but not local -> Add it
-                        recordsToPut.push(cloudRecord);
-                    } else {
-                        // Record exists in both -> Compare updatedAt
-                        const localTime = (localRecord as any).updatedAt || 0;
-
-                        if (cloudTime > localTime) {
-                            // Cloud is newer -> Update local
-                            // Do not overwrite cloudHandle in settings
-                            if (table === 'settings' && (localRecord as any).cloudHandle) {
-                                cloudRecord.cloudHandle = (localRecord as any).cloudHandle;
-                            }
-                            recordsToPut.push(cloudRecord);
-                        } else if (localTime > cloudTime) {
-                            // Local is newer -> Mark for export
-                            hasLocalChanges = true;
-                        }
-                    }
-                }
-                localMap.delete(cloudRecord.id);
-            }
-
-            if (recordsToPut.length > 0) {
-                await dexieTable.bulkPut(recordsToPut);
-            }
-
-            // Any remaining in localMap are local-only -> Mark for export
-            if (localMap.size > 0) {
+            // Step B: Merge Graveyards
+            const rawCloudTombstones = cloudData['deletedRows'] || [];
+            const graveyardCutoff = Date.now() - GRAVEYARD_RETENTION_MS;
+            const cloudTombstones = rawCloudTombstones.filter((r: any) => r.deletedAt >= graveyardCutoff);
+            if (cloudTombstones.length < rawCloudTombstones.length) {
                 hasLocalChanges = true;
             }
-        }
-    });
+            const cloudTombstoneMap = new Map(cloudTombstones.map((r: any) => [r.id, r]));
 
-    dbHooks.isSyncing = false;
+            for (const [id, localTombstone] of tombstoneMap.entries()) {
+                const cloudTombstone = cloudTombstoneMap.get(id);
+                if (!cloudTombstone || localTombstone.deletedAt > cloudTombstone.deletedAt) {
+                    hasLocalChanges = true;
+                    break;
+                }
+            }
+
+            const tombstonesToPut: any[] = [];
+
+            for (let i = 0; i < cloudTombstones.length; i++) {
+                const cloudTombstone = cloudTombstones[i];
+                const localTombstone = tombstoneMap.get(cloudTombstone.id);
+                if (!localTombstone || cloudTombstone.deletedAt > localTombstone.deletedAt) {
+                    tombstonesToPut.push(cloudTombstone);
+                    tombstoneMap.set(cloudTombstone.id, cloudTombstone);
+                }
+            }
+
+            if (tombstonesToPut.length > 0) {
+                await db.deletedRows.bulkPut(tombstonesToPut);
+            }
+
+            // Step C: Execute Remote Deletes
+            const deletesByTable = new Map<string, any[]>();
+            for (let i = 0; i < tombstonesToPut.length; i++) {
+                const tombstone = tombstonesToPut[i];
+                if (!deletesByTable.has(tombstone.tableName)) {
+                    deletesByTable.set(tombstone.tableName, []);
+                }
+                deletesByTable.get(tombstone.tableName)!.push(tombstone);
+            }
+
+            for (const [tableName, tombstones] of deletesByTable.entries()) {
+                if (tables.includes(tableName)) {
+                    const dexieTable = (db as any)[tableName];
+                    const idsToCheck = tombstones.map((t: any) => t.id);
+                    const localRecords = await dexieTable.bulkGet(idsToCheck);
+
+                    const idsToDelete: string[] = [];
+                    for (let i = 0; i < tombstones.length; i++) {
+                        const localRecord = localRecords[i];
+                        if (localRecord) {
+                            const localUpdatedAt = localRecord.updatedAt || 0;
+                            if (tombstones[i].deletedAt >= localUpdatedAt) {
+                                idsToDelete.push(tombstones[i].id);
+                            }
+                        }
+                    }
+
+                    if (idsToDelete.length > 0) {
+                        await dexieTable.bulkDelete(idsToDelete);
+                    }
+                }
+            }
+
+            // Step D: Process Standard Tables
+            for (let t = 0; t < tables.length; t++) {
+                const table = tables[t];
+                const dexieTable = (db as any)[table];
+                const localRecords = await dexieTable.toArray();
+                const cloudRecords = cloudData[table] || [];
+
+                const localMap = new Map(localRecords.map((r: any) => [r.id, r]));
+
+                const recordsToPut: any[] = [];
+
+                for (let i = 0; i < cloudRecords.length; i++) {
+                    const cloudRecord = cloudRecords[i] as any;
+                    const cloudTime = cloudRecord.updatedAt || 0;
+
+                    const tombstone = tombstoneMap.get(cloudRecord.id);
+
+                    if (tombstone) {
+                        if (cloudTime > tombstone.deletedAt) {
+                            // Resurrected
+                            recordsToPut.push(cloudRecord);
+                            await db.deletedRows.delete(tombstone.id);
+                            tombstoneMap.delete(tombstone.id);
+                            hasLocalChanges = true;
+                        } else {
+                            // Tombstone is newer, ignore the cloudRecord and mark local changes to purge it from cloud
+                            hasLocalChanges = true;
+                        }
+                    } else {
+                        const localRecord = localMap.get(cloudRecord.id);
+
+                        if (!localRecord) {
+                            // Record exists in cloud but not local -> Add it
+                            recordsToPut.push(cloudRecord);
+                        } else {
+                            // Record exists in both -> Compare updatedAt
+                            const localTime = (localRecord as any).updatedAt || 0;
+
+                            if (cloudTime > localTime) {
+                                // Cloud is newer -> Update local
+                                // Preserve local device sync state in settings
+                                if (table === 'settings') {
+                                    const localSettings = localRecord as any;
+                                    cloudRecord.cloudHandle = localSettings.cloudHandle;
+                                    cloudRecord.lastSynced = localSettings.lastSynced;
+                                    cloudRecord.syncServerUrl = localSettings.syncServerUrl;
+                                    cloudRecord.syncPassphrase = localSettings.syncPassphrase;
+                                    cloudRecord.syncHeaderKey = localSettings.syncHeaderKey;
+                                }
+                                recordsToPut.push(cloudRecord);
+                            } else if (localTime > cloudTime) {
+                                // Local is newer -> Mark for export
+                                hasLocalChanges = true;
+                            }
+                        }
+                    }
+                    localMap.delete(cloudRecord.id);
+                }
+
+                if (recordsToPut.length > 0) {
+                    await dexieTable.bulkPut(recordsToPut);
+                }
+
+                // Any remaining in localMap are local-only -> Mark for export
+                if (localMap.size > 0) {
+                    hasLocalChanges = true;
+                }
+            }
+        });
+    } finally {
+        dbHooks.isSyncing = false;
+    }
+
     return hasLocalChanges;
 }
 
@@ -224,8 +251,8 @@ export async function decryptData(buffer: ArrayBuffer, passphrase: string): Prom
 
 async function cleanGraveyard() {
     try {
-        const ninetyDaysAgo = Date.now() - 90 * 24 * 60 * 60 * 1000;
-        const oldRecords = await db.deletedRows.where('deletedAt').below(ninetyDaysAgo).toArray();
+        const cutoff = Date.now() - GRAVEYARD_RETENTION_MS;
+        const oldRecords = await db.deletedRows.where('deletedAt').below(cutoff).toArray();
         if (oldRecords.length > 0) {
             const idsToDelete = oldRecords.map(r => r.id);
             await db.deletedRows.bulkDelete(idsToDelete);
@@ -238,15 +265,19 @@ async function cleanGraveyard() {
 
 export const remoteSyncService = {
     _syncTimeout: null as ReturnType<typeof setTimeout> | null,
+    _isSyncing: false,
+    _hasPendingLocalChanges: false,
 
     autoSync() {
+        this._hasPendingLocalChanges = true;
         if (this._syncTimeout) {
             clearTimeout(this._syncTimeout);
         }
         this._syncTimeout = setTimeout(async () => {
-            const status = useStore.getState().syncStatus;
-            if (status === 'connected') {
+            try {
                 await this.sync();
+            } catch {
+                // Error already logged in sync()
             }
         }, 2000);
     },
@@ -261,6 +292,15 @@ export const remoteSyncService = {
     },
 
     async sync() {
+        if (this._isSyncing) {
+            return false;
+        }
+
+        this._isSyncing = true;
+        const forcePush = this._hasPendingLocalChanges;
+        this._hasPendingLocalChanges = false;
+        let syncFailed = false;
+
         try {
             await cleanGraveyard();
             const settingsArray = await db.settings.toArray();
@@ -268,6 +308,10 @@ export const remoteSyncService = {
 
             if (!settings) {
                 console.warn('Sync aborted: settings not initialized.');
+                if (forcePush) {
+                    this._hasPendingLocalChanges = true;
+                }
+                syncFailed = true;
                 return false;
             }
 
@@ -277,6 +321,10 @@ export const remoteSyncService = {
 
             if (!syncUrl || !syncPassphrase || !syncHeaderKey) {
                 console.warn('Sync aborted: syncUrl, syncPassphrase, or syncHeaderKey is not configured.');
+                if (forcePush) {
+                    this._hasPendingLocalChanges = true;
+                }
+                syncFailed = true;
                 useStore.getState().setSyncStatus('disconnected');
                 return false;
             }
@@ -300,27 +348,31 @@ export const remoteSyncService = {
 
             const localLastSynced = settings.lastSynced || 0;
 
-            let hasLocalChanges = false;
+            let mergeFoundLocalChanges = false;
 
             // 2. Pull & Merge (If Needed)
-            if (serverLastUpdated > localLastSynced) {
+            if (serverLastUpdated > 0 && (serverLastUpdated > localLastSynced || forcePush)) {
                 const pullResponse = await fetch(syncUrl, { headers: customHeaders, cache: 'no-store' });
                 if (pullResponse.ok) {
                     const buffer = await pullResponse.arrayBuffer();
                     if (buffer.byteLength > 0) {
                         const decryptedData = await decryptData(buffer, syncPassphrase);
                         // Merge data to Dexie
-                        hasLocalChanges = await mergeData(decryptedData);
+                        mergeFoundLocalChanges = await mergeData(decryptedData);
+                        const updatedProfile = (await db.profile.toArray())[0] || null;
+                        const updatedSettings = (await db.settings.toArray())[0];
+                        useStore.setState({ profile: updatedProfile });
+                        if (updatedSettings?.taxYear) {
+                            useStore.getState().setTaxYear(updatedSettings.taxYear);
+                        }
                     }
                 } else if (pullResponse.status !== 404) {
                     throw new Error(`Failed to pull data: ${pullResponse.status} ${pullResponse.statusText}`);
                 }
-            } else {
-                hasLocalChanges = true;
             }
 
             // 3. Extract full database and 4. Encrypt & Push (If Needed)
-            if (hasLocalChanges || serverLastUpdated === 0) {
+            if (forcePush || mergeFoundLocalChanges || serverLastUpdated === 0) {
                 // 3. Extract full database, including numeric sanitization for strict clients
                 const allData = await getSanitizedDbData();
 
@@ -340,22 +392,59 @@ export const remoteSyncService = {
                 if (!pushResponse.ok) {
                     throw new Error(`Failed to push data: ${pushResponse.status} ${pushResponse.statusText}`);
                 }
+
+                let pushedTimestamp = 0;
+                try {
+                    const pushData = await pushResponse.json();
+                    if (pushData && typeof pushData.lastUpdated === 'number') {
+                        pushedTimestamp = pushData.lastUpdated;
+                    }
+                } catch {
+                    // Response body may not be JSON; fall back to /version check
+                }
+
+                if (!pushedTimestamp) {
+                    try {
+                        const verifyVersionResponse = await fetch(`${syncUrl}/version`, { headers: customHeaders, cache: 'no-store' });
+                        if (verifyVersionResponse.ok) {
+                            const verifyVersionData = await verifyVersionResponse.json();
+                            if (verifyVersionData && typeof verifyVersionData.lastUpdated === 'number') {
+                                pushedTimestamp = verifyVersionData.lastUpdated;
+                            }
+                        }
+                    } catch {
+                        // Fall back to Date.now() if version re-fetch fails
+                    }
+                }
+
+                serverLastUpdated = pushedTimestamp || Date.now();
             }
 
             // 5. Update State
-            settings.lastSynced = Date.now();
-            await db.settings.put(settings);
+            const syncedAt = serverLastUpdated > 0 ? serverLastUpdated : Date.now();
+            const latestSettings = (await db.settings.toArray())[0] || settings;
+            latestSettings.lastSynced = syncedAt;
+            await db.settings.put(latestSettings);
 
             useStore.getState().setSyncStatus('connected');
-            useStore.getState().setLastSynced(Date.now());
+            useStore.getState().setLastSynced(syncedAt);
 
             return true;
         } catch (error) {
+            syncFailed = true;
+            if (forcePush) {
+                this._hasPendingLocalChanges = true;
+            }
             console.error('Sync failed:', error);
             // We intentionally do not set status to 'disconnected' here.
             // If the failure was just a temporary network drop, we don't want to
             // break the autoSync background loop which only triggers if 'connected'
             throw error;
+        } finally {
+            this._isSyncing = false;
+            if (!syncFailed && this._hasPendingLocalChanges) {
+                this.autoSync();
+            }
         }
     }
 };

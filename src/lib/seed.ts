@@ -1,4 +1,4 @@
-import { db } from '@/lib/db'; 
+import { db, dbHooks } from '@/lib/db'; 
 import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
 
 export const syncTaxRules = async () => {
@@ -38,7 +38,12 @@ export const syncTaxRules = async () => {
 
         // 4. Only hit the database with a write operation if there are actual changes
         if (recordsToSync.length > 0) {
-            await db.taxRules.bulkPut(recordsToSync);
+            dbHooks.isSyncing = true;
+            try {
+                await db.taxRules.bulkPut(recordsToSync);
+            } finally {
+                dbHooks.isSyncing = false;
+            }
             console.log(`Successfully synced ${recordsToSync.length} updated tax year(s).`);
         } else {
             // Failsafe exit: do nothing!

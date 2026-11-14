@@ -1,6 +1,7 @@
 import type { Income, Budget, Property, PropertyOwnership, Milestone } from '../lib/db';
 import { TaxCalculationService } from '../services/TaxCalculationService';
 import type { TaxRulesByYear } from '../constants/taxConstants';
+import { calculateIncomeForTaxYear } from './incomeCalculations';
 
 export type DrawdownStrategy = 'taxable_first' | 'tax_free_first' | 'pensions_first' | 'proportional';
 
@@ -114,18 +115,10 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
         continue;
       }
 
-      const effectiveStart = Math.max(yearStartTs, income.startDate ?? yearStartTs);
-      const effectiveEnd = Math.min(yearEndTs, income.endDate ?? yearEndTs);
-
-      if (effectiveStart > effectiveEnd) {
+      const amountForYear = calculateIncomeForTaxYear(income, yearStartTs, yearEndTs);
+      if (amountForYear <= 0) {
         continue;
       }
-
-      const activeMs = effectiveEnd - effectiveStart;
-      const fraction = activeMs / yearTotalMs;
-
-      const baseAnnual = income.frequency === 'monthly' ? income.amount * 12 : income.amount;
-      const amountForYear = baseAnnual * fraction;
 
       if (income.ownerId === 'person1') {
         if (income.type === 'employment') p1Salary += amountForYear;

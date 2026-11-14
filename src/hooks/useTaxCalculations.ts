@@ -8,7 +8,7 @@ import type { TaxCalculationResult } from '@/models/TaxCalculationResult';
 import { calculateProjectedTaxableInterest } from '@/services/accountCalculations';
 import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import { calculatePropertyIncomeForTaxYear, calculatePropertyExpensesForTaxYear } from '@/utils/propertyCalculations';
-import { isIncomeValidInTaxYear } from '@/utils/incomeCalculations';
+import { isIncomeValidInTaxYear, calculateIncomeForTaxYear } from '@/utils/incomeCalculations';
 
 
 export interface UseTaxCalculationsResult {
@@ -47,7 +47,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
             dbIncomes
                 .filter(inc => isIncomeValidInTaxYear(inc, startTs, endTs))
                 .forEach(inc => {
-                    const amount = inc.frequency === 'monthly' ? inc.amount * 12 : inc.amount;
+                    const amount = calculateIncomeForTaxYear(inc, startTs, endTs);
                     const target = inc.ownerId === 'person1' ? p1Incomes : p2Incomes;
 
                     if (inc.type === 'employment') target.employment += amount;

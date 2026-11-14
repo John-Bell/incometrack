@@ -348,4 +348,47 @@ describe('useSimulatorCalculations', () => {
         expect(resultWithSweep.current.p1Incomes.interest).toBeCloseTo(0, 0);
         expect(resultWithSweep.current.p2Incomes.interest).toBeCloseTo(0, 0);
     });
+
+    it('pro-rates mid-tax-year pension and employment incomes while keeping dividends un-pro-rated', () => {
+        (useStore as any).mockReturnValue({
+            taxYear: '2025-2026',
+            taxRules: TAX_YEAR_CONSTANTS,
+        });
+
+        const startTs = new Date(2025, 3, 6).getTime();
+        const endTs = new Date(2026, 3, 5, 23, 59, 59, 999).getTime();
+        const midTaxYear = startTs + (endTs - startTs) / 2;
+
+        const incomes = [
+            {
+                id: 'pension1',
+                ownerId: 'person1',
+                type: 'pension',
+                amount: 2000,
+                frequency: 'monthly',
+                startDate: midTaxYear,
+            },
+            {
+                id: 'div1',
+                ownerId: 'person1',
+                type: 'dividends',
+                amount: 5000,
+                frequency: 'annual',
+                startDate: midTaxYear,
+            },
+        ];
+
+        (useLiveQuery as any).mockImplementation((cb: any) => {
+            const str = cb.toString();
+            if (str.includes('incomes')) return incomes;
+            return [];
+        });
+
+        const { result } = renderHook(() =>
+            useSimulatorCalculations(undefined, undefined, '2025-2026', false)
+        );
+
+        expect(result.current.p1Incomes.pension).toBeCloseTo(12000, 2);
+        expect(result.current.p1Incomes.dividends).toBe(5000);
+    });
 });

@@ -10,6 +10,9 @@ import {
   getUpdatedSearchParamsOnAccountChange,
   getUpdatedSearchParamsOnBudgetChange,
   buildTransactionUrl,
+  getPostSaveTransactionRedirectUrl,
+  findSuggestedBudgetIdsForPayee,
+  resolveBudgetIdForAccount,
 } from './transactionUtils';
 
 describe('transactionUtils', () => {
@@ -223,6 +226,30 @@ describe('transactionUtils', () => {
 
     it('returns base path when no parameters are provided', () => {
       expect(buildTransactionUrl('/transactions/add', '', '')).toBe('/transactions/add');
+    });
+  });
+
+  describe('Payment Form Pure Utilities', () => {
+    it('resolves post-save redirect URLs based on origin and account filter', () => {
+      expect(getPostSaveTransactionRedirectUrl('dashboard', 'acc1')).toBe('/');
+      expect(getPostSaveTransactionRedirectUrl('', 'acc1')).toBe('/transactions?accountId=acc1');
+      expect(getPostSaveTransactionRedirectUrl('', '')).toBe('/transactions');
+    });
+
+    it('finds suggested budget IDs from payment mappings case-insensitively', () => {
+      const mappings = [
+        { id: 'm1', paymentName: 'Tesco', budgetIds: ['b1', 'b2'] },
+        { id: 'm2', paymentName: 'Netflix', budgetIds: ['b3'] },
+      ];
+      expect(findSuggestedBudgetIdsForPayee('TESCO EXTRA 123', mappings)).toEqual(['b1', 'b2']);
+      expect(findSuggestedBudgetIdsForPayee('Unknown Shop', mappings)).toEqual([]);
+      expect(findSuggestedBudgetIdsForPayee('', mappings)).toEqual([]);
+    });
+
+    it('clears budgetId when switching to an account that does not own the budget', () => {
+      expect(resolveBudgetIdForAccount('b1', 'acc1', sampleBudgets)).toBe('b1');
+      expect(resolveBudgetIdForAccount('b1', 'acc2', sampleBudgets)).toBe('');
+      expect(resolveBudgetIdForAccount('', 'acc1', sampleBudgets)).toBe('');
     });
   });
 });

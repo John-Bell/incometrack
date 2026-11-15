@@ -1,4 +1,4 @@
-import type { Account, Budget, Transaction } from '@/lib/db';
+import type { Account, Budget, PaymentMapping, Transaction } from '@/lib/db';
 
 /**
  * Filters accounts to Current Accounts and sorts them alphabetically by name.
@@ -197,4 +197,48 @@ export function buildTransactionUrl(
   }
   const queryString = params.toString();
   return queryString ? `${path}?${queryString}` : path;
+}
+
+/**
+ * Resolves the post-save or post-delete navigation target for payment forms.
+ */
+export function getPostSaveTransactionRedirectUrl(from: string, urlAccountId: string): string {
+  if (from === 'dashboard') {
+    return '/';
+  }
+  if (urlAccountId) {
+    return `/transactions?accountId=${urlAccountId}`;
+  }
+  return '/transactions';
+}
+
+/**
+ * Matches a payee string against saved payment mappings and returns suggested budget IDs.
+ */
+export function findSuggestedBudgetIdsForPayee(
+  payee: string,
+  mappings: PaymentMapping[]
+): string[] {
+  if (!payee) return [];
+  const lowerPayee = payee.toLowerCase();
+  const matched = mappings.find((m) =>
+    lowerPayee.includes(m.paymentName.toLowerCase())
+  );
+  return matched?.budgetIds?.length ? matched.budgetIds : [];
+}
+
+/**
+ * Clears the selected budgetId if it does not belong to the newly selected accountId.
+ */
+export function resolveBudgetIdForAccount(
+  budgetId: string,
+  newAccountId: string,
+  budgets: Budget[]
+): string {
+  if (!budgetId) return '';
+  const budget = budgets.find((b) => b.id === budgetId);
+  if (budget && budget.accountId !== newAccountId) {
+    return '';
+  }
+  return budgetId;
 }

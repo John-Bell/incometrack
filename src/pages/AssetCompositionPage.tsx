@@ -1,38 +1,12 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-
-const COLORS = [
-    '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8',
-    '#82ca9d', '#ffc658', '#8dd1e1', '#a4de6c', '#d0ed57'
-];
+import { useAssetCompositionPage } from '@/hooks/useAssetPages';
+import { formatAssetCurrency } from '@/utils/assetUtils';
 
 export function AssetCompositionPage() {
-    const accounts = useLiveQuery(() => db.accounts.toArray()) || [];
-
-    const categoryDataMap = accounts.reduce((acc, account) => {
-        const category = account.category || 'Uncategorized';
-        acc[category] = (acc[category] || 0) + (account.balance || 0);
-        return acc;
-    }, {} as Record<string, number>);
-
-    const chartData = Object.entries(categoryDataMap)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value);
-
-    const totalAssets = chartData.reduce((sum, item) => sum + item.value, 0);
-
-    const formatCurrency = (val: number) => new Intl.NumberFormat('en-GB', {
-        style: 'currency',
-        currency: 'GBP',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(val);
-
-    const formatPercentage = (val: number) => ((val / totalAssets) * 100).toFixed(1) + '%';
+    const { accounts, chartData, totalAssets } = useAssetCompositionPage();
 
     return (
         <AppLayout
@@ -75,12 +49,12 @@ export function AssetCompositionPage() {
                                             paddingAngle={5}
                                             dataKey="value"
                                         >
-                                            {chartData.map((_entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            {chartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
                                             ))}
                                         </Pie>
                                         <Tooltip
-                                            formatter={(value: any) => [formatCurrency(Number(value) || 0), 'Value']}
+                                            formatter={(value: unknown) => [formatAssetCurrency(Number(value) || 0, 2), 'Value']}
                                             contentStyle={{
                                                 backgroundColor: 'rgba(255, 255, 255, 0.96)',
                                                 borderRadius: '12px',
@@ -95,13 +69,13 @@ export function AssetCompositionPage() {
                             </div>
                             <div className="mt-4 text-center">
                                 <p className="text-sm text-slate-500 dark:text-slate-400">Total Net Worth</p>
-                                <p className="text-3xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalAssets)}</p>
+                                <p className="text-3xl font-bold text-slate-900 dark:text-white">{formatAssetCurrency(totalAssets, 2)}</p>
                             </div>
                         </div>
 
                         <div className="space-y-3">
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white px-1">Detailed Breakdown</h2>
-                            {chartData.map((item, index) => (
+                            {chartData.map((item) => (
                                 <div
                                     key={item.name}
                                     className="bg-white dark:bg-surface-dark rounded-xl p-4 shadow-sm border border-slate-100 dark:border-[#283933] flex items-center justify-between"
@@ -109,15 +83,15 @@ export function AssetCompositionPage() {
                                     <div className="flex items-center gap-3">
                                         <div
                                             className="w-3 h-3 rounded-full"
-                                            style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                            style={{ backgroundColor: item.color }}
                                         />
                                         <div>
                                             <p className="font-semibold text-slate-900 dark:text-white">{item.name}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{formatPercentage(item.value)} of total</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{item.percentage} of total</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.value)}</p>
+                                        <p className="font-bold text-slate-900 dark:text-white">{formatAssetCurrency(item.value, 2)}</p>
                                     </div>
                                 </div>
                             ))}

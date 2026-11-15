@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { isIncomeValidInTaxYear, calculateIncomeForTaxYear } from './incomeCalculations';
+import {
+    isIncomeValidInTaxYear,
+    calculateIncomeForTaxYear,
+    calculatePartnerIncomeSplitPercentages,
+    formatWholeCurrency,
+    formatCompactThousandsCurrency,
+    groupIncomesByType,
+    getAvailableSimulatorTaxYears,
+    calculateSliderPercent
+} from './incomeCalculations';
 import type { Income } from '@/lib/db';
 
 describe('isIncomeValidInTaxYear', () => {
@@ -158,3 +167,51 @@ describe('calculateIncomeForTaxYear', () => {
         expect(calculateIncomeForTaxYear(dividendIncome, taxYearStart, taxYearEnd)).toBe(5000);
     });
 });
+
+describe('income page & simulator pure helpers', () => {
+    it('calculates partner income split percentages and defaults to 50/50 when total is 0', () => {
+        expect(calculatePartnerIncomeSplitPercentages(0, 0)).toEqual({
+            total: 0,
+            p1Pct: 50,
+            p2Pct: 50
+        });
+        expect(calculatePartnerIncomeSplitPercentages(750, 250)).toEqual({
+            total: 1000,
+            p1Pct: 75,
+            p2Pct: 25
+        });
+    });
+
+    it('formats whole and compact thousands currencies in en-GB', () => {
+        expect(formatWholeCurrency(12345.67)).toBe('£12,346');
+        expect(formatCompactThousandsCurrency(12500)).toBe('£12.5k');
+    });
+
+    it('groups incomes by type', () => {
+        const items: Income[] = [
+            { id: '1', ownerId: 'person1', name: 'Job', amount: 50000, frequency: 'annual', type: 'employment', taxCategory: 'Earned' },
+            { id: '2', ownerId: 'person1', name: 'SIPP', amount: 12000, frequency: 'annual', type: 'pension', taxCategory: 'Pension' },
+            { id: '3', ownerId: 'person1', name: 'Divs', amount: 2000, frequency: 'annual', type: 'dividends', taxCategory: 'Dividend' }
+        ];
+        const grouped = groupIncomesByType(items);
+        expect(grouped.employment.map(i => i.id)).toEqual(['1']);
+        expect(grouped.pensions.map(i => i.id)).toEqual(['2']);
+        expect(grouped.dividends.map(i => i.id)).toEqual(['3']);
+    });
+
+    it('returns tax rule IDs when present and falls back to constant keys when empty', () => {
+        expect(getAvailableSimulatorTaxYears([{ id: '2025-2026' }, { id: '2026-2027' }], ['2024-2025'])).toEqual([
+            '2025-2026',
+            '2026-2027'
+        ]);
+        expect(getAvailableSimulatorTaxYears([], ['2024-2025'])).toEqual(['2024-2025']);
+        expect(getAvailableSimulatorTaxYears(undefined, ['2024-2025'])).toEqual(['2024-2025']);
+    });
+
+    it('calculates slider percentage with override or falls back to ratio or 50', () => {
+        expect(calculateSliderPercent(80, 100, 500)).toBe(80);
+        expect(calculateSliderPercent(undefined, 150, 600)).toBe(25);
+        expect(calculateSliderPercent(undefined, 0, 0)).toBe(50);
+    });
+});
+

@@ -1,38 +1,23 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { Tabs } from '../components/ui/Tabs';
-
 import { TaxBandVisualizer } from '../components/income/TaxBandVisualizer';
 import { IncomeEntryCard } from '../components/income/IncomeEntryCard';
 import { IncomeEntryForm } from '../components/income/IncomeEntryForm';
-
-import { useStore } from '@/store/useStore';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
-import { useIncomeForm } from '@/hooks/useIncomeForm';
-import { useTaxCalculations } from '@/hooks/useTaxCalculations';
+import { useIncomeEditPage } from '@/hooks/useIncomePages';
 
 export function IncomeEditPage() {
-    const navigate = useNavigate();
-    const { profile } = useStore();
-    const p1Name = profile?.partner1Name || 'Partner 1';
-    const p2Name = profile?.partner2Name || 'Partner 2';
-
-    const [activeTabKey, setActiveTabKey] = useState<'partner1' | 'partner2'>('partner1');
-    const ownerId = activeTabKey === 'partner1' ? 'person1' : 'person2';
-
     const {
-        p1TaxResult, p2TaxResult,
-        p1TotalIncome, p2TotalIncome
-    } = useTaxCalculations();
-
-    const activeTaxResult = activeTabKey === 'partner1' ? p1TaxResult : p2TaxResult;
-    const activeTotalIncome = activeTabKey === 'partner1' ? p1TotalIncome : p2TotalIncome;
-
-    const {
-        incomes,
+        p1Name,
+        p2Name,
+        activeTabKey,
+        activeTaxResult,
+        activeTotalIncome,
+        pensions,
+        employment,
+        dividends,
         formData,
         editingId,
         handleFormChange,
@@ -40,18 +25,11 @@ export function IncomeEditPage() {
         handleSaveEntry,
         handleDeleteEntry,
         handleCancelEdit,
-        handleAddClick
-    } = useIncomeForm(ownerId);
-
-    const pensions = incomes.filter(i => i.type === 'pension');
-    const employment = incomes.filter(i => i.type === 'employment');
-    const dividends = incomes.filter(i => i.type === 'dividends');
-
-    const handleSaveAndCalculate = () => {
-        // Entries are already saved to Dexie immediately upon "Add to Portfolio".
-        // This button acts as a final confirmation to go back to the overview.
-        navigate('/income');
-    };
+        handleAddClick,
+        handleTabChange,
+        handleSaveAndCalculate,
+        handleNavigateBack
+    } = useIncomeEditPage();
 
     return (
         <AppLayout
@@ -60,8 +38,8 @@ export function IncomeEditPage() {
                     title="Income Configuration"
                     className="text-center justify-center relative"
                     leftElement={
-                        <button 
-                            onClick={() => navigate('/income')}
+                        <button
+                            onClick={handleNavigateBack}
                             className="absolute left-4 flex w-10 h-10 items-center justify-center rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
                         >
                             <Icon name="arrow_back" className="text-2xl text-slate-900 dark:text-slate-100" />
@@ -75,10 +53,7 @@ export function IncomeEditPage() {
                 <Tabs
                     options={[p1Name, p2Name]}
                     selected={activeTabKey === 'partner1' ? p1Name : p2Name}
-                    onValueChange={(val) => {
-                        setActiveTabKey(val === p1Name ? 'partner1' : 'partner2');
-                        handleCancelEdit(); // Clear form when switching tabs
-                    }}
+                    onValueChange={handleTabChange}
                 />
             </div>
 
@@ -95,7 +70,7 @@ export function IncomeEditPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">{pensions.length} ENTRIES</span>
-                                <button 
+                                <button
                                     onClick={() => handleAddClick()}
                                     className="w-7 h-7 rounded-sm bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
                                 >
@@ -121,7 +96,7 @@ export function IncomeEditPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">{employment.length} ENTRIES</span>
-                                <button 
+                                <button
                                     onClick={() => handleAddClick()}
                                     className="w-7 h-7 rounded-sm bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
                                 >
@@ -147,7 +122,7 @@ export function IncomeEditPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <span className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">{dividends.length} ENTRIES</span>
-                                <button 
+                                <button
                                     onClick={() => handleAddClick()}
                                     className="w-7 h-7 rounded-sm bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
                                 >
@@ -171,14 +146,14 @@ export function IncomeEditPage() {
 
                 {/* Right Column: Sticky Form */}
                 <div className="md:sticky md:top-24 space-y-6 self-start pb-24 md:pb-0">
-                    <IncomeEntryForm 
-                        formData={formData} 
-                        isEditing={!!editingId} 
-                        onChange={handleFormChange} 
-                        onSave={handleSaveEntry} 
-                        onCancel={handleCancelEdit} 
+                    <IncomeEntryForm
+                        formData={formData}
+                        isEditing={!!editingId}
+                        onChange={handleFormChange}
+                        onSave={handleSaveEntry}
+                        onCancel={handleCancelEdit}
                     />
-                    
+
                     <button
                         onClick={handleSaveAndCalculate}
                         className="w-full h-14 bg-[#13eca4] text-[#10221c] font-bold text-lg rounded-xl shadow-[0_4px_14px_0_rgba(19,236,164,0.39)] flex items-center justify-center gap-2 hover:bg-[#11d896] hover:shadow-[0_6px_20px_rgba(19,236,164,0.23)] transition-all active:scale-[0.98]"

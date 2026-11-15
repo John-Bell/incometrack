@@ -59,7 +59,9 @@ export function formatAccountForDisplay(
   const projectedInterestValue = calculateProjectedInterestForAccount(acc, allAccruals, startTs, endTs);
   const projectedInterest = formatGBP(projectedInterestValue);
 
-  const isTaxFree = acc.category && TAX_FREE_CATEGORIES.includes(acc.category as any);
+  const isTaxFree =
+    acc.category &&
+    (TAX_FREE_CATEGORIES as readonly string[]).includes(acc.category);
 
   return {
     id: acc.id,
@@ -80,7 +82,7 @@ export function formatAccountForDisplay(
     interestPayoutDate: acc.interestPayoutDate,
     updatedAt: formatRelativeTime(acc.updatedAt),
     alertText: acc.alertText,
-    alertType: acc.alertType as any,
+    alertType: acc.alertType,
   };
 }
 
@@ -116,3 +118,26 @@ export function calculateTabSummaries(
     };
   });
 }
+
+export function parseLedgerDateInput(entryDate: string): number {
+  const [year, month, day] = entryDate.split('-');
+  return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10)).getTime();
+}
+
+export function formatLedgerDateInput(timestamp: number): string {
+  const dateObj = new Date(timestamp);
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function formatLedgerDisplayDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+export function formatLedgerInterestAmount(amount: number): string {
+  return `+ £${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+

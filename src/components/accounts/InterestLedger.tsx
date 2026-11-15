@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { useInterestAccruals, addInterestAccrual, updateInterestAccrual, deleteInterestAccrual } from '@/hooks/useInterestAccruals';
+import { useInterestLedger } from '@/hooks/useInterestAccruals';
 import { Icon } from '@/components/ui/Icon';
-import type { InterestAccrual } from '@/lib/db';
 import { DateInput } from '@/components/ui/DateInput';
+import { formatLedgerDisplayDate, formatLedgerInterestAmount } from '@/utils/accountUtils';
 
 interface InterestLedgerProps {
     accountId: string;
@@ -10,60 +9,19 @@ interface InterestLedgerProps {
 }
 
 export function InterestLedger({ accountId }: InterestLedgerProps) {
-    const { accruals, isLoading } = useInterestAccruals(accountId);
-
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [entryDate, setEntryDate] = useState('');
-    const [interest, setInterest] = useState('');
-
-    const handleAddOrEdit = async () => {
-        if (!entryDate || !interest || !accountId) return;
-
-        // Convert "YYYY-MM-DD" to a Date object.
-        const [year, month, day] = entryDate.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).getTime();
-
-        if (editingId) {
-            await updateInterestAccrual(editingId, {
-                accountId,
-                date,
-                interestAccrued: parseFloat(interest),
-            });
-            setEditingId(null);
-        } else {
-            await addInterestAccrual({
-                accountId,
-                date,
-                interestAccrued: parseFloat(interest),
-            });
-        }
-
-        setInterest('');
-        setEntryDate('');
-    };
-
-    const handleEditClick = (accrual: InterestAccrual) => {
-        setEditingId(accrual.id);
-
-        const dateObj = new Date(accrual.date);
-        const year = dateObj.getFullYear();
-        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
-
-        setEntryDate(`${year}-${month}-${day}`);
-        setInterest(accrual.interestAccrued.toString());
-    };
-
-    const handleCancelEdit = () => {
-        setEditingId(null);
-        setInterest('');
-        setEntryDate('');
-    };
-
-    const formatDate = (timestamp: number) => {
-        const date = new Date(timestamp);
-        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    };
+    const {
+        accruals,
+        isLoading,
+        editingId,
+        entryDate,
+        interest,
+        setEntryDate,
+        setInterest,
+        handleAddOrEdit,
+        handleEditClick,
+        handleCancelEdit,
+        handleDeleteClick
+    } = useInterestLedger(accountId);
 
     return (
         <div className="bg-white dark:bg-primary/5 rounded-2xl border border-slate-200 dark:border-primary/20 flex flex-col h-full shadow-sm">
@@ -112,8 +70,8 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                         disabled={!interest || !entryDate}
                         className="flex-1 h-12 rounded-xl bg-[#1ce86f] text-slate-900 font-bold text-sm hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <Icon name={editingId ? "save" : "add_circle"} className="text-[18px]" />
-                        {editingId ? "Save Changes" : "Log Interest Entry"}
+                        <Icon name={editingId ? 'save' : 'add_circle'} className="text-[18px]" />
+                        {editingId ? 'Save Changes' : 'Log Interest Entry'}
                     </button>
                     {editingId && (
                         <button
@@ -140,13 +98,13 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                             <div key={accrual.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
                                 <div>
                                     <div className="font-bold text-slate-900 dark:text-slate-100 text-base mb-1">
-                                        {formatDate(accrual.date)}
+                                        {formatLedgerDisplayDate(accrual.date)}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-6">
                                     <div className="text-right">
                                         <div className="font-bold text-[#1ce86f] text-base mb-1">
-                                            + £{accrual.interestAccrued.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            {formatLedgerInterestAmount(accrual.interestAccrued)}
                                         </div>
                                         <div className="text-xs text-slate-400 font-medium uppercase tracking-wider">
                                             Accrued Interest
@@ -160,7 +118,7 @@ export function InterestLedger({ accountId }: InterestLedgerProps) {
                                             <Icon name="edit" className="text-[24px]" />
                                         </button>
                                         <button
-                                            onClick={() => deleteInterestAccrual(accrual.id)}
+                                            onClick={() => handleDeleteClick(accrual.id)}
                                             className="text-slate-300 hover:text-red-500 transition-colors"
                                         >
                                             <Icon name="delete" className="text-[24px]" />

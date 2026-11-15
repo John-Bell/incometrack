@@ -9,16 +9,21 @@ import {
   Tooltip,
 } from 'recharts';
 import { useLifetimeProjection } from '@/hooks/useLifetimeProjection';
+import type { ProjectionYearResult } from '@/utils/projectionEngine';
 
 /**
  * LifetimeProjectionChart
  * A touch-first mobile chart module for lifetime cash flow projection.
  * Designed to prevent scroll hijacking and provide a clear readout header on scrub.
  */
+interface TooltipPayloadItem {
+  payload: ProjectionYearResult;
+}
+
 interface TouchTooltipBridgeProps {
   active?: boolean;
-  payload?: any[];
-  onPointUpdate: (point: any) => void;
+  payload?: TooltipPayloadItem[];
+  onPointUpdate: (point: ProjectionYearResult) => void;
 }
 
 const TouchTooltipBridge: React.FC<TouchTooltipBridgeProps> = ({ active, payload, onPointUpdate }) => {
@@ -31,9 +36,39 @@ const TouchTooltipBridge: React.FC<TouchTooltipBridgeProps> = ({ active, payload
   return null;
 };
 
+interface CustomTickProps {
+  x?: number;
+  y?: number;
+  payload?: {
+    value: number;
+  };
+  data: ProjectionYearResult[];
+}
+
+const CustomTick: React.FC<CustomTickProps> = ({ x = 0, y = 0, payload, data }) => {
+  const point = data.find((d) => d.calendarYear === payload?.value);
+  if (!point) return null;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={12}
+        textAnchor="middle"
+        fill="#6B7280"
+        className="text-[10px] font-medium"
+      >
+        <tspan x="0" dy="1.2em">{point.ageP1}</tspan>
+        <tspan x="0" dy="1.2em">{point.ageP2}</tspan>
+      </text>
+    </g>
+  );
+};
+
 const LifetimeProjectionChart: React.FC = () => {
   const { data, isReady, p1Name, p2Name, growthRate } = useLifetimeProjection();
-  const [activePoint, setActivePoint] = useState<any>(null);
+  const [activePoint, setActivePoint] = useState<ProjectionYearResult | null>(null);
 
   // Loading State
   if (!isReady || !data || data.length === 0) {
@@ -53,30 +88,6 @@ const LifetimeProjectionChart: React.FC = () => {
     }).format(value);
 
   const formatYAxis = (v: number) => `£${v / 1000}k`;
-
-  // Custom X-Axis Tick to show stacked Dan & Freya ages
-  const CustomTick = (props: any) => {
-    const { x, y, payload } = props;
-    // Find the data point corresponding to this tick value
-    const point = data.find((d: any) => d.calendarYear === payload.value);
-    if (!point) return null;
-
-    return (
-      <g transform={`translate(${x},${y})`}>
-        <text
-          x={0}
-          y={0}
-          dy={12}
-          textAnchor="middle"
-          fill="#6B7280"
-          className="text-[10px] font-medium"
-        >
-          <tspan x="0" dy="1.2em">{point.ageP1}</tspan>
-          <tspan x="0" dy="1.2em">{point.ageP2}</tspan>
-        </text>
-      </g>
-    );
-  };
 
   return (
     <div className="w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm touch-pan-y select-none relative">
@@ -159,7 +170,7 @@ const LifetimeProjectionChart: React.FC = () => {
               axisLine={false}
               tickLine={false}
               interval={Math.floor(data.length / 6)} // Dynamic interval for 5-6 ticks
-              tick={<CustomTick />}
+              tick={<CustomTick data={data} />}
             />
 
             <YAxis

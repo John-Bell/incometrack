@@ -9,16 +9,20 @@ import {
   Tooltip,
 } from 'recharts';
 import { useLifetimeProjection } from '@/hooks/useLifetimeProjection';
-import type { DrawdownStrategy } from '@/utils/projectionEngine';
+import type { DrawdownStrategy, ProjectionYearResult } from '@/utils/projectionEngine';
 
 /**
  * AssetBurndownChart
  * A touch-first mobile chart showing the breakdown of asset pots over time.
  */
+interface TooltipPayloadItem {
+  payload: ProjectionYearResult;
+}
+
 interface TouchTooltipBridgeProps {
   active?: boolean;
-  payload?: any[];
-  onPointUpdate: (point: any) => void;
+  payload?: TooltipPayloadItem[];
+  onPointUpdate: (point: ProjectionYearResult) => void;
 }
 
 const TouchTooltipBridge: React.FC<TouchTooltipBridgeProps> = ({ active, payload, onPointUpdate }) => {
@@ -31,13 +35,43 @@ const TouchTooltipBridge: React.FC<TouchTooltipBridgeProps> = ({ active, payload
   return null;
 };
 
+interface CustomTickProps {
+  x?: number;
+  y?: number;
+  payload?: {
+    value: number;
+  };
+  data: ProjectionYearResult[];
+}
+
+const CustomTick: React.FC<CustomTickProps> = ({ x = 0, y = 0, payload, data }) => {
+  const point = data.find((d) => d.calendarYear === payload?.value);
+  if (!point) return null;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text
+        x={0}
+        y={0}
+        dy={12}
+        textAnchor="middle"
+        fill="#6B7280"
+        className="text-[10px] font-medium"
+      >
+        <tspan x="0" dy="1.2em">{point.ageP1}</tspan>
+        <tspan x="0" dy="1.2em">{point.ageP2}</tspan>
+      </text>
+    </g>
+  );
+};
+
 interface AssetBurndownChartProps {
   drawdownStrategy?: DrawdownStrategy;
 }
 
 const AssetBurndownChart: React.FC<AssetBurndownChartProps> = ({ drawdownStrategy }) => {
   const { data, isReady, p1Name, p2Name } = useLifetimeProjection(drawdownStrategy);
-  const [activePoint, setActivePoint] = useState<any>(null);
+  const [activePoint, setActivePoint] = useState<ProjectionYearResult | null>(null);
 
   // Loading State
   if (!isReady || !data || data.length === 0) {
@@ -58,31 +92,8 @@ const AssetBurndownChart: React.FC<AssetBurndownChartProps> = ({ drawdownStrateg
 
   const formatYAxis = (v: number) => `£${v / 1000}k`;
 
-  // Custom X-Axis Tick
-  const CustomTick = (props: any) => {
-    const { x, y, payload } = props;
-    const point = data.find((d: any) => d.calendarYear === payload.value);
-    if (!point) return null;
-
-    return (
-      <g transform={`translate(${x},${y})`}>
-        <text
-          x={0}
-          y={0}
-          dy={12}
-          textAnchor="middle"
-          fill="#6B7280"
-          className="text-[10px] font-medium"
-        >
-          <tspan x="0" dy="1.2em">{point.ageP1}</tspan>
-          <tspan x="0" dy="1.2em">{point.ageP2}</tspan>
-        </text>
-      </g>
-    );
-  };
-
   // Recharts 3.x Tooltip formatter fix (as per memory)
-  const tooltipFormatter = (value: any) => {
+  const tooltipFormatter = (value: unknown) => {
     return formatCurrency(Number(value) || 0);
   };
 
@@ -180,7 +191,7 @@ const AssetBurndownChart: React.FC<AssetBurndownChartProps> = ({ drawdownStrateg
               axisLine={false}
               tickLine={false}
               interval={Math.floor(data.length / 6)}
-              tick={<CustomTick />}
+              tick={<CustomTick data={data} />}
             />
 
             <YAxis

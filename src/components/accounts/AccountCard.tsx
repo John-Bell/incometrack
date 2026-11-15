@@ -1,11 +1,10 @@
-import type { HTMLAttributes } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
 
-interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
+interface AccountCardProps {
     id: string;
-    ownerId: string;
+    ownerId?: string;
     accountIcon: string;
     iconColor: 'red' | 'blue' | 'gray' | 'green' | 'pink' | 'purple';
     accountName: string;
@@ -25,6 +24,7 @@ interface AccountCardProps extends HTMLAttributes<HTMLDivElement> {
     updatedAt: string;
     alertText?: string;
     alertType?: 'warning' | 'error' | 'info';
+    className?: string;
 }
 
 const iconColorMap = {
@@ -70,8 +70,6 @@ export function AccountCard({
     alertText,
     alertType = 'warning',
     className,
-    ownerId, // destructure ownerId to prevent it being passed to DOM via ...props
-    ...props
 }: AccountCardProps) {
     const navigate = useNavigate();
 
@@ -107,7 +105,6 @@ export function AccountCard({
                 isStale && 'opacity-80',
                 className
             )}
-            {...props}
         >
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">

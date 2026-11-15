@@ -1,32 +1,35 @@
-import Papa from 'papaparse';
+import Papa, { type ParseResult } from 'papaparse';
+import type { Table } from 'dexie';
 import { db, type Budget } from '../lib/db';
+
+export type ImportRow = Record<string, unknown>;
 
 export class DataImportService {
     /**
      * Parse a CSV or JSON file and return an array of objects.
      */
-    static async parseFile(file: File): Promise<any[]> {
+    static async parseFile(file: File): Promise<ImportRow[]> {
         return new Promise((resolve, reject) => {
             if (file.name.endsWith('.json')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const json = JSON.parse(e.target?.result as string);
+                        const json = JSON.parse(e.target?.result as string) as ImportRow | ImportRow[];
                         resolve(Array.isArray(json) ? json : [json]);
-                    } catch (err) {
+                    } catch {
                         reject(new Error('Failed to parse JSON file'));
                     }
                 };
                 reader.onerror = () => reject(new Error('Failed to read file'));
                 reader.readAsText(file);
             } else if (file.name.endsWith('.csv')) {
-                Papa.parse(file, {
+                Papa.parse<ImportRow>(file, {
                     header: true,
                     skipEmptyLines: true,
-                    complete: (results: any) => {
+                    complete: (results: ParseResult<ImportRow>) => {
                         resolve(results.data);
                     },
-                    error: (error: any) => {
+                    error: (error: Error) => {
                         reject(error);
                     }
                 });
@@ -39,7 +42,7 @@ export class DataImportService {
     /**
      * Generate a deterministic string hash for ID fallback.
      */
-    static generateDeterministicId(row: any, targetTable: string): string {
+    static generateDeterministicId(row: ImportRow, targetTable: string): string {
         let sourceString = '';
         if (targetTable === 'transactions') {
             sourceString = `${row.date || ''}-${row.amount || ''}-${row.payee || ''}-${row.rawDesc || ''}-${row.importCategory || ''}`;
@@ -62,7 +65,7 @@ export class DataImportService {
 
     static async importData(
         targetTable: 'accounts' | 'budgets' | 'transactions',
-        data: any[],
+        data: ImportRow[],
         filename: string,
         fieldMapping: Record<string, string>
     ): Promise<number> {
@@ -70,7 +73,7 @@ export class DataImportService {
 
         const importId = filename;
         const now = Date.now();
-        const recordsToInsert: any[] = [];
+        const recordsToInsert: ImportRow[] = [];
 
         // Pre-fetch budgets if we are importing transactions to handle linking
         let budgets: Budget[] = [];
@@ -80,7 +83,7 @@ export class DataImportService {
 
         for (const row of data) {
             // Map the source row to our database schema using fieldMapping
-            const mappedRow: any = {};
+            const mappedRow: ImportRow = {};
 
             for (const [sourceKey, targetKey] of Object.entries(fieldMapping)) {
                 if (targetKey && row[sourceKey] !== undefined && row[sourceKey] !== '') {
@@ -89,7 +92,7 @@ export class DataImportService {
                         const parsed = parseFloat(String(row[sourceKey]).replace(/[^0-9.-]+/g, ""));
                         mappedRow[targetKey] = isNaN(parsed) ? 0 : parsed;
                     } else if (targetKey === 'date' || targetKey === 'bonusEndDate' || targetKey === 'budgetStartDate') {
-                        const parsedDate = new Date(row[sourceKey]).getTime();
+                        const parsedDate = new Date(String(row[sourceKey])).getTime();
                         mappedRow[targetKey] = isNaN(parsedDate) ? Date.now() : parsedDate;
                     } else if (targetKey === 'bonusRateActive') {
                         mappedRow[targetKey] = String(row[sourceKey]).toLowerCase() === 'true';
@@ -111,10 +114,10 @@ export class DataImportService {
             // Table-specific logic
             if (targetTable === 'transactions') {
                 if (!mappedRow.date) mappedRow.date = now;
-                if (!mappedRow.type) mappedRow.type = mappedRow.amount >= 0 ? 'income' : 'expense';
+                if (!mappedRow.type) mappedRow.type = Number(mappedRow.amount) >= 0 ? 'income' : 'expense';
 
                 // Transaction Linking logic
-                if (mappedRow.importCategory && !mappedRow.budgetId) {
+                if (typeof mappedRow.importCategory === 'string' && !mappedRow.budgetId) {
                     const categoryLower = mappedRow.importCategory.toLowerCase();
                     const matchedBudget = budgets.find(b =>
                         (b.importMappingName && b.importMappingName.toLowerCase() === categoryLower) ||
@@ -145,8 +148,9 @@ export class DataImportService {
         }
 
         // Perform bulk upsert in a transaction
+        const tableRef = db.table(targetTable) as Table<ImportRow, string>;
         await db.transaction('rw', db[targetTable], async () => {
-            await (db as any)[targetTable].bulkPut(recordsToInsert);
+            await tableRef.bulkPut(recordsToInsert);
         });
 
         return recordsToInsert.length;

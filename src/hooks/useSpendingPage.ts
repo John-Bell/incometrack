@@ -10,7 +10,7 @@ import {
 import { calculateSpendingGraphData } from '@/utils/spendingUtils';
 
 export function useSpendingPage() {
-  const { profile } = useStore();
+  const profile = useStore((state) => state.profile);
   const p1Name = profile?.partner1Name || 'Dan';
   const p2Name = profile?.partner2Name || 'Freya';
   const namesLabel = `${p1Name} & ${p2Name}`;

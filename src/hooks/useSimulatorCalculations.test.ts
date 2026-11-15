@@ -9,13 +9,19 @@ vi.mock('@/store/useStore', () => ({
     useStore: vi.fn(),
 }));
 
+const mockStore = (state: Record<string, unknown>) => {
+    (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (selector?: (s: Record<string, unknown>) => unknown) => (selector ? selector(state) : state)
+    );
+};
+
 vi.mock('dexie-react-hooks', () => ({
     useLiveQuery: vi.fn(),
 }));
 
 describe('useSimulatorCalculations', () => {
     it('uses taxYearOverride when provided and calculates tax correctly for specified tax year', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2024-2025',
             taxRules: TAX_YEAR_CONSTANTS,
         });
@@ -71,7 +77,7 @@ describe('useSimulatorCalculations', () => {
     });
 
     it('reduces taxable cash balance by £20,000 per partner when isaSweep is true', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
         });
@@ -123,7 +129,7 @@ describe('useSimulatorCalculations', () => {
     });
 
     it('sweeps manual tracking accounts with positive interest rate and ignores 0% interest or excluded accounts', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
         });
@@ -182,7 +188,7 @@ describe('useSimulatorCalculations', () => {
     });
 
     it('scales workingAccruals proportionally when deducting balance during ISA sweep', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
         });
@@ -235,7 +241,7 @@ describe('useSimulatorCalculations', () => {
     });
 
     it('sweeps movable savings first before non-movable savings, and ignores non-paying fixed accounts for selected tax year', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
         });
@@ -306,7 +312,7 @@ describe('useSimulatorCalculations', () => {
     });
 
     it('isolates joint accounts so sweeping for Person 2 only reduces Person 2 interest share', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
         });
@@ -350,7 +356,7 @@ describe('useSimulatorCalculations', () => {
     });
 
     it('pro-rates mid-tax-year pension and employment incomes while keeping dividends un-pro-rated', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             taxYear: '2025-2026',
             taxRules: TAX_YEAR_CONSTANTS,
         });

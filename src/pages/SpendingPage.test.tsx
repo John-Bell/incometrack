@@ -10,13 +10,19 @@ vi.mock('@/store/useStore', () => ({
   useStore: vi.fn(),
 }));
 
+const mockStore = (state: Record<string, unknown>) => {
+  (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+    (selector?: (s: Record<string, unknown>) => unknown) => (selector ? selector(state) : state)
+  );
+};
+
 vi.mock('dexie-react-hooks', () => ({
   useLiveQuery: vi.fn(),
 }));
 
 describe('SpendingPage', () => {
   it('renders current accounts in the accounts select dropdown', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: {
         partner1Name: 'Dan',
         partner2Name: 'Freya',
@@ -53,7 +59,7 @@ describe('SpendingPage', () => {
   });
 
   it('renders budget dropdown and filters budgets based on account selection', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -95,7 +101,7 @@ describe('SpendingPage', () => {
   });
 
   it('defaults to YTD and shows only YTD timeframe when an annual budget exists in scope', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -125,7 +131,7 @@ describe('SpendingPage', () => {
   });
 
   it('shows all timeframe options when no annual budget exists in scope', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -155,7 +161,7 @@ describe('SpendingPage', () => {
   });
 
   it('calculates spending graph and KPI stats correctly for transactions in timeframe', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -202,7 +208,7 @@ describe('SpendingPage', () => {
   });
 
   it('resets budget filter when selected account changes and budget belongs to another account', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -243,7 +249,7 @@ describe('SpendingPage', () => {
   });
 
   it('excludes one-off budgets from totals on the spending screen unless the one-off budget is selected', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -287,7 +293,7 @@ describe('SpendingPage', () => {
   });
 
   it('renders year dropdown defaulting to current year, and filters payments when year changes', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
@@ -359,7 +365,7 @@ describe('SpendingPage', () => {
   });
 
   it('resets budget filter when selected budget is not available in the newly selected year', () => {
-    (useStore as any).mockReturnValue({
+    mockStore({
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 

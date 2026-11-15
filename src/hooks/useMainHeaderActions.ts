@@ -13,25 +13,8 @@ interface MainHeaderActionsState {
 }
 
 export function useMainHeaderActions(onSave?: () => void, externalIsSaving?: boolean) {
-    const rawSyncStatus = useStore(state => state.syncStatus) as
-        | string
-        | { syncStatus?: string; lastSynced?: number | null }
-        | undefined;
-    const rawLastSynced = useStore(state => state.lastSynced) as
-        | number
-        | { lastSynced?: number | null }
-        | null
-        | undefined;
-
-    const syncStatus =
-        rawSyncStatus && typeof rawSyncStatus === 'object' && 'syncStatus' in rawSyncStatus
-            ? rawSyncStatus.syncStatus
-            : (rawSyncStatus as string | undefined);
-
-    const lastSynced =
-        rawLastSynced && typeof rawLastSynced === 'object' && 'lastSynced' in rawLastSynced
-            ? rawLastSynced.lastSynced
-            : (rawLastSynced as number | null | undefined);
+    const syncStatus = useStore((state) => state.syncStatus);
+    const lastSynced = useStore((state) => state.lastSynced);
 
     const settingsArray = useLiveQuery(() => db.settings.toArray());
     const settings = Array.isArray(settingsArray) ? settingsArray[0] : undefined;

@@ -9,13 +9,19 @@ vi.mock('@/store/useStore', () => ({
     useStore: vi.fn(),
 }));
 
+const mockStore = (state: Record<string, unknown>) => {
+    (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (selector?: (s: Record<string, unknown>) => unknown) => (selector ? selector(state) : state)
+    );
+};
+
 vi.mock('dexie-react-hooks', () => ({
     useLiveQuery: vi.fn(),
 }));
 
 describe('BudgetReviewPage', () => {
     it('renders current accounts in the accounts select dropdown', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: {
                 partner1Name: 'Dan',
                 partner2Name: 'Freya',
@@ -55,7 +61,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('renders budget dropdown and filters budgets based on account selection', async () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -93,7 +99,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('filters displayed categories in Spend Details when a budget is selected', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -130,7 +136,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('calculates Spend Details for filtered budgets and selected timeframe', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -173,7 +179,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('defaults to YTD timeframe and shows only YTD filter when an annual budget exists in scope', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -204,7 +210,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('shows all timeframe options when no annual budget exists in scope', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -234,7 +240,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('does not render Budget Spend vs Cap graph when an annual budget is selected', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -263,7 +269,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('renders and populates Budget Spend vs Cap graph when a monthly budget is selected', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -305,7 +311,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('dynamically calculates Persistent Overspend when spend exceeds budget cap >35% of months', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -348,7 +354,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('dynamically calculates Excess Slack Available when spend is <30% of budget cap >35% of months for monthly budgets', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -391,7 +397,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('does NOT generate Excessive Slack for non-monthly budgets (e.g. annual)', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -425,7 +431,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('recalculates overspend and slack based on selected account scope', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -489,7 +495,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('displays Budget Cap and Total Payments for annual budgets instead of Avg Monthly Spend and Peak Month', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -527,7 +533,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('renders grey bullet for months with no spend in Audit Trend', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -567,7 +573,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('hides Unused cushion proposal for monthly budgets when any months have a breached budget', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -602,7 +608,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('hides proposal section (Unused cushion / On target) for annual budgets when within cap or under-spent', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -629,7 +635,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('shows proposal section (Under-budgeted) for annual budgets when over cap', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -663,7 +669,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('does NOT show breached/within pill for annual budgets, and does NOT treat equal spend as exceeded', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -703,7 +709,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('marks annual budget as exceeded/error when payments strictly exceed budget cap', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -739,7 +745,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('renders ALL monthly budgets meeting criteria under Persistent Overspend and Excess Slack Available', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -797,7 +803,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('triggers Persistent Overspend / Excessive Slack when breached/low in >35% of selected months, but not <=35%', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 
@@ -908,7 +914,7 @@ describe('BudgetReviewPage', () => {
     });
 
     it('renders year dropdown defaulting to current year, and filters budgets and payments when year changes', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
         });
 

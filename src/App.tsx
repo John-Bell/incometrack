@@ -43,7 +43,9 @@ import { remoteSyncService } from '@/services/remoteSyncService';
 import { dbHooks } from '@/lib/db';
 
 function AppRoutes() {
-  const { isHydrated, profile, initStore } = useStore();
+  const isHydrated = useStore((state) => state.isHydrated);
+  const profile = useStore((state) => state.profile);
+  const initStore = useStore((state) => state.initStore);
   const location = useLocation();
 
   useEffect(() => {

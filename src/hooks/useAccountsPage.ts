@@ -11,7 +11,10 @@ import {
 } from '@/utils/accountUtils';
 
 export function useAccountsPage() {
-  const { profile, activeAccountsTab, setActiveAccountsTab, taxYear } = useStore();
+  const profile = useStore((state) => state.profile);
+  const activeAccountsTab = useStore((state) => state.activeAccountsTab);
+  const setActiveAccountsTab = useStore((state) => state.setActiveAccountsTab);
+  const taxYear = useStore((state) => state.taxYear);
   const p1Name = profile?.partner1Name || 'Partner 1';
   const p2Name = profile?.partner2Name || 'Partner 2';
 

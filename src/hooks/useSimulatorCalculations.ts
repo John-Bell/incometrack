@@ -43,7 +43,8 @@ export function useSimulatorCalculations(
     taxYearOverride?: string,
     isaSweep?: boolean
 ): UseSimulatorCalculationsResult {
-    const { taxYear: storeTaxYear, taxRules } = useStore();
+    const storeTaxYear = useStore((state) => state.taxYear);
+    const taxRules = useStore((state) => state.taxRules);
     const effectiveTaxYear = taxYearOverride || storeTaxYear || undefined;
 
     const taxService = useMemo(() => {
@@ -207,7 +208,7 @@ export function useSimulatorCalculations(
                 const SWEEP_AMOUNT = 20000;
 
                 const isCandidate = (acc: Account) => {
-                    const isTaxable = !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any);
+                    const isTaxable = !acc.category || !(TAX_FREE_CATEGORIES as readonly string[]).includes(acc.category);
                     if (!isTaxable) return false;
                     if (acc.category === 'Current Account' || acc.category === 'Stocks & Shares') return false;
                     if ((acc.balance || 0) <= 0) return false;
@@ -286,7 +287,7 @@ export function useSimulatorCalculations(
                 }
             }
 
-            const taxableAccounts = workingAccounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
+            const taxableAccounts = workingAccounts.filter(acc => !acc.category || !(TAX_FREE_CATEGORIES as readonly string[]).includes(acc.category));
 
             const movableAccounts = taxableAccounts.filter(acc => {
                 const frequency = acc.interestPayoutFrequency || 'monthly';
@@ -386,5 +387,5 @@ export function useSimulatorCalculations(
             isReady: !!dbAccounts && !!dbIncomes && !!taxService && !!dbProperties && !!dbPropertyIncomes && !!dbPropertyExpenses && !!dbPropertyOwnerships
         };
 
-    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, startTs, endTs, movableInterestP1Percent, propertySplits, isaSweep]);
+    }, [dbAccounts, dbIncomes, dbInterestAccruals, dbProperties, dbPropertyIncomes, dbPropertyExpenses, dbPropertyOwnerships, taxService, effectiveTaxYear, startTs, endTs, movableInterestP1Percent, propertySplits, isaSweep]);
 }

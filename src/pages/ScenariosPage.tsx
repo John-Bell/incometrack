@@ -3,13 +3,11 @@ import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { Button } from '../components/ui/Button';
 import { FinancialImpactCard } from '../components/scenarios/FinancialImpactCard';
-import { useStore } from '@/store/useStore';
 import { MainHeaderActions } from '../components/layout/MainHeaderActions';
+import { useScenariosPage } from '@/hooks/useIncomePages';
 
 export function ScenariosPage() {
-    const { profile } = useStore();
-    const p1Name = profile?.partner1Name || 'Partner 1';
-    const p2Name = profile?.partner2Name || 'Partner 2';
+    const { p1Name, p2Name } = useScenariosPage();
 
     return (
         <AppLayout

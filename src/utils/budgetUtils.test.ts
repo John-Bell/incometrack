@@ -6,6 +6,9 @@ import {
   calculateCategoryTuningItems,
   filterAndSortBudgets,
   getBudgetAccounts,
+  parseBudgetStartDate,
+  formatBudgetStartDateInput,
+  calculateAnnualisedBudgetAmount,
   calculateBudgetItemDetails,
   getAvailableBudgetYears,
   filterBudgetsByYear,
@@ -538,6 +541,21 @@ describe('budgetUtils', () => {
 
       expect(details.status).toBe('ON TRACK');
       expect(details.barColor).toBe('bg-blue-500');
+    });
+  });
+
+  describe('Budget Form Pure Utilities', () => {
+    it('parses and formats budget start dates consistently', () => {
+      const ts = parseBudgetStartDate('2026-04-01');
+      expect(ts).toBe(new Date(2026, 3, 1).getTime());
+      expect(formatBudgetStartDateInput(ts)).toBe('2026-04-01');
+      expect(formatBudgetStartDateInput(undefined)).toBe('2026-04-01');
+    });
+
+    it('calculates annualised budget amounts for monthly and annual frequencies', () => {
+      expect(calculateAnnualisedBudgetAmount('150', 'monthly')).toBe(1800);
+      expect(calculateAnnualisedBudgetAmount('1200', 'annual')).toBe(1200);
+      expect(calculateAnnualisedBudgetAmount('', 'monthly')).toBe(0);
     });
   });
 });

@@ -1,6 +1,13 @@
 import type { Account, Budget, Transaction } from '@/lib/db';
 import { Icon } from '../ui/Icon';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import {
+    buildDashboardSummary,
+    formatDashboardAmount,
+    formatDashboardCurrency,
+    getBudgetIconName
+} from '@/utils/dashboardUtils';
 
 interface DashboardAccountListProps {
     accounts: Account[];
@@ -11,88 +18,11 @@ interface DashboardAccountListProps {
 export function DashboardAccountList({ accounts, budgets, transactions }: DashboardAccountListProps) {
     const navigate = useNavigate();
 
-    // Filter out accounts with no budgets, then sort by budgetOrder
-    const sortedAccounts = [...accounts]
-        .filter(account => budgets.some(b => b.accountId === account.id))
-        .sort((a, b) => {
-            const orderA = a.budgetOrder ?? 9999;
-            const orderB = b.budgetOrder ?? 9999;
-            return orderA - orderB;
-        });
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const getBudgetsForAccount = (accountId: string) => {
-        return budgets.filter(b => b.accountId === accountId);
-    };
-
-    const getTransactionsForBudget = (budgetId: string, frequency?: string) => {
-        return transactions.filter(t => {
-            if (t.type !== 'expense') return false;
-            if (t.budgetId !== budgetId) return false;
-            const d = new Date(t.date);
-            if (frequency === 'annual') {
-                return d.getFullYear() === currentYear;
-            }
-            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-        }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    };
-
-    const formatCurrency = (amount: number) => {
-        return `£${amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
-
-    const getBudgetIcon = (name: string) => {
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes('hous') || lowerName.includes('mortgage') || lowerName.includes('rent')) return 'home';
-        if (lowerName.includes('food') || lowerName.includes('din') || lowerName.includes('groc')) return 'restaurant';
-        if (lowerName.includes('util') || lowerName.includes('water') || lowerName.includes('gas') || lowerName.includes('electric')) return 'water_drop';
-        if (lowerName.includes('trans') || lowerName.includes('car') || lowerName.includes('auto') || lowerName.includes('fuel')) return 'directions_car';
-        if (lowerName.includes('shop') || lowerName.includes('cloth')) return 'shopping_bag';
-        if (lowerName.includes('health') || lowerName.includes('med')) return 'medical_services';
-        if (lowerName.includes('entert') || lowerName.includes('fun') || lowerName.includes('hobby')) return 'confirmation_number';
-        if (lowerName.includes('save') || lowerName.includes('invest')) return 'savings';
-        if (lowerName.includes('holiday') || lowerName.includes('travel') || lowerName.includes('vacation')) return 'flight_takeoff';
-        return 'category';
-    };
-
-
-    const accountsData = sortedAccounts.map(account => {
-        const accountBudgets = getBudgetsForAccount(account.id);
-        const accountTotalAllocated = accountBudgets
-            .filter(budget => !budget.oneOffBudget)
-            .reduce((sum, budget) => sum + budget.amount, 0);
-        const accountMonthlyAllocated = accountBudgets
-            .filter(budget => !budget.oneOffBudget)
-            .reduce((sum, budget) => {
-                const monthlyValue = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
-                return sum + monthlyValue;
-            }, 0);
-        const isOnlyAnnual = accountBudgets.length > 0 && accountBudgets.every(budget => budget.frequency === 'annual');
-        let totalSpent = 0;
-        accountBudgets.forEach(budget => {
-            const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
-            totalSpent += budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-        });
-
-        return {
-            account,
-            accountBudgets,
-            accountTotalAllocated,
-            accountMonthlyAllocated,
-            isOnlyAnnual,
-            totalSpent
-        };
-    });
-
-    const totalMonthlyAllocated = budgets
-        .filter(budget => !budget.oneOffBudget)
-        .reduce((sum, budget) => {
-            const monthlyValue = budget.frequency === 'annual' ? budget.amount / 12 : budget.amount;
-            return sum + monthlyValue;
-        }, 0);
+    const { sortedAccounts, accountsData, totalMonthlyAllocated } = buildDashboardSummary(
+        accounts,
+        budgets,
+        transactions
+    );
 
     return (
         <div className="w-full max-w-7xl mx-auto pt-4 px-4 pb-24">
@@ -107,7 +37,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                     </p>
                 </div>
                 <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                    {formatCurrency(totalMonthlyAllocated)}
+                    {formatDashboardCurrency(totalMonthlyAllocated)}
                 </div>
             </div>
 
@@ -133,7 +63,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                     )}
                                 </span>
                                 <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                                    {formatCurrency(accountMonthlyAllocated)}
+                                    {formatDashboardCurrency(accountMonthlyAllocated)}
                                 </span>
                             </div>
                         ))}
@@ -162,7 +92,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
                 {/* Rows */}
                 <div className="flex flex-col">
-                    {accountsData.map(({ account, accountBudgets, accountTotalAllocated, isOnlyAnnual, totalSpent }) => {
+                    {accountsData.map(({ account, budgetItems, accountTotalAllocated, isOnlyAnnual, totalSpent }) => {
                         return (
                             <div key={account.id} className="flex flex-col border-b border-slate-200 dark:border-slate-800 last:border-0">
                                 {/* Account Row */}
@@ -175,25 +105,21 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                     </div>
                                     <div></div>
                                     <div className="text-right text-slate-500 dark:text-slate-400 font-medium">
-                                        <div>Allocated: {formatCurrency(accountTotalAllocated)}</div>
+                                        <div>Allocated: {formatDashboardCurrency(accountTotalAllocated)}</div>
                                         {isOnlyAnnual && (
                                             <div className="text-xs text-slate-400 dark:text-slate-500">
-                                                Monthly Allocated: {formatCurrency(accountTotalAllocated / 12)}
+                                                Monthly Allocated: {formatDashboardCurrency(accountTotalAllocated / 12)}
                                             </div>
                                         )}
                                     </div>
                                     <div className="text-right font-bold text-slate-900 dark:text-white text-lg">
-                                        Total Remaining: {formatCurrency(accountTotalAllocated - totalSpent)}
+                                        Total Remaining: {formatDashboardCurrency(accountTotalAllocated - totalSpent)}
                                     </div>
                                     <div></div>
                                 </div>
 
                                 {/* Budgets & Transactions */}
-                                {accountBudgets.map(budget => {
-                                    const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
-                                    const budgetTotalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-                                    const budgetTarget = budget.amount;
-
+                                {budgetItems.map(({ budget, budgetTransactions, budgetTarget, budgetRemaining }) => {
                                     return (
                                         <div key={budget.id} className="flex flex-col border-b border-slate-100 dark:border-slate-800/50 last:border-0">
                                             {/* Budget Row */}
@@ -208,10 +134,15 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 </div>
                                                 <div></div>
                                                 <div className="text-right text-slate-700 dark:text-slate-300 font-medium">
-                                                    {budgetTarget.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    {formatDashboardAmount(budgetTarget)}
                                                 </div>
-                                                <div className={`text-right font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-[#1DAF61] dark:text-emerald-400'}`}>
-                                                    {(budgetTarget - budgetTotalSpent).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div
+                                                    className={cn(
+                                                        'text-right font-bold',
+                                                        budgetRemaining < 0 ? 'text-red-500' : 'text-[#1DAF61] dark:text-emerald-400'
+                                                    )}
+                                                >
+                                                    {formatDashboardAmount(budgetRemaining)}
                                                 </div>
                                                 <div className="flex items-center justify-end gap-4 text-slate-400 dark:text-slate-500">
                                                     <div
@@ -247,7 +178,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                         —
                                                     </div>
                                                     <div className="text-right text-slate-600 dark:text-slate-300 text-sm">
-                                                        {transaction.amount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                        {formatDashboardAmount(transaction.amount)}
                                                     </div>
                                                     <div></div>
                                                 </div>
@@ -263,7 +194,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
 
             {/* Mobile View */}
             <div className="md:hidden flex flex-col gap-6">
-                {accountsData.map(({ account, accountBudgets, accountTotalAllocated, isOnlyAnnual, totalSpent }) => {
+                {accountsData.map(({ account, budgetItems, accountTotalAllocated, isOnlyAnnual, totalSpent }) => {
                     return (
                         <div key={account.id} className="flex flex-col gap-2">
                             {/* Account Header */}
@@ -283,37 +214,32 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                 </div>
                                 <div className="flex flex-col items-end">
                                     <span className="text-xl font-bold text-[#1DAF61] dark:text-emerald-400">
-                                        {formatCurrency(accountTotalAllocated - totalSpent)}
+                                        {formatDashboardCurrency(accountTotalAllocated - totalSpent)}
                                     </span>
                                     {accountTotalAllocated > 0 && (
                                         <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                                            Allocated: {formatCurrency(accountTotalAllocated)}
+                                            Allocated: {formatDashboardCurrency(accountTotalAllocated)}
                                         </span>
                                     )}
                                     {isOnlyAnnual && (
                                         <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                                            Monthly Allocated: {formatCurrency(accountTotalAllocated / 12)}
+                                            Monthly Allocated: {formatDashboardCurrency(accountTotalAllocated / 12)}
                                         </span>
                                     )}
                                 </div>
                             </div>
 
                             {/* Budgets List */}
-                            {accountBudgets.length > 0 ? (
+                            {budgetItems.length > 0 ? (
                                 <div className="flex flex-col gap-2 mt-2">
-                                    {accountBudgets.map(budget => {
-                                        const budgetTransactions = getTransactionsForBudget(budget.id, budget.frequency);
-                                        const budgetTotalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-
-                                        const budgetTarget = budget.amount;
-
+                                    {budgetItems.map(({ budget, budgetTransactions, budgetTarget, budgetRemaining }) => {
                                         return (
                                             <div key={budget.id} className="flex flex-col gap-3 py-2">
                                                 {/* Budget Header */}
                                                 <div className="flex items-center justify-between border-b border-green-100 dark:border-emerald-900/30 pb-3">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-12 h-12 rounded-xl bg-[#E8F5E9] dark:bg-emerald-900/20 flex items-center justify-center text-[#1DAF61] dark:text-emerald-400">
-                                                            <Icon name={budget.icon || getBudgetIcon(budget.name)} className="w-6 h-6" />
+                                                            <Icon name={budget.icon || getBudgetIconName(budget.name)} className="w-6 h-6" />
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">{budget.name}</h3>
@@ -344,12 +270,17 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                 <div className="flex items-center justify-between px-1">
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Budgeted</span>
-                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatCurrency(budgetTarget)}</span>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{formatDashboardCurrency(budgetTarget)}</span>
                                                     </div>
                                                     <div className="flex flex-col items-end">
                                                         <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider font-bold">Remaining</span>
-                                                        <span className={`text-sm font-bold ${budgetTarget - budgetTotalSpent < 0 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
-                                                            {formatCurrency(budgetTarget - budgetTotalSpent)}
+                                                        <span
+                                                            className={cn(
+                                                                'text-sm font-bold',
+                                                                budgetRemaining < 0 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'
+                                                            )}
+                                                        >
+                                                            {formatDashboardCurrency(budgetRemaining)}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -372,7 +303,7 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
                                                                     </span>
                                                                 </div>
                                                                 <span className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                                                                    -{formatCurrency(transaction.amount)}
+                                                                    -{formatDashboardCurrency(transaction.amount)}
                                                                 </span>
                                                             </div>
                                                         ))}
@@ -391,5 +322,4 @@ export function DashboardAccountList({ accounts, budgets, transactions }: Dashbo
             </div>
         </div>
     );
-
 }

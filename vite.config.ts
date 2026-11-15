@@ -84,10 +84,40 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom', 'zustand'],
-          db: ['dexie', 'dexie-react-hooks'],
-          utils: ['papaparse', 'uuid', 'clsx', 'tailwind-merge']
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (
+            id.includes('/recharts/') ||
+            id.includes('/d3-') ||
+            id.includes('/victory-vendor/') ||
+            id.includes('/es-toolkit/') ||
+            id.includes('/@reduxjs/toolkit/') ||
+            id.includes('/immer/') ||
+            id.includes('/reselect/') ||
+            id.includes('/decimal.js-light/')
+          ) {
+            return 'charts'
+          }
+          if (id.includes('/dexie')) {
+            return 'db'
+          }
+          if (
+            id.includes('/papaparse/') ||
+            id.includes('/clsx/') ||
+            id.includes('/tailwind-merge/')
+          ) {
+            return 'utils'
+          }
+          if (
+            id.includes('/react/') ||
+            id.includes('/react-dom/') ||
+            id.includes('/scheduler/') ||
+            id.includes('/react-router') ||
+            id.includes('/zustand/') ||
+            id.includes('/use-sync-external-store/')
+          ) {
+            return 'vendor'
+          }
         }
       }
     }

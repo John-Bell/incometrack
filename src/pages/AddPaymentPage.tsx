@@ -3,7 +3,6 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db } from '@/lib/db';
-import { v4 as uuidv4 } from 'uuid';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { DateInput } from '@/components/ui/DateInput';
 
@@ -31,7 +30,7 @@ export function AddPaymentPage() {
         if (!accountId) return;
 
         await db.transactions.add({
-            id: uuidv4(),
+            id: crypto.randomUUID(),
             date: new Date(date).getTime(),
             payee,
             amount: parseFloat(amount) || 0,

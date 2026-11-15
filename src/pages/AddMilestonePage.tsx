@@ -4,7 +4,6 @@ import { db } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Icon } from '@/components/ui/Icon';
-import { v4 as uuidv4 } from 'uuid';
 
 export function AddMilestonePage() {
     const navigate = useNavigate();
@@ -17,7 +16,7 @@ export function AddMilestonePage() {
         if (!name || !date) return;
 
         await db.milestones.add({
-            id: uuidv4(),
+            id: crypto.randomUUID(),
             name,
             date: new Date(date).getTime(),
             amount: parseFloat(amount) || 0,

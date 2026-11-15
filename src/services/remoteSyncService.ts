@@ -1,7 +1,16 @@
-import { db, dbHooks, getSanitizedDbData } from '@/lib/db';
+import type { Table } from 'dexie';
+import { db, dbHooks, getSanitizedDbData, type DeletedRow, type Settings } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 
 export const GRAVEYARD_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+
+export interface SyncRecord {
+    id: string;
+    updatedAt?: number;
+    [key: string]: unknown;
+}
+
+type SyncTable = Table<SyncRecord, string>;
 
 /**
  * Derives a key from a passphrase using PBKDF2
@@ -34,7 +43,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
 // PART 2: Merge Logic
 // ==========================================
 
-export async function mergeData(cloudData: Record<string, any[]>): Promise<boolean> {
+export async function mergeData(cloudData: Record<string, unknown[]>): Promise<boolean> {
     let hasLocalChanges = false;
     const tables = ['profile', 'accounts', 'incomes', 'scenarios', 'settings', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership', 'milestones'];
 
@@ -45,16 +54,16 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
         await db.transaction('rw', tableList, async () => {
             // Step A: Pre-load local tombstones
             const localTombstones = await db.deletedRows.toArray();
-            const tombstoneMap = new Map(localTombstones.map((r: any) => [r.id, r]));
+            const tombstoneMap = new Map(localTombstones.map((r) => [r.id, r]));
 
             // Step B: Merge Graveyards
-            const rawCloudTombstones = cloudData['deletedRows'] || [];
+            const rawCloudTombstones = (cloudData['deletedRows'] || []) as DeletedRow[];
             const graveyardCutoff = Date.now() - GRAVEYARD_RETENTION_MS;
-            const cloudTombstones = rawCloudTombstones.filter((r: any) => r.deletedAt >= graveyardCutoff);
+            const cloudTombstones = rawCloudTombstones.filter((r) => r.deletedAt >= graveyardCutoff);
             if (cloudTombstones.length < rawCloudTombstones.length) {
                 hasLocalChanges = true;
             }
-            const cloudTombstoneMap = new Map(cloudTombstones.map((r: any) => [r.id, r]));
+            const cloudTombstoneMap = new Map(cloudTombstones.map((r) => [r.id, r]));
 
             for (const [id, localTombstone] of tombstoneMap.entries()) {
                 const cloudTombstone = cloudTombstoneMap.get(id);
@@ -64,7 +73,7 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
                 }
             }
 
-            const tombstonesToPut: any[] = [];
+            const tombstonesToPut: DeletedRow[] = [];
 
             for (let i = 0; i < cloudTombstones.length; i++) {
                 const cloudTombstone = cloudTombstones[i];
@@ -80,7 +89,7 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
             }
 
             // Step C: Execute Remote Deletes
-            const deletesByTable = new Map<string, any[]>();
+            const deletesByTable = new Map<string, DeletedRow[]>();
             for (let i = 0; i < tombstonesToPut.length; i++) {
                 const tombstone = tombstonesToPut[i];
                 if (!deletesByTable.has(tombstone.tableName)) {
@@ -91,8 +100,8 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
 
             for (const [tableName, tombstones] of deletesByTable.entries()) {
                 if (tables.includes(tableName)) {
-                    const dexieTable = (db as any)[tableName];
-                    const idsToCheck = tombstones.map((t: any) => t.id);
+                    const dexieTable = db.table(tableName) as SyncTable;
+                    const idsToCheck = tombstones.map((t) => t.id);
                     const localRecords = await dexieTable.bulkGet(idsToCheck);
 
                     const idsToDelete: string[] = [];
@@ -115,16 +124,16 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
             // Step D: Process Standard Tables
             for (let t = 0; t < tables.length; t++) {
                 const table = tables[t];
-                const dexieTable = (db as any)[table];
+                const dexieTable = db.table(table) as SyncTable;
                 const localRecords = await dexieTable.toArray();
-                const cloudRecords = cloudData[table] || [];
+                const cloudRecords = (cloudData[table] || []) as SyncRecord[];
 
-                const localMap = new Map(localRecords.map((r: any) => [r.id, r]));
+                const localMap = new Map(localRecords.map((r) => [r.id, r]));
 
-                const recordsToPut: any[] = [];
+                const recordsToPut: SyncRecord[] = [];
 
                 for (let i = 0; i < cloudRecords.length; i++) {
-                    const cloudRecord = cloudRecords[i] as any;
+                    const cloudRecord = cloudRecords[i];
                     const cloudTime = cloudRecord.updatedAt || 0;
 
                     const tombstone = tombstoneMap.get(cloudRecord.id);
@@ -148,18 +157,19 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
                             recordsToPut.push(cloudRecord);
                         } else {
                             // Record exists in both -> Compare updatedAt
-                            const localTime = (localRecord as any).updatedAt || 0;
+                            const localTime = localRecord.updatedAt || 0;
 
                             if (cloudTime > localTime) {
                                 // Cloud is newer -> Update local
                                 // Preserve local device sync state in settings
                                 if (table === 'settings') {
-                                    const localSettings = localRecord as any;
-                                    cloudRecord.cloudHandle = localSettings.cloudHandle;
-                                    cloudRecord.lastSynced = localSettings.lastSynced;
-                                    cloudRecord.syncServerUrl = localSettings.syncServerUrl;
-                                    cloudRecord.syncPassphrase = localSettings.syncPassphrase;
-                                    cloudRecord.syncHeaderKey = localSettings.syncHeaderKey;
+                                    const localSettings = localRecord as unknown as Settings;
+                                    const cloudSettings = cloudRecord as unknown as Settings;
+                                    cloudSettings.cloudHandle = localSettings.cloudHandle;
+                                    cloudSettings.lastSynced = localSettings.lastSynced;
+                                    cloudSettings.syncServerUrl = localSettings.syncServerUrl;
+                                    cloudSettings.syncPassphrase = localSettings.syncPassphrase;
+                                    cloudSettings.syncHeaderKey = localSettings.syncHeaderKey;
                                 }
                                 recordsToPut.push(cloudRecord);
                             } else if (localTime > cloudTime) {
@@ -192,7 +202,7 @@ export async function mergeData(cloudData: Record<string, any[]>): Promise<boole
 // PART 1: Web Crypto Utilities
 // ==========================================
 
-export async function encryptData(data: any, passphrase: string): Promise<Blob> {
+export async function encryptData(data: unknown, passphrase: string): Promise<Blob> {
     const encoder = new TextEncoder();
     const encodedData = encoder.encode(JSON.stringify(data));
 
@@ -215,7 +225,7 @@ export async function encryptData(data: any, passphrase: string): Promise<Blob> 
     return new Blob([salt, iv, encryptedBuffer], { type: 'application/octet-stream' });
 }
 
-export async function decryptData(buffer: ArrayBuffer, passphrase: string): Promise<any> {
+export async function decryptData(buffer: ArrayBuffer, passphrase: string): Promise<Record<string, unknown[]>> {
     if (buffer.byteLength < 28) {
         throw new Error('Invalid encrypted data format.');
     }
@@ -239,8 +249,8 @@ export async function decryptData(buffer: ArrayBuffer, passphrase: string): Prom
         const decoder = new TextDecoder();
         const decryptedString = decoder.decode(decryptedBuffer);
 
-        return JSON.parse(decryptedString);
-    } catch (error) {
+        return JSON.parse(decryptedString) as Record<string, unknown[]>;
+    } catch {
         throw new Error('Decryption failed. Incorrect passphrase or corrupted data.');
     }
 }
@@ -286,7 +296,7 @@ export const remoteSyncService = {
         // Just try to sync once on boot
         try {
             await this.sync();
-        } catch (e) {
+        } catch {
             // ignore
         }
     },
@@ -315,7 +325,7 @@ export const remoteSyncService = {
                 return false;
             }
 
-            const syncUrl = settings.syncServerUrl || (settings as any).syncUrl;
+            const syncUrl = settings.syncServerUrl || (settings as Settings & { syncUrl?: string }).syncUrl;
             const syncPassphrase = settings.syncPassphrase;
             const syncHeaderKey = settings.syncHeaderKey;
 

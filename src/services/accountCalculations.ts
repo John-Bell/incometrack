@@ -1,6 +1,6 @@
 import { type Account, type InterestAccrual } from '@/lib/db';
 import { calculateHybridForecast, calculateHybridForecastForAccount } from '@/utils/forecastUtils';
-import { getTaxYearDates, TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
+import { getTaxYearDates, TAX_FREE_CATEGORIES, type AccountCategory } from '@/constants/taxConstants';
 
 export function calculateTotalSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -12,7 +12,7 @@ export function calculateNonPensionSavings(accounts: Account[]): number {
 
 export function calculateTaxableSavings(accounts: Account[]): number {
     return accounts.reduce((sum, acc) => {
-        if (acc.category && TAX_FREE_CATEGORIES.includes(acc.category as any)) {
+        if (acc.category && TAX_FREE_CATEGORIES.includes(acc.category as AccountCategory)) {
             return sum;
         }
         return sum + (acc.balance || 0);
@@ -37,7 +37,7 @@ export function calculateProjectedTaxableInterestForAccount(
     startTs: number,
     endTs: number
 ): number {
-    if (account.category && TAX_FREE_CATEGORIES.includes(account.category as any)) {
+    if (account.category && TAX_FREE_CATEGORIES.includes(account.category as AccountCategory)) {
         return 0;
     }
     return calculateProjectedInterestForAccount(account, accruals, startTs, endTs);

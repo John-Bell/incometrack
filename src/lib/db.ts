@@ -79,7 +79,7 @@ export interface Settings {
     icloudSync: boolean;
     lastSynced?: number;
     updatedAt?: number;
-    cloudHandle?: any; // FileSystemFileHandle
+    cloudHandle?: unknown; // FileSystemFileHandle
     syncServerUrl?: string;
     syncPassphrase?: string;
     syncHeaderKey?: string;
@@ -94,7 +94,7 @@ export interface MonthlyArchive {
     totalInterest: number;
     estimatedAccruedInterest: number;
     closedAt: number;
-    data: any; // Snapshot of accounts/incomes and calculated tax results
+    data: unknown; // Snapshot of accounts/incomes and calculated tax results
     updatedAt?: number;
 }
 
@@ -587,7 +587,7 @@ db.version(19).stores({
     });
 });
 
-export const getSanitizedDbData = async (): Promise<Record<string, any[]>> => {
+export const getSanitizedDbData = async (): Promise<Record<string, unknown[]>> => {
     const rawData = {
         profile: await db.profile.toArray(),
         accounts: await db.accounts.toArray(),
@@ -729,8 +729,8 @@ export const initDb = async () => {
     dbHooks.isSyncing = true;
     try {
         await db.open();
-    } catch (err: any) {
-        if (err.name === 'VersionError') {
+    } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'VersionError') {
             console.warn('Database version downgrade detected. Wiping and recreating...');
             await db.delete();
             await db.open();
@@ -749,7 +749,14 @@ export const dbHooks = {
 
 // Ensure Dexie's root PSD has a valid transless reference so Dexie.ignoreTransaction()
 // works inside implicit tempTransactions (Dexie 4.x leaves PSD.transless undefined in tempTransaction).
-const rootPSD = (Dexie as any).Promise?.PSD;
+interface DexieWithPSD {
+    Promise?: {
+        PSD?: {
+            transless?: unknown;
+        };
+    };
+}
+const rootPSD = (Dexie as unknown as DexieWithPSD).Promise?.PSD;
 if (rootPSD && !rootPSD.transless) {
     rootPSD.transless = rootPSD;
 }
@@ -757,8 +764,16 @@ if (rootPSD && !rootPSD.transless) {
 // Add hooks to automatically update the updatedAt timestamp
 const tablesToHook = ['profile', 'accounts', 'incomes', 'scenarios', 'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets', 'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership', 'milestones'];
 
+interface HookableRecord {
+    id?: string;
+    updatedAt?: number;
+    [key: string]: unknown;
+}
+
 tablesToHook.forEach(tableName => {
-    (db as any)[tableName].hook('creating', function (_primKey: any, obj: any, _transaction: any) {
+    const tableRef = db.table(tableName);
+
+    tableRef.hook('creating', function (_primKey: unknown, obj: HookableRecord) {
         if (!obj.updatedAt) {
             obj.updatedAt = Date.now();
         }
@@ -767,7 +782,7 @@ tablesToHook.forEach(tableName => {
         }
     });
 
-    (db as any)[tableName].hook('updating', function (modifications: any, _primKey: any, _obj: any, _transaction: any) {
+    tableRef.hook('updating', function (modifications) {
         if (!dbHooks.isSyncing) {
             dbHooks.onLocalChange();
             return { ...modifications, updatedAt: Date.now() };
@@ -775,7 +790,7 @@ tablesToHook.forEach(tableName => {
         return modifications;
     });
 
-    (db as any)[tableName].hook('deleting', function (_primKey: any, _obj: any, _transaction: any) {
+    tableRef.hook('deleting', function (_primKey: unknown, _obj: HookableRecord | undefined) {
         if (!dbHooks.isSyncing) {
             dbHooks.onLocalChange();
 
@@ -783,7 +798,7 @@ tablesToHook.forEach(tableName => {
             const deletedAt = Math.max(Date.now(), (_obj?.updatedAt || 0) + 1);
             if (idToUse) {
                 Dexie.ignoreTransaction(() => {
-                    (db as any).deletedRows.put({
+                    db.deletedRows.put({
                         id: idToUse,
                         tableName,
                         deletedAt
@@ -795,5 +810,5 @@ tablesToHook.forEach(tableName => {
 });
 
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
-    (window as any).__DEXIE_DB__ = db;
+    (window as unknown as { __DEXIE_DB__?: typeof db }).__DEXIE_DB__ = db;
 }

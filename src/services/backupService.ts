@@ -1,8 +1,23 @@
+import type { Table } from 'dexie';
 import { db, getSanitizedDbData } from '@/lib/db';
 
 export interface BackupData {
     version: number;
-    data: Record<string, any[]>;
+    data: Record<string, unknown[]>;
+}
+
+interface FilePickerWindow extends Window {
+    showSaveFilePicker: (options: unknown) => Promise<{
+        createWritable: () => Promise<{
+            write: (data: Blob) => Promise<void>;
+            close: () => Promise<void>;
+        }>;
+    }>;
+    showOpenFilePicker: (options: unknown) => Promise<
+        Array<{
+            getFile: () => Promise<File>;
+        }>
+    >;
 }
 
 export const exportDatabase = async () => {
@@ -14,16 +29,17 @@ export const exportDatabase = async () => {
 
         // Remove cloudHandle from settings before stringifying to avoid serialization issues
         if (backup.data.settings) {
-            backup.data.settings = backup.data.settings.map((s: any) => {
-                const { cloudHandle, ...rest } = s;
-                return rest;
+            backup.data.settings = backup.data.settings.map((s) => {
+                const record = { ...(s as Record<string, unknown>) };
+                delete record.cloudHandle;
+                return record;
             });
         }
 
         const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
         const suggestedName = `incometrack-backup-${new Date().toISOString().split('T')[0]}.json`;
 
-        const fileHandle = await (window as any).showSaveFilePicker({
+        const fileHandle = await (window as unknown as FilePickerWindow).showSaveFilePicker({
             suggestedName,
             types: [
                 {
@@ -39,8 +55,9 @@ export const exportDatabase = async () => {
             const writable = await fileHandle.createWritable();
             await writable.write(blob);
             await writable.close();
-        } catch (writeError: any) {
-            if (writeError.name === 'QuotaExceededError' || (writeError.message && writeError.message.toLowerCase().includes('quota'))) {
+        } catch (writeError: unknown) {
+            const err = writeError as { name?: string; message?: string };
+            if (err.name === 'QuotaExceededError' || (err.message && err.message.toLowerCase().includes('quota'))) {
                 alert('Storage quota exceeded. Please free up space on your device.');
                 throw writeError;
             } else {
@@ -57,9 +74,7 @@ export const exportDatabase = async () => {
 
 export const importDatabase = async () => {
     try {
-        let file: File;
-
-        const [fileHandle] = await (window as any).showOpenFilePicker({
+        const [fileHandle] = await (window as unknown as FilePickerWindow).showOpenFilePicker({
             types: [
                 {
                     description: 'JSON Files',
@@ -69,12 +84,17 @@ export const importDatabase = async () => {
                 },
             ],
         });
-        file = await fileHandle.getFile();
+        const file = await fileHandle.getFile();
 
         const contents = await file.text();
-        const backupData: any = JSON.parse(contents);
+        const backupData = JSON.parse(contents) as {
+            version?: number;
+            data?: Record<string, unknown[]>;
+            profile?: unknown[];
+            [key: string]: unknown;
+        };
 
-        let parsedData: any;
+        let parsedData: Record<string, unknown[]>;
 
         if (backupData.version && backupData.data) {
             if (backupData.version !== 1) {
@@ -82,7 +102,7 @@ export const importDatabase = async () => {
             }
             parsedData = backupData.data;
         } else if (backupData.profile && Array.isArray(backupData.profile)) {
-            parsedData = backupData;
+            parsedData = backupData as Record<string, unknown[]>;
         } else {
             throw new Error('Unrecognized backup format');
         }
@@ -92,14 +112,15 @@ export const importDatabase = async () => {
             'monthlyArchives', 'notifications', 'taxRules', 'transactions', 'budgets',
             'paymentMappings', 'interestAccruals', 'properties', 'propertyExpenses', 'propertyIncomes', 'propertyOwnership'
         ];
-        const dexieTables = tables.map(t => (db as any)[t]);
+        const dexieTables = tables.map(t => db.table(t));
 
         // Wrap in a transaction to ensure atomic restore
         await db.transaction('rw', dexieTables, async () => {
             for (const table of tables) {
                 if (parsedData[table]) {
-                    await (db as any)[table].clear();
-                    await (db as any)[table].bulkAdd(parsedData[table]);
+                    const tableRef = db.table(table) as Table<unknown, string>;
+                    await tableRef.clear();
+                    await tableRef.bulkAdd(parsedData[table]);
                 }
             }
         });

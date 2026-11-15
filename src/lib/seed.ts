@@ -1,15 +1,15 @@
-import { db, dbHooks } from '@/lib/db'; 
-import { TAX_YEAR_CONSTANTS } from '@/constants/taxConstants';
+import { db, dbHooks, type TaxYearRule } from '@/lib/db'; 
+import { TAX_YEAR_CONSTANTS, type TaxYearConstants } from '@/constants/taxConstants';
 
 export const syncTaxRules = async () => {
     try {
         // 1. Instantly load the current DB state
         const existingRules = await db.taxRules.toArray();
-        const recordsToSync: any[] = [];
+        const recordsToSync: TaxYearRule[] = [];
 
         for (const year of Object.keys(TAX_YEAR_CONSTANTS)) {
-            const constantRule = TAX_YEAR_CONSTANTS[year] as Record<string, any>;
-            const existingRule = existingRules.find(r => r.id === year) as Record<string, any> | undefined;
+            const constantRule = TAX_YEAR_CONSTANTS[year];
+            const existingRule = existingRules.find(r => r.id === year);
 
             // 2. If the year is completely missing from the DB, queue it for addition
             if (!existingRule) {
@@ -23,7 +23,8 @@ export const syncTaxRules = async () => {
 
             // 3. If it exists, check if any of the actual tax rates/bands have changed.
             // We loop over the keys in the constant (ignoring DB-only keys like updatedAt)
-            const needsUpdate = Object.keys(constantRule).some(
+            const ruleKeys = Object.keys(constantRule) as Array<keyof TaxYearConstants>;
+            const needsUpdate = ruleKeys.some(
                 (key) => constantRule[key] !== existingRule[key]
             );
 

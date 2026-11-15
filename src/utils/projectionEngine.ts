@@ -7,6 +7,13 @@ export type DrawdownStrategy = 'taxable_first' | 'tax_free_first' | 'pensions_fi
 
 const PENSION_DRAWDOWN_TAX_RATE = 0.15;
 
+export interface PensionPot {
+  id: string;
+  ownerId: 'person1' | 'person2';
+  balance: number;
+  category: string;
+}
+
 export interface ProjectionEngineInput {
   currentBalances: number; // Sum of active balances across liquid pots
   assetPots?: {
@@ -15,12 +22,7 @@ export interface ProjectionEngineInput {
     premiumBonds: number;
     pensions: number;
   };
-  pensionPots?: {
-    id: string;
-    ownerId: 'person1' | 'person2';
-    balance: number;
-    category: string;
-  }[];
+  pensionPots?: PensionPot[];
   drawdownStrategy?: DrawdownStrategy;
   realGrowthRate: number;  // App global growth asset rate (e.g., 2.38)
   profile: {
@@ -79,7 +81,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
   let trackingTaxFree = input.assetPots?.taxFree ?? 0;
   let trackingPremiumBonds = input.assetPots?.premiumBonds ?? 0;
 
-  let trackingPensions = input.pensionPots ? JSON.parse(JSON.stringify(input.pensionPots)) : [];
+  const trackingPensions: PensionPot[] = input.pensionPots ? JSON.parse(JSON.stringify(input.pensionPots)) : [];
   if (!input.pensionPots && input.assetPots?.pensions) {
     trackingPensions.push({
       id: 'dummy-pension',
@@ -226,11 +228,11 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     const totalInflows = (p1Salary + p1Pension + p1Dividends + p2Salary + p2Pension + p2Dividends) + p1RentalGrossForYear + p2RentalGrossForYear;
     const netCashFlow = totalInflows - totalBudgetsForYear - totalTaxForYear;
 
-    const totalPensions = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
+    const totalPensions = trackingPensions.reduce((sum, p) => sum + p.balance, 0);
     const totalBefore = trackingTaxable + trackingTaxFree + trackingPremiumBonds + totalPensions;
 
     if (totalBefore > 0 || totalCashInjectionsForYear > 0) {
-      let annualSurplus = netCashFlow + totalCashInjectionsForYear;
+      const annualSurplus = netCashFlow + totalCashInjectionsForYear;
 
       if (annualSurplus >= 0) {
         trackingTaxable += annualSurplus;
@@ -240,7 +242,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
         if (strategy === 'proportional') {
           const availableCash = Math.max(0, (trackingTaxable + trackingTaxFree + trackingPremiumBonds) - floor);
-          const currentTotalPensions = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
+          const currentTotalPensions = trackingPensions.reduce((sum, p) => sum + p.balance, 0);
           const totalAtStartOfDeficit = availableCash + currentTotalPensions;
           if (totalAtStartOfDeficit > 0) {
             const ratioCash = availableCash / totalAtStartOfDeficit;
@@ -267,7 +269,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
             }
 
             // Sort pension pots: Uncrystallised ('DC Pension') first, then Crystallised
-            trackingPensions.sort((a: any, b: any) => {
+            trackingPensions.sort((a, b) => {
               if (a.category === 'DC Pension' && b.category !== 'DC Pension') return -1;
               if (a.category !== 'DC Pension' && b.category === 'DC Pension') return 1;
               return 0;
@@ -284,7 +286,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                   pot.balance -= requiredCrystallisation;
                   deficit -= pensionDrawNeeded;
                   pensionDrawNeeded = 0;
-                  let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
+                  let postPot = trackingPensions.find((p) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
                   if (!postPot) {
                     postPot = { id: `post-${pot.id}-${yearIndex}`, ownerId: pot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
                     trackingPensions.push(postPot);
@@ -294,7 +296,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                   const availableTaxFree = pot.balance * 0.25;
                   deficit -= availableTaxFree;
                   pensionDrawNeeded -= availableTaxFree;
-                  let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
+                  let postPot = trackingPensions.find((p) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pot.ownerId);
                   if (!postPot) {
                     postPot = { id: `post-${pot.id}-${yearIndex}`, ownerId: pot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
                     trackingPensions.push(postPot);
@@ -344,7 +346,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               availableCash -= draw;
             } else if (pot === 'pensions') {
               // Sort pension pots: Uncrystallised ('DC Pension') first, then Crystallised
-              trackingPensions.sort((a: any, b: any) => {
+              trackingPensions.sort((a, b) => {
                 if (a.category === 'DC Pension' && b.category !== 'DC Pension') return -1;
                 if (a.category !== 'DC Pension' && b.category === 'DC Pension') return 1;
                 return 0;
@@ -359,7 +361,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                   if (pPot.balance >= requiredCrystallisation) {
                     pPot.balance -= requiredCrystallisation;
                     deficit -= deficit;
-                    let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pPot.ownerId);
+                    let postPot = trackingPensions.find((p) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pPot.ownerId);
                     if (!postPot) {
                       postPot = { id: `post-${pPot.id}-${yearIndex}`, ownerId: pPot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
                       trackingPensions.push(postPot);
@@ -368,7 +370,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
                   } else {
                     const availableTaxFree = pPot.balance * 0.25;
                     deficit -= availableTaxFree;
-                    let postPot = trackingPensions.find((p: any) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pPot.ownerId);
+                    let postPot = trackingPensions.find((p) => p.category === 'DC Pension (Post-Drawdown)' && p.ownerId === pPot.ownerId);
                     if (!postPot) {
                       postPot = { id: `post-${pPot.id}-${yearIndex}`, ownerId: pPot.ownerId, balance: 0, category: 'DC Pension (Post-Drawdown)' };
                       trackingPensions.push(postPot);
@@ -451,7 +453,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
       if (pot.balance < 0) pot.balance = 0;
     }
 
-    const currentTotalPensionsAfterDrawdown = trackingPensions.reduce((sum: number, p: any) => sum + p.balance, 0);
+    const currentTotalPensionsAfterDrawdown = trackingPensions.reduce((sum, p) => sum + p.balance, 0);
     const trackingTotalLiquidAssets = trackingTaxable + trackingTaxFree + trackingPremiumBonds + currentTotalPensionsAfterDrawdown;
 
     let isRunwayBroken = false;

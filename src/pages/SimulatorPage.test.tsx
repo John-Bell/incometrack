@@ -9,13 +9,19 @@ vi.mock('@/store/useStore', () => ({
     useStore: vi.fn(),
 }));
 
+const mockStore = (state: Record<string, unknown>) => {
+    (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (selector?: (s: Record<string, unknown>) => unknown) => (selector ? selector(state) : state)
+    );
+};
+
 vi.mock('dexie-react-hooks', () => ({
     useLiveQuery: vi.fn(),
 }));
 
 describe('SimulatorPage', () => {
     it('renders tax year select dropdown populated with tax rules and recalculates when tax year changes', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Alice', partner2Name: 'Bob' },
             taxYear: '2025-2026',
             taxRules: {
@@ -63,7 +69,7 @@ describe('SimulatorPage', () => {
     });
 
     it('renders ISA sweep checkbox under tax year dropdown, handles checking and resets state on Reset click', () => {
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: { partner1Name: 'Alice', partner2Name: 'Bob' },
             taxYear: '2025-2026',
             taxRules: {

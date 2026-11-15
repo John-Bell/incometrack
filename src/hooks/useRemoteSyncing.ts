@@ -1,59 +1,120 @@
-import { useState, useEffect } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, getSanitizedDbData } from '@/lib/db';
+import { db, getSanitizedDbData, type Settings } from '@/lib/db';
 import { encryptData, decryptData, mergeData } from '@/services/remoteSyncService';
 import { useStore } from '@/store/useStore';
 import { getSyncHeaders, validateSyncConfig } from '@/utils/remoteSyncUtils';
 
+export interface RemoteSyncStatusMessage {
+    type: 'success' | 'error';
+    text: string;
+}
+
+export interface RemoteSyncingState {
+    syncServerUrl: string;
+    syncPassphrase: string;
+    syncHeaderKey: string;
+    isUpdating: boolean;
+    isProcessing: boolean;
+    statusMessage: RemoteSyncStatusMessage | null;
+    syncedSettings: Settings | undefined;
+}
+
+const initialRemoteSyncingState: RemoteSyncingState = {
+    syncServerUrl: '',
+    syncPassphrase: '',
+    syncHeaderKey: '',
+    isUpdating: false,
+    isProcessing: false,
+    statusMessage: null,
+    syncedSettings: undefined,
+};
+
 export function useRemoteSyncing() {
     const navigate = useNavigate();
-    const { initStore } = useStore();
+    const initStore = useStore((state) => state.initStore);
     const settings = useLiveQuery(() => db.settings.toArray());
     const currentSettings = settings?.[0];
 
-    const [syncServerUrl, setSyncServerUrl] = useState('');
-    const [syncPassphrase, setSyncPassphrase] = useState('');
-    const [syncHeaderKey, setSyncHeaderKey] = useState('');
+    const [state, setState] = useState<RemoteSyncingState>(initialRemoteSyncingState);
 
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    if (currentSettings !== state.syncedSettings) {
+        setState((prev) => ({
+            ...prev,
+            syncedSettings: currentSettings,
+            ...(currentSettings
+                ? {
+                      syncServerUrl: currentSettings.syncServerUrl || '',
+                      syncPassphrase: currentSettings.syncPassphrase || '',
+                      syncHeaderKey: currentSettings.syncHeaderKey || '',
+                  }
+                : {}),
+        }));
+    }
+
+    const {
+        syncServerUrl,
+        syncPassphrase,
+        syncHeaderKey,
+        isUpdating,
+        isProcessing,
+        statusMessage,
+    } = state;
+
+    const createFieldSetter =
+        <K extends keyof RemoteSyncingState>(field: K): Dispatch<SetStateAction<RemoteSyncingState[K]>> =>
+        (value) => {
+            setState((prev) => ({
+                ...prev,
+                [field]:
+                    typeof value === 'function'
+                        ? (value as (prevVal: RemoteSyncingState[K]) => RemoteSyncingState[K])(prev[field])
+                        : value,
+            }));
+        };
+
+    const setSyncServerUrl = createFieldSetter('syncServerUrl');
+    const setSyncPassphrase = createFieldSetter('syncPassphrase');
+    const setSyncHeaderKey = createFieldSetter('syncHeaderKey');
 
     const hasChanges =
         syncServerUrl.trim() !== (currentSettings?.syncServerUrl || '') ||
         syncPassphrase.trim() !== (currentSettings?.syncPassphrase || '') ||
         syncHeaderKey.trim() !== (currentSettings?.syncHeaderKey || '');
 
-    useEffect(() => {
-        if (currentSettings) {
-            setSyncServerUrl(currentSettings.syncServerUrl || '');
-            setSyncPassphrase(currentSettings.syncPassphrase || '');
-            setSyncHeaderKey(currentSettings.syncHeaderKey || '');
-        }
-    }, [currentSettings]);
-
     const handleUpdate = async () => {
         if (!currentSettings) return;
-        setIsUpdating(true);
-        setStatusMessage(null);
+        setState((prev) => ({ ...prev, isUpdating: true, statusMessage: null }));
         try {
             await db.settings.update(currentSettings.id, {
                 syncServerUrl: syncServerUrl.trim() || undefined,
                 syncPassphrase: syncPassphrase.trim() || undefined,
                 syncHeaderKey: syncHeaderKey.trim() || undefined,
             });
-            setStatusMessage({ type: 'success', text: 'Settings updated successfully.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: { type: 'success', text: 'Settings updated successfully.' },
+            }));
         } catch {
-            setStatusMessage({ type: 'error', text: 'Failed to update settings.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: { type: 'error', text: 'Failed to update settings.' },
+            }));
         } finally {
-            setIsUpdating(false);
+            setState((prev) => ({ ...prev, isUpdating: false }));
         }
     };
 
     const handleLoadFromRemote = async () => {
         if (!validateSyncConfig(syncServerUrl, syncPassphrase, syncHeaderKey)) {
-            setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: {
+                    type: 'error',
+                    text: 'Server URL, Encryption Passphrase, and Header Key are required.',
+                },
+            }));
             return;
         }
 
@@ -61,8 +122,7 @@ export function useRemoteSyncing() {
             return;
         }
 
-        setIsProcessing(true);
-        setStatusMessage(null);
+        setState((prev) => ({ ...prev, isProcessing: true, statusMessage: null }));
         try {
             const headers = getSyncHeaders(syncHeaderKey);
             const response = await fetch(syncServerUrl.trim(), { headers, cache: 'no-store' });
@@ -85,18 +145,33 @@ export function useRemoteSyncing() {
             }
 
             await initStore();
-            setStatusMessage({ type: 'success', text: 'Data loaded from remote successfully.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: { type: 'success', text: 'Data loaded from remote successfully.' },
+            }));
         } catch (error) {
             console.error('Load from remote failed:', error);
-            setStatusMessage({ type: 'error', text: error instanceof Error ? error.message : 'An unknown error occurred during load.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: {
+                    type: 'error',
+                    text: error instanceof Error ? error.message : 'An unknown error occurred during load.',
+                },
+            }));
         } finally {
-            setIsProcessing(false);
+            setState((prev) => ({ ...prev, isProcessing: false }));
         }
     };
 
     const handleSaveToRemote = async () => {
         if (!validateSyncConfig(syncServerUrl, syncPassphrase, syncHeaderKey)) {
-            setStatusMessage({ type: 'error', text: 'Server URL, Encryption Passphrase, and Header Key are required.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: {
+                    type: 'error',
+                    text: 'Server URL, Encryption Passphrase, and Header Key are required.',
+                },
+            }));
             return;
         }
 
@@ -104,8 +179,7 @@ export function useRemoteSyncing() {
             return;
         }
 
-        setIsProcessing(true);
-        setStatusMessage(null);
+        setState((prev) => ({ ...prev, isProcessing: true, statusMessage: null }));
         try {
             const allData = await getSanitizedDbData();
             const encryptedBlob = await encryptData(allData, syncPassphrase.trim());
@@ -131,12 +205,21 @@ export function useRemoteSyncing() {
                 });
             }
 
-            setStatusMessage({ type: 'success', text: 'Data saved to remote successfully.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: { type: 'success', text: 'Data saved to remote successfully.' },
+            }));
         } catch (error) {
             console.error('Save to remote failed:', error);
-            setStatusMessage({ type: 'error', text: error instanceof Error ? error.message : 'An unknown error occurred during save.' });
+            setState((prev) => ({
+                ...prev,
+                statusMessage: {
+                    type: 'error',
+                    text: error instanceof Error ? error.message : 'An unknown error occurred during save.',
+                },
+            }));
         } finally {
-            setIsProcessing(false);
+            setState((prev) => ({ ...prev, isProcessing: false }));
         }
     };
 

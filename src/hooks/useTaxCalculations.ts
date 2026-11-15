@@ -25,7 +25,7 @@ export interface UseTaxCalculationsResult {
 }
 
 export function useTaxCalculations(): UseTaxCalculationsResult {
-    const { taxYear } = useStore();
+    const taxYear = useStore((state) => state.taxYear);
     const taxService = useTaxService();
 
     const { startTs, endTs } = useMemo(() => getTaxYearDates(taxYear || undefined), [taxYear]);
@@ -79,7 +79,7 @@ export function useTaxCalculations(): UseTaxCalculationsResult {
         }
 
         if (dbAccounts) {
-            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !TAX_FREE_CATEGORIES.includes(acc.category as any));
+            const taxableAccounts = dbAccounts.filter(acc => !acc.category || !(TAX_FREE_CATEGORIES as readonly string[]).includes(acc.category));
 
             const p1Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person1');
             const p2Accounts = taxableAccounts.filter(acc => acc.ownerId === 'person2');

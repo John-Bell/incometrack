@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { db, type Profile, type Settings } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import {
     buildProfileName,
@@ -9,9 +9,33 @@ import {
     parseDobToTimestamp,
 } from '@/utils/settingsUtils';
 
+export interface SettingsState {
+    isSaving: boolean;
+    remoteSync: boolean;
+    defaultGrowthRate: number;
+    partner1Name: string;
+    partner1Dob: string;
+    partner2Name: string;
+    partner2Dob: string;
+    syncedSettings: Settings | undefined;
+    syncedProfile: Profile | undefined;
+}
+
+const initialSettingsState: SettingsState = {
+    isSaving: false,
+    remoteSync: false,
+    defaultGrowthRate: 1.75,
+    partner1Name: '',
+    partner1Dob: '',
+    partner2Name: '',
+    partner2Dob: '',
+    syncedSettings: undefined,
+    syncedProfile: undefined,
+};
+
 export function useSettings() {
     const navigate = useNavigate();
-    const { setTaxYear } = useStore();
+    const setTaxYear = useStore((state) => state.setTaxYear);
 
     const settings = useLiveQuery(() => db.settings.toArray());
     const taxRules = useLiveQuery(() => db.taxRules.toArray());
@@ -20,30 +44,58 @@ export function useSettings() {
     const currentSettings = settings?.[0];
     const currentProfile = profiles?.[0];
 
-    const [isSaving, setIsSaving] = useState(false);
-    const [remoteSync, setRemoteSync] = useState(false);
-    const [defaultGrowthRate, setDefaultGrowthRate] = useState<number>(1.75);
+    const [state, setState] = useState<SettingsState>(initialSettingsState);
 
-    const [partner1Name, setPartner1Name] = useState('');
-    const [partner1Dob, setPartner1Dob] = useState('');
-    const [partner2Name, setPartner2Name] = useState('');
-    const [partner2Dob, setPartner2Dob] = useState('');
+    if (currentSettings !== state.syncedSettings || currentProfile !== state.syncedProfile) {
+        setState((prev) => ({
+            ...prev,
+            syncedSettings: currentSettings,
+            syncedProfile: currentProfile,
+            ...(currentSettings !== prev.syncedSettings && currentSettings
+                ? {
+                      remoteSync: currentSettings.icloudSync || false,
+                      defaultGrowthRate: currentSettings.defaultGrowthRate ?? 1.75,
+                  }
+                : {}),
+            ...(currentProfile !== prev.syncedProfile && currentProfile
+                ? {
+                      partner1Name: currentProfile.partner1Name || '',
+                      partner1Dob: formatDobForInput(currentProfile.partner1Dob),
+                      partner2Name: currentProfile.partner2Name || '',
+                      partner2Dob: formatDobForInput(currentProfile.partner2Dob),
+                  }
+                : {}),
+        }));
+    }
 
-    useEffect(() => {
-        if (currentSettings) {
-            setRemoteSync(currentSettings.icloudSync || false);
-            setDefaultGrowthRate(currentSettings.defaultGrowthRate ?? 1.75);
-        }
-    }, [currentSettings]);
+    const {
+        isSaving,
+        remoteSync,
+        defaultGrowthRate,
+        partner1Name,
+        partner1Dob,
+        partner2Name,
+        partner2Dob,
+    } = state;
 
-    useEffect(() => {
-        if (currentProfile) {
-            setPartner1Name(currentProfile.partner1Name || '');
-            setPartner1Dob(formatDobForInput(currentProfile.partner1Dob));
-            setPartner2Name(currentProfile.partner2Name || '');
-            setPartner2Dob(formatDobForInput(currentProfile.partner2Dob));
-        }
-    }, [currentProfile]);
+    const createFieldSetter =
+        <K extends keyof SettingsState>(field: K): Dispatch<SetStateAction<SettingsState[K]>> =>
+        (value) => {
+            setState((prev) => ({
+                ...prev,
+                [field]:
+                    typeof value === 'function'
+                        ? (value as (prevVal: SettingsState[K]) => SettingsState[K])(prev[field])
+                        : value,
+            }));
+        };
+
+    const setRemoteSync = createFieldSetter('remoteSync');
+    const setDefaultGrowthRate = createFieldSetter('defaultGrowthRate');
+    const setPartner1Name = createFieldSetter('partner1Name');
+    const setPartner1Dob = createFieldSetter('partner1Dob');
+    const setPartner2Name = createFieldSetter('partner2Name');
+    const setPartner2Dob = createFieldSetter('partner2Dob');
 
     const handleTaxYearChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newTaxYear = e.target.value;
@@ -55,7 +107,7 @@ export function useSettings() {
 
     const handleSave = async () => {
         if (currentSettings || currentProfile) {
-            setIsSaving(true);
+            setState((prev) => ({ ...prev, isSaving: true }));
             try {
                 if (currentSettings) {
                     await db.settings.update(currentSettings.id, {
@@ -75,7 +127,7 @@ export function useSettings() {
                 }
                 await new Promise((resolve) => setTimeout(resolve, 500));
             } finally {
-                setIsSaving(false);
+                setState((prev) => ({ ...prev, isSaving: false }));
             }
         }
     };

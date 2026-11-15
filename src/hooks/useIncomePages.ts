@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Profile } from '@/lib/db';
+import { db } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { useTaxCalculations } from '@/hooks/useTaxCalculations';
 import { useIncomeForm } from '@/hooks/useIncomeForm';
@@ -14,24 +14,8 @@ import {
     groupIncomesByType
 } from '@/utils/incomeCalculations';
 
-function useProfileState(): Profile | null {
-    const raw = useStore(state => state.profile) as Profile | { profile?: Profile | null } | null | undefined;
-    if (raw && typeof raw === 'object' && 'profile' in raw) {
-        return raw.profile ?? null;
-    }
-    return (raw as Profile | null | undefined) ?? null;
-}
-
-function useStoreTaxYearState(): string | null {
-    const raw = useStore(state => state.taxYear) as string | { taxYear?: string | null } | null | undefined;
-    if (raw && typeof raw === 'object' && 'taxYear' in raw) {
-        return raw.taxYear ?? null;
-    }
-    return (raw as string | null | undefined) ?? null;
-}
-
 export function useIncomePage() {
-    const profile = useProfileState();
+    const profile = useStore((state) => state.profile);
     const p1Name = profile?.partner1Name || 'Person 1';
     const p2Name = profile?.partner2Name || 'Person 2';
 
@@ -79,7 +63,7 @@ export function useIncomePage() {
 
 export function useIncomeEditPage() {
     const navigate = useNavigate();
-    const profile = useProfileState();
+    const profile = useStore((state) => state.profile);
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
 
@@ -161,8 +145,8 @@ const INITIAL_SIMULATOR_STATE: SimulatorFormState = {
 };
 
 export function useSimulatorPage() {
-    const profile = useProfileState();
-    const storeTaxYear = useStoreTaxYearState();
+    const profile = useStore((state) => state.profile);
+    const storeTaxYear = useStore((state) => state.taxYear);
     const taxRules = useLiveQuery(() => db.taxRules.toArray(), []);
 
     const [simulatorState, setSimulatorState] = useState<SimulatorFormState>(INITIAL_SIMULATOR_STATE);
@@ -259,7 +243,7 @@ export function useSimulatorPage() {
 }
 
 export function useScenariosPage() {
-    const profile = useProfileState();
+    const profile = useStore((state) => state.profile);
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
 

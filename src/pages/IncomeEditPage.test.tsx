@@ -9,6 +9,12 @@ vi.mock('@/store/useStore', () => ({
     useStore: vi.fn(),
 }));
 
+const mockStore = (state: Record<string, unknown>) => {
+    (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+        (selector?: (s: Record<string, unknown>) => unknown) => (selector ? selector(state) : state)
+    );
+};
+
 vi.mock('@/hooks/useTaxCalculations', () => ({
     useTaxCalculations: vi.fn(() => ({
         p1TaxResult: { personalAllowance: 12570, brbExtended: 50270, incomeBreakdown: { savingsIncome: 0 } },
@@ -21,7 +27,7 @@ vi.mock('@/hooks/useTaxCalculations', () => ({
 describe('IncomeEditPage', () => {
     it('renders tabs and allows switching between partners', () => {
         // Mock store return value
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: {
                 partner1Name: 'Alice',
                 partner2Name: 'Bob',
@@ -55,7 +61,7 @@ describe('IncomeEditPage', () => {
 
     it('updates input fields when switching tabs', () => {
         // Mock store return value
-        (useStore as any).mockReturnValue({
+        mockStore({
             profile: {
                 partner1Name: 'Alice',
                 partner2Name: 'Bob',

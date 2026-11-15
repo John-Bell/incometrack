@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Account } from '@/lib/db';
@@ -45,18 +45,22 @@ const defaultFormData: AccountFormData = {
 
 export function useAccountForm(accountId?: string) {
     const navigate = useNavigate();
-    const { profile } = useStore();
+    const profile = useStore((state) => state.profile);
     const p1Name = profile?.partner1Name || 'Partner 1';
     const p2Name = profile?.partner2Name || 'Partner 2';
 
-    const account = useLiveQuery(() => accountId ? db.accounts.get(accountId) : undefined, [accountId]);
+    const account = useLiveQuery(() => (accountId ? db.accounts.get(accountId) : undefined), [accountId]);
 
     const [formData, setFormData] = useState<AccountFormData>(defaultFormData);
+    const [syncedAccount, setSyncedAccount] = useState<Account | undefined>(undefined);
+    const [syncedAccountId, setSyncedAccountId] = useState<string | undefined>(accountId);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [draftId] = useState(() => crypto.randomUUID());
     const activeAccountId = accountId || draftId;
 
-    useEffect(() => {
+    if (account !== syncedAccount || accountId !== syncedAccountId) {
+        setSyncedAccount(account);
+        setSyncedAccountId(accountId);
         if (account) {
             setFormData({
                 ownerId: account.ownerId || 'joint',
@@ -82,19 +86,19 @@ export function useAccountForm(accountId?: string) {
         } else if (!accountId) {
             setFormData(defaultFormData);
         }
-    }, [account, accountId]);
+    }
 
     const showAER = canShowAER(formData.category as AccountCategory);
     const showBonus = canShowBonus(formData.category as AccountCategory);
 
-    useEffect(() => {
-        if (formData.category !== 'Current Account' && formData.budgetOrder !== '') {
-            handleChange('budgetOrder', '');
-        }
-    }, [formData.category]);
-
-    const handleChange = (field: keyof AccountFormData, value: any) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+    const handleChange = <K extends keyof AccountFormData>(field: K, value: AccountFormData[K]) => {
+        setFormData((prev) => {
+            const next = { ...prev, [field]: value };
+            if (field === 'category' && value !== 'Current Account' && next.budgetOrder !== '') {
+                next.budgetOrder = '';
+            }
+            return next;
+        });
     };
 
     const handleSave = async () => {
@@ -169,6 +173,6 @@ export function useAccountForm(accountId?: string) {
         handleSave,
         handleDelete,
         showDeleteConfirm,
-        setShowDeleteConfirm
+        setShowDeleteConfirm,
     };
 }

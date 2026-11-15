@@ -7,7 +7,10 @@ import {
     formatCompactThousandsCurrency,
     groupIncomesByType,
     getAvailableSimulatorTaxYears,
-    calculateSliderPercent
+    calculateSliderPercent,
+    resolveIncomeDropdownSelection,
+    formatOptionalDateInput,
+    parseOptionalDateInput
 } from './incomeCalculations';
 import type { Income } from '@/lib/db';
 
@@ -212,6 +215,29 @@ describe('income page & simulator pure helpers', () => {
         expect(calculateSliderPercent(80, 100, 500)).toBe(80);
         expect(calculateSliderPercent(undefined, 150, 600)).toBe(25);
         expect(calculateSliderPercent(undefined, 0, 0)).toBe(50);
+    });
+
+    it('resolves income dropdown selection for cleared, exact, and custom entries', () => {
+        expect(resolveIncomeDropdownSelection(false, undefined, undefined)).toEqual({
+            selectedDropdownPath: '',
+            showCustomName: false
+        });
+        expect(resolveIncomeDropdownSelection(true, 'Private Pension', 'pension')).toEqual({
+            selectedDropdownPath: 'Private Pension',
+            showCustomName: false
+        });
+        expect(resolveIncomeDropdownSelection(true, 'My Consulting Ltd', 'dividends')).toEqual({
+            selectedDropdownPath: 'Custom Dividend...',
+            showCustomName: true
+        });
+    });
+
+    it('formats and parses optional ISO date strings', () => {
+        const ts = parseOptionalDateInput('2026-04-06');
+        expect(ts).toBeTypeOf('number');
+        expect(formatOptionalDateInput(ts)).toBe('2026-04-06');
+        expect(parseOptionalDateInput('')).toBeUndefined();
+        expect(formatOptionalDateInput(undefined)).toBe('');
     });
 });
 

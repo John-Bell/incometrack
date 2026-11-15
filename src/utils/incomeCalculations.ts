@@ -122,3 +122,56 @@ export function calculateSliderPercent(
     return totalAmount > 0 ? (p1Amount / totalAmount) * 100 : 50;
 }
 
+export interface IncomeCategoryOption {
+    label: string;
+    type: Income['type'];
+    taxCategory: Income['taxCategory'];
+    isCustom?: boolean;
+}
+
+export const INCOME_OPTIONS: IncomeCategoryOption[] = [
+    // Pensions
+    { label: 'Private Pension', type: 'pension', taxCategory: 'Pension' },
+    { label: 'State Pension', type: 'pension', taxCategory: 'State Pension' },
+    { label: 'Custom Pension...', type: 'pension', taxCategory: 'Pension', isCustom: true },
+    // Employment & Other
+    { label: 'Employment', type: 'employment', taxCategory: 'Earned' },
+    { label: 'Other Income', type: 'employment', taxCategory: 'Earned' },
+    { label: 'Custom Employment/Other...', type: 'employment', taxCategory: 'Earned', isCustom: true },
+    // Dividends
+    { label: 'Dividends', type: 'dividends', taxCategory: 'Dividend' },
+    { label: 'Custom Dividend...', type: 'dividends', taxCategory: 'Dividend', isCustom: true }
+];
+
+export function resolveIncomeDropdownSelection(
+    isEditing: boolean,
+    name?: string,
+    type?: Income['type']
+): { selectedDropdownPath: string; showCustomName: boolean } | null {
+    if (!type) {
+        return { selectedDropdownPath: '', showCustomName: false };
+    }
+
+    if (isEditing && name) {
+        const exactMatch = INCOME_OPTIONS.find(opt => opt.label === name && !opt.isCustom);
+        if (exactMatch) {
+            return { selectedDropdownPath: exactMatch.label, showCustomName: false };
+        }
+        const customOpt = INCOME_OPTIONS.find(opt => opt.type === type && opt.isCustom);
+        if (customOpt) {
+            return { selectedDropdownPath: customOpt.label, showCustomName: true };
+        }
+    }
+
+    return null;
+}
+
+export function formatOptionalDateInput(timestamp?: number): string {
+    return timestamp ? new Date(timestamp).toISOString().split('T')[0] : '';
+}
+
+export function parseOptionalDateInput(val: string): number | undefined {
+    return val ? new Date(val).getTime() : undefined;
+}
+
+

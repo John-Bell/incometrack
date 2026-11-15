@@ -1,80 +1,31 @@
-import { useState, useEffect } from 'react';
 import { type Income } from '@/lib/db';
 import { Icon } from '../ui/Icon';
 import { cn } from '@/lib/utils';
 import { DateInput } from '../ui/DateInput';
+import { useIncomeEntryForm, type IncomeFieldValue } from '@/hooks/useIncomeForm';
 
 interface IncomeEntryFormProps {
     formData: Partial<Income>;
     isEditing: boolean;
-    onChange: (field: keyof Income, value: any) => void;
+    onChange: (field: keyof Income, value: IncomeFieldValue) => void;
     onSave: () => void;
     onCancel: () => void;
 }
 
-export const INCOME_OPTIONS = [
-    // Pensions
-    { label: 'Private Pension', type: 'pension', taxCategory: 'Pension' },
-    { label: 'State Pension', type: 'pension', taxCategory: 'State Pension' },
-    { label: 'Custom Pension...', type: 'pension', taxCategory: 'Pension', isCustom: true },
-    // Employment & Other
-    { label: 'Employment', type: 'employment', taxCategory: 'Earned' },
-    { label: 'Other Income', type: 'employment', taxCategory: 'Earned' },
-    { label: 'Custom Employment/Other...', type: 'employment', taxCategory: 'Earned', isCustom: true },
-    // Dividends
-    { label: 'Dividends', type: 'dividends', taxCategory: 'Dividend' },
-    { label: 'Custom Dividend...', type: 'dividends', taxCategory: 'Dividend', isCustom: true },
-];
-
 export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCancel }: IncomeEntryFormProps) {
-    const [showCustomName, setShowCustomName] = useState(false);
-    const [selectedDropdownPath, setSelectedDropdownPath] = useState('');
-
-    // Clear the form if the parent resets formData (type becomes undefined)
-    useEffect(() => {
-        if (!formData.type) {
-            setSelectedDropdownPath('');
-            setShowCustomName(false);
-        }
-    }, [formData.type]);
-
-    // Hydrate the form faithfully when the user hits 'Edit' on an existing entry
-    useEffect(() => {
-        if (isEditing && formData.name) {
-            const exactMatch = INCOME_OPTIONS.find(opt => opt.label === formData.name && !opt.isCustom);
-            if (exactMatch) {
-                setSelectedDropdownPath(exactMatch.label);
-                setShowCustomName(false);
-            } else {
-                // It's a custom name that doesn't match the strict labels
-                const customOpt = INCOME_OPTIONS.find(opt => opt.type === formData.type && opt.isCustom);
-                if (customOpt) {
-                    setSelectedDropdownPath(customOpt.label);
-                    setShowCustomName(true);
-                }
-            }
-        }
-    }, [isEditing, formData.name, formData.type]);
-
-    const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const option = INCOME_OPTIONS.find(opt => opt.label === e.target.value);
-        if (option) {
-            setSelectedDropdownPath(option.label);
-            onChange('type', option.type);
-            onChange('taxCategory', option.taxCategory);
-            
-            if (option.isCustom) {
-                setShowCustomName(true);
-                onChange('name', ''); // Clear it so they can type freely
-            } else {
-                setShowCustomName(false);
-                onChange('name', option.label);
-            }
-        }
-    };
-
-    // Ensure amount renders as string in input to allow empty clearing
-    const displayAmount = formData.amount === 0 ? '' : formData.amount?.toString() || '';
+    const {
+        selectedDropdownPath,
+        showCustomName,
+        displayAmount,
+        startDateValue,
+        endDateValue,
+        pensionOptions,
+        employmentOptions,
+        dividendOptions,
+        handleTypeChange,
+        handleStartDateChange,
+        handleEndDateChange
+    } = useIncomeEntryForm(formData, isEditing, onChange);
 
     return (
         <div id="modify-entry-form" className="bg-slate-50 dark:bg-slate-800/50 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 space-y-5">
@@ -83,7 +34,7 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                     {isEditing ? 'Modify Entry' : 'New Entry'}
                 </h3>
                 {isEditing && (
-                    <button 
+                    <button
                         onClick={onCancel}
                         className="text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
                     >
@@ -101,23 +52,23 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                             value={selectedDropdownPath || ''}
                             onChange={handleTypeChange}
                             className={cn(
-                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5",
-                                "text-slate-900 dark:text-white font-medium appearance-none min-w-0 max-w-full block dark:[color-scheme:dark]"
+                                'w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5',
+                                'text-slate-900 dark:text-white font-medium appearance-none min-w-0 max-w-full block dark:[color-scheme:dark]'
                             )}
                         >
                             <option value="" disabled>Select income category</option>
                             <optgroup label="Pensions">
-                                {INCOME_OPTIONS.filter(o => o.type === 'pension').map(opt => (
+                                {pensionOptions.map(opt => (
                                     <option key={opt.label} value={opt.label}>{opt.label}</option>
                                 ))}
                             </optgroup>
                             <optgroup label="Employment & Other">
-                                {INCOME_OPTIONS.filter(o => o.type === 'employment').map(opt => (
+                                {employmentOptions.map(opt => (
                                     <option key={opt.label} value={opt.label}>{opt.label}</option>
                                 ))}
                             </optgroup>
                             <optgroup label="Dividends">
-                                {INCOME_OPTIONS.filter(o => o.type === 'dividends').map(opt => (
+                                {dividendOptions.map(opt => (
                                     <option key={opt.label} value={opt.label}>{opt.label}</option>
                                 ))}
                             </optgroup>
@@ -134,11 +85,11 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                         <label htmlFor="startDate" className="text-xs font-bold text-slate-600 dark:text-slate-400 pl-1">Starts (Optional)</label>
                         <DateInput
                             id="startDate"
-                            value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
-                            onChange={(e) => onChange('startDate', e.target.value ? new Date(e.target.value).getTime() : undefined)}
+                            value={startDateValue}
+                            onChange={(e) => handleStartDateChange(e.target.value)}
                             className={cn(
-                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5",
-                                "text-slate-900 dark:text-white font-medium block"
+                                'w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5',
+                                'text-slate-900 dark:text-white font-medium block'
                             )}
                         />
                     </div>
@@ -146,11 +97,11 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                         <label htmlFor="endDate" className="text-xs font-bold text-slate-600 dark:text-slate-400 pl-1">Ends (Optional)</label>
                         <DateInput
                             id="endDate"
-                            value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
-                            onChange={(e) => onChange('endDate', e.target.value ? new Date(e.target.value).getTime() : undefined)}
+                            value={endDateValue}
+                            onChange={(e) => handleEndDateChange(e.target.value)}
                             className={cn(
-                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5",
-                                "text-slate-900 dark:text-white font-medium block"
+                                'w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5',
+                                'text-slate-900 dark:text-white font-medium block'
                             )}
                         />
                     </div>
@@ -166,8 +117,8 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                             onChange={(e) => onChange('name', e.target.value)}
                             placeholder="e.g. Side Hustle"
                             className={cn(
-                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5",
-                                "text-slate-900 dark:text-white font-medium min-w-0 max-w-full block dark:[color-scheme:dark]"
+                                'w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5',
+                                'text-slate-900 dark:text-white font-medium min-w-0 max-w-full block dark:[color-scheme:dark]'
                             )}
                         />
                     </div>
@@ -185,8 +136,8 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                             onChange={(e) => onChange('amount', e.target.value)}
                             placeholder="0.00"
                             className={cn(
-                                "w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3.5",
-                                "text-slate-900 dark:text-white font-bold min-w-0 max-w-full block appearance-none dark:[color-scheme:dark]"
+                                'w-full bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-4 py-3.5',
+                                'text-slate-900 dark:text-white font-bold min-w-0 max-w-full block appearance-none dark:[color-scheme:dark]'
                             )}
                         />
                     </div>
@@ -199,10 +150,10 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                         <button
                             onClick={() => onChange('frequency', 'monthly')}
                             className={cn(
-                                "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
+                                'flex-1 py-2.5 rounded-lg text-sm font-bold transition-all',
                                 formData.frequency === 'monthly'
-                                    ? "bg-white dark:bg-background-dark text-primary shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    ? 'bg-white dark:bg-background-dark text-primary shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                             )}
                         >
                             Monthly
@@ -210,10 +161,10 @@ export function IncomeEntryForm({ formData, isEditing, onChange, onSave, onCance
                         <button
                             onClick={() => onChange('frequency', 'annual')}
                             className={cn(
-                                "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
+                                'flex-1 py-2.5 rounded-lg text-sm font-bold transition-all',
                                 formData.frequency === 'annual'
-                                    ? "bg-white dark:bg-background-dark text-primary shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    ? 'bg-white dark:bg-background-dark text-primary shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                             )}
                         >
                             Yearly

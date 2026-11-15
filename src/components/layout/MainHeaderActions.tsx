@@ -1,9 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { Icon } from '../ui/Icon';
-import { useStore } from '@/store/useStore';
-import { db } from '@/lib/db';
-import { remoteSyncService } from '@/services/remoteSyncService';
+import { cn } from '@/lib/utils';
+import { useMainHeaderActions } from '@/hooks/useMainHeaderActions';
 
 interface MainHeaderActionsProps {
     onSave?: () => void;
@@ -12,81 +9,16 @@ interface MainHeaderActionsProps {
 }
 
 export function MainHeaderActions({ onSave, isSaving: externalIsSaving, showSaveButton = false }: MainHeaderActionsProps) {
-    const { syncStatus, lastSynced } = useStore();
-    const [recentlySaved, setRecentlySaved] = useState(false);
-    const [internalIsSaving, setInternalIsSaving] = useState(false);
-
-    const settingsArray = useLiveQuery(() => db.settings.toArray());
-    const settings = settingsArray?.[0];
-    const isSyncConfigured = !!(settings?.syncServerUrl?.trim() && settings?.syncPassphrase?.trim() && settings?.syncHeaderKey?.trim());
-
-    const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
-
-    const isSaving = externalIsSaving !== undefined ? externalIsSaving : internalIsSaving;
-
-    // When isSaving goes from true -> false, we show the "Saved" text briefly
-    useEffect(() => {
-        if (isSaving) {
-            setHasAttemptedSave(true);
-            setRecentlySaved(false);
-        }
-
-        let timeout: NodeJS.Timeout;
-        if (isSaving === false && hasAttemptedSave) {
-            setRecentlySaved(true);
-            timeout = setTimeout(() => {
-                setRecentlySaved(false);
-            }, 3000);
-        }
-        return () => clearTimeout(timeout);
-    }, [isSaving, hasAttemptedSave]);
-
-    const handleSyncClick = async () => {
-        if (onSave) {
-            onSave();
-            return;
-        }
-
-        setInternalIsSaving(true);
-        try {
-            await remoteSyncService.sync();
-        } catch (error) {
-            console.error('Failed to sync:', error);
-        } finally {
-            setInternalIsSaving(false);
-        }
-    };
-
-    const getStatusDetails = () => {
-        switch (syncStatus) {
-            case 'disconnected':
-                return {
-                    color: 'text-red-500',
-                    tooltip: 'Cloud not linked. Tap to connect.',
-                    icon: 'cloud_off'
-                };
-            case 'permission_needed':
-                return {
-                    color: 'text-orange-500',
-                    tooltip: 'Permission expired. Tap to reconnect.',
-                    icon: 'cloud_sync'
-                };
-            case 'connected':
-                return {
-                    color: 'text-[#10221c]', // Match button text color for connected
-                    tooltip: `Connected. Last synced: ${lastSynced ? new Date(lastSynced).toLocaleTimeString() : 'never'}`,
-                    icon: 'cloud_done'
-                };
-            default:
-                return {
-                    color: 'text-slate-500',
-                    tooltip: 'Unknown sync status.',
-                    icon: 'cloud'
-                };
-        }
-    };
-
-    const { color, tooltip, icon } = getStatusDetails();
+    const {
+        isSaving,
+        recentlySaved,
+        isSyncConfigured,
+        color,
+        iconButtonColor,
+        tooltip,
+        icon,
+        handleSyncClick
+    } = useMainHeaderActions(onSave, externalIsSaving);
 
     return (
         <div className="flex items-center gap-2">
@@ -98,7 +30,7 @@ export function MainHeaderActions({ onSave, isSaving: externalIsSaving, showSave
                     title={tooltip}
                     aria-label={tooltip}
                 >
-                    <Icon name={icon} className={`${color === 'text-[#10221c]' ? 'text-green-500' : color}`} />
+                    <Icon name={icon} className={iconButtonColor} />
                 </button>
             )}
 
@@ -106,11 +38,11 @@ export function MainHeaderActions({ onSave, isSaving: externalIsSaving, showSave
                 <button
                     onClick={handleSyncClick}
                     disabled={isSaving || (!onSave && !isSyncConfigured)}
-                    title={tooltip} // Show sync tooltip on hover for the combined button
+                    title={tooltip}
                     className="flex items-center gap-2 bg-primary text-[#10221c] px-3 py-1.5 rounded-xl font-bold text-sm transition-transform hover:scale-105 active:scale-95 disabled:opacity-70 disabled:pointer-events-none"
                 >
-                    <Icon name={isSaving ? "hourglass_empty" : icon} className={`text-lg ${color}`} />
-                    {isSaving ? "Saving..." : (recentlySaved ? "Saved" : "Save")}
+                    <Icon name={isSaving ? 'hourglass_empty' : icon} className={cn('text-lg', color)} />
+                    {isSaving ? 'Saving...' : (recentlySaved ? 'Saved' : 'Save')}
                 </button>
             )}
         </div>

@@ -127,6 +127,25 @@ export function getBudgetAccounts(accounts: Account[]): Account[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+export function parseBudgetStartDate(budgetStartDate?: string): number {
+  const [y, m, d] = (budgetStartDate || '2026-04-01').split('-').map(Number);
+  return new Date(y, m - 1, d).getTime();
+}
+
+export function formatBudgetStartDateInput(timestamp?: number): string {
+  if (!timestamp) return '2026-04-01';
+  const dateObj = new Date(timestamp);
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const d = String(dateObj.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function calculateAnnualisedBudgetAmount(amount: string | number, frequency: string): number {
+  const numericAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+  return frequency === 'monthly' ? numericAmount * 12 : numericAmount;
+}
+
 export function calculateBudgetItemDetails(
   budget: Budget,
   transactions: Transaction[],

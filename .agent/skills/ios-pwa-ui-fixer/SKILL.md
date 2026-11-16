@@ -1,49 +1,45 @@
 ---
 name: ios-pwa-ui-fixer
-description: Enforces Tailwind CSS v4 best practices, strict mobile-first design, iOS PWA safe-area handling, and modifies React UI components (like date inputs) to render perfectly without overflow on iOS Safari.
-version: 1.0.0
+description: >-
+  Tailwind CSS v4 and Apple iOS/iPadOS Safari & Home Screen PWA UI conventions:
+  dynamic viewports (dvh), safe-area insets with zero-inset fallbacks, status bar theme-color tinting,
+  date/month input overflow resets, standalone back navigation, @theme tokens in src/index.css, and cn() class merging.
+  Use when creating, styling, auditing, or fixing React UI components, layouts, overlays, or form inputs.
+  Not for service workers, Workbox caching, or Dexie database logic.
 ---
 
-# iOS PWA & Tailwind v4 UI Fixer Skill
+# iOS PWA & Tailwind CSS v4 Guidelines
 
-You are an expert UI engineer specializing in Tailwind CSS v4 and iOS Progressive Web Apps (PWAs). Whenever you style or fix a component, you must strictly adhere to the following rules to ensure flawless mobile execution, clean code, and correct rendering on iOS Safari.
+## 1. Viewport, Safe Areas & Zero-Inset Fallbacks
+- **Head Meta Tags (`index.html`)**:
+  - Viewport must include `viewport-fit=cover` so `env(safe-area-inset-*)` resolves on notched/Dynamic Island devices.
+  - Never add `maximum-scale=1` or `user-scalable=no` (preserve pinch zoom). Prevent iOS auto-zoom on input focus by keeping input font sizes at `16px` (`text-base`) or larger, or handled properly within the layout.
+  - Provide light and dark `<meta name="theme-color">` tags matching `--color-background-light` (`#f8fafc`) and `--color-background-dark` (`#0f172a`) so Safari's status bar and address bar tint seamlessly.
+- **Dynamic Viewport Height**:
+  - Use `h-dvh` or `min-h-dvh` (never `h-screen` / `100vh`) so layouts adapt smoothly to Safari's collapsible address bar and virtual keyboard.
+- **Safe Area Insets & Zero-Inset Validity**:
+  - A `0px` safe-area inset is valid (desktop, non-notched iPads, or landscape). Never rely *solely* on `env(safe-area-inset-*)` for an element's visual padding.
+  - Either place `pt-[env(safe-area-inset-top)]` / `pb-[env(safe-area-inset-bottom)]` on the outer sticky/fixed wrapper with standard padding (`py-3`, `py-4`) on the inner container (as in [`AppLayout.tsx`](../../src/components/layout/AppLayout.tsx) and [`BottomNavigation.tsx`](../../src/components/layout/BottomNavigation.tsx)), or combine them via `calc()` / `max()` (e.g., `pt-[calc(1rem+env(safe-area-inset-top))]`).
+  - Full-height fixed drawers/modals (`fixed inset-0` or `fixed top-0 bottom-0`, like [`SideMenu.tsx`](../../src/components/layout/SideMenu.tsx)) must also account for top and bottom safe areas.
 
-## 1. Input Fields & iOS Resets
-This skill ensures that form inputs (especially date/month types) do not break out of their flex/grid constraints on iOS Safari.
-- **Apply Core iOS Resets (Always)**: 
-  - Append `min-w-0` to allow flex children to shrink below their content size.
-  - Append `max-w-full` and `block` to enforce strict boundary constraints.
-  - Append `appearance-none` to strip erratic default native styling.
-- **Apply Conditional Resets**:
-  - IF the original input contains any `dark:` utility classes (e.g., `dark:bg-primary`), you MUST also append `dark:[color-scheme:dark]` to ensure the native iOS date picker popover matches the app's dark mode state.
-  - IF the original input does not have dark mode classes, DO NOT add `dark:[color-scheme:dark]`.
-- **Constraints**: Never remove the user's existing aesthetic utility classes (colors, padding, text size). Only append the structural iOS fixes.
-- **Reference**: Review the `examples/` directory to see how input logic is applied to both light and dark components.
+## 2. Standalone Navigation & Touch Ergonomics
+- **Standalone Back Navigation**: Because the app runs in `display: standalone` when installed to the Home Screen (hiding Safari's back/forward controls), any page or modal that hides [`BottomNavigation`](../../src/components/layout/BottomNavigation.tsx) (e.g., `hideBottomNav` or standalone Add/Edit screens) must render an explicit in-app back or cancel button in its top bar.
+- **Touch & Text Selection**: Preserve default text selection on content; scope `select-none` only to interactive controls, buttons, or tabs.
 
-## 2. Tailwind v4 Architecture
-- **CSS-First Configuration:** Tailwind v4 does not use a `tailwind.config.js` file. If you need to define custom theme variables, colors, or fonts, you MUST define them using the `@theme` directive inside the main global CSS file (e.g., `globals.css`).
+## 3. Date/Month Inputs & iOS Safari Overflow Resets
+Native iOS Safari `date` and `month` inputs can overflow flex/grid containers unless constrained.
+- Prefer the shared [`DateInput`](../../src/components/ui/DateInput.tsx) component (`src/components/ui/DateInput.tsx`) for `date` and `month` fields.
+- When styling raw `<input>` elements directly:
+  - Append structural resets: `block max-w-full min-w-0 appearance-none`
+  - If the input supports dark mode (`dark:*` classes), append `dark:[color-scheme:dark]` so the native iOS picker popover matches the dark theme.
+  - Preserve existing visual utility classes (colors, borders, spacing, typography).
+  - Reference examples: [`light_input_out.tsx`](./examples/light_input_out.tsx), [`dark_input_out.tsx`](./examples/dark_input_out.tsx).
 
-## 3. Mobile Viewports (Crucial)
-- **NEVER** use `h-screen` or `100vh` for full-height layouts. In Safari, `100vh` includes the bottom navigation bar, which causes violent layout jumps when scrolling. 
-- **ALWAYS** use `h-dvh` (dynamic viewport height) or `min-h-dvh` to handle Safari's bottom bar appearing/disappearing and to handle the virtual keyboard smoothly.
+## 4. Tailwind v4 & Class Merging
+- **CSS-First Theme (`src/index.css`)**: This project uses Tailwind CSS v4 (`@import "tailwindcss";`) without `tailwind.config.js`. Define custom theme variables (`--color-*`, `--font-*`) inside the `@theme` block in [`src/index.css`](../../src/index.css).
+- **Class Merging**: Use `cn()` from [`@/lib/utils`](../../src/lib/utils.ts) (`clsx` + `tailwind-merge`) for conditional classes and `className` prop overrides instead of nested string ternaries.
+- **Layout Reference**: See [`tailwind-reference.md`](./tailwind-reference.md) for a complete layout example.
 
-## 4. iOS PWA Safe Areas
-- PWAs installed on the iOS Home Screen run in standalone mode, but notched devices still require safe area insets.
-- **ALWAYS** use Tailwind's environment variable support for padding on fixed headers/footers to prevent UI elements from hiding behind the notch or the home indicator (e.g., `pt-[env(safe-area-inset-top)]` and `pb-[env(safe-area-inset-bottom)]`).
-
-## 5. Clean TSX & Class Merging
-- **NEVER** write long, nested ternary operators inside a `className` prop. 
-- **ALWAYS** use a utility like `clsx` combined with `twMerge` (often exported as a `cn()` utility) to handle conditional styling. This prevents class conflicts and keeps the component readable.
-
-## 6. Reference Patterns
-Before styling any component, you MUST read and apply the structural patterns provided in the bundled resource:
-**Refer to:** `./tailwind-reference.md`
-
-## 7. Verification
-Before finalizing your code, ask yourself:
-* Did I apply the `min-w-0`, `max-w-full`, `block`, and `appearance-none` fixes to inputs?
-* Did I use `h-dvh` instead of `h-screen`?
-* Did I account for iOS safe areas on fixed elements?
-* Are my conditional classes merged cleanly using a utility function?
-
-If the answer to any of these is "No," you must refactor the styling.
+## 5. Verification
+- Verify TypeScript compilation, unit tests (`npm test`), and lint rules (`npm run lint`).
+- Real-device behaviors (iOS status-bar tint sampling, standalone safe-area timing, hardware keyboard overlap) cannot be proved by jsdom or desktop emulation alone—verify the generated DOM/CSS classes and explicitly note any device-only visual checks as **Unverified on device**.

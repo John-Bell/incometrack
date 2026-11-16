@@ -25,7 +25,7 @@ export function AppLayout({
             )}
         >
             {header && (
-                <div className="flex-none z-20 sticky top-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-[#283933]">
+                <div className="flex-none z-20 sticky top-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-gray-200 dark:border-[#283933] pt-[env(safe-area-inset-top)]">
                     {header}
                 </div>
             )}

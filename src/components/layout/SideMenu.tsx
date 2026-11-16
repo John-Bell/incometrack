@@ -44,7 +44,7 @@ export function SideMenu({ isOpen, onClose }: SideMenuProps) {
             {/* Menu Drawer */}
             <div
                 className={cn(
-                    'fixed top-0 left-0 bottom-0 z-[101] w-[280px] bg-background-light dark:bg-background-dark shadow-xl transition-transform duration-300 ease-in-out flex flex-col',
+                    'fixed top-0 left-0 bottom-0 z-[101] w-[280px] bg-background-light dark:bg-background-dark shadow-xl transition-transform duration-300 ease-in-out flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]',
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >

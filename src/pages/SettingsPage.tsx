@@ -76,17 +76,17 @@ export function SettingsPage() {
                     <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-primary/5 rounded-xl divide-y divide-slate-100 dark:divide-primary/5 p-4 space-y-4">
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                                <div className="space-y-2 min-w-0">
                                     <label htmlFor="partner1Name" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 1 Name</label>
                                     <input
                                         id="partner1Name"
                                         type="text"
                                         value={partner1Name}
                                         onChange={(e) => setPartner1Name(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
+                                        className="w-full min-w-0 max-w-full block appearance-none bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 min-w-0">
                                     <label htmlFor="partner1Dob" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 1 DOB</label>
                                     <DateInput
                                         id="partner1Dob"
@@ -98,17 +98,17 @@ export function SettingsPage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                                <div className="space-y-2 min-w-0">
                                     <label htmlFor="partner2Name" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 2 Name</label>
                                     <input
                                         id="partner2Name"
                                         type="text"
                                         value={partner2Name}
                                         onChange={(e) => setPartner2Name(e.target.value)}
-                                        className="w-full bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
+                                        className="w-full min-w-0 max-w-full block appearance-none bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 min-w-0">
                                     <label htmlFor="partner2Dob" className="text-xs font-bold text-slate-500 dark:text-primary/60 uppercase">Partner 2 DOB</label>
                                     <DateInput
                                         id="partner2Dob"
@@ -151,7 +151,7 @@ export function SettingsPage() {
                                     step="0.01"
                                     value={defaultGrowthRate}
                                     onChange={(e) => setDefaultGrowthRate(parseFloat(e.target.value) || 0)}
-                                    className="w-20 bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30 text-right"
+                                    className="w-20 min-w-0 max-w-full block appearance-none bg-slate-50 dark:bg-primary/5 border border-slate-200 dark:border-primary/10 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30 text-right"
                                 />
                             </div>
                         </div>
@@ -165,7 +165,7 @@ export function SettingsPage() {
                             </div>
                             <div className="flex items-center gap-2 text-primary font-semibold">
                                 <select
-                                    className="bg-transparent text-right text-primary font-semibold appearance-none outline-none cursor-pointer pr-4"
+                                    className="block max-w-full min-w-0 bg-transparent text-right text-primary font-semibold appearance-none outline-none cursor-pointer pr-4"
                                     value={currentSettings?.taxYear || ''}
                                     onChange={handleTaxYearChange}
                                 >

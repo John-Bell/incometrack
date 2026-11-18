@@ -3,6 +3,7 @@ import { ACCOUNT_CATEGORIES, type AccountCategory } from '@/constants/taxConstan
 import { InterestLedger } from '@/components/accounts/InterestLedger';
 import { useAccountForm } from '@/hooks/useAccountForm';
 import { DateInput } from '@/components/ui/DateInput';
+import { cn } from '@/lib/utils';
 
 export function AddAccountPage() {
     const {
@@ -18,9 +19,9 @@ export function AddAccountPage() {
     } = useAccountForm();
 
     return (
-        <div className="w-full max-w-7xl mx-auto min-h-screen flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
+        <div className="w-full max-w-7xl mx-auto min-h-dvh flex flex-col bg-background-light dark:bg-background-dark shadow-2xl relative">
             {/* TopAppBar */}
-            <header className="flex items-center p-4 border-b border-primary/10">
+            <header className="flex items-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] border-b border-primary/10 sticky top-0 z-10 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-md">
                 <button
                     onClick={() => navigate(-1)}
                     className="p-2 hover:bg-primary/10 rounded-full transition-colors text-slate-900 dark:text-slate-100"
@@ -31,14 +32,14 @@ export function AddAccountPage() {
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col xl:flex-row gap-8">
-                <main className={`space-y-6 ${showAER ? 'xl:w-[calc(40%-1rem)]' : 'flex-1'}`}>
+                <main className={cn('space-y-6', showAER ? 'xl:w-[calc(40%-1rem)]' : 'flex-1')}>
                     <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">GENERAL INFORMATION</h2>
                 {/* Account Name Field */}
                 <div className="space-y-2">
                     <label htmlFor="accountName" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Account Name</label>
                     <input
                         id="accountName"
-                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                        className="w-full min-w-0 max-w-full block appearance-none h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         placeholder="e.g. Santander eSaver"
                             value={formData.accountName}
@@ -52,7 +53,7 @@ export function AddAccountPage() {
                     <label htmlFor="nickname" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Nickname (Optional)</label>
                     <input
                         id="nickname"
-                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                        className="w-full min-w-0 max-w-full block appearance-none h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         placeholder="e.g. Holiday Fund"
                             value={formData.nickname}
@@ -65,7 +66,7 @@ export function AddAccountPage() {
                     <label htmlFor="last4Digits" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Last 4 Digits (Optional)</label>
                     <input
                         id="last4Digits"
-                        className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                        className="w-full min-w-0 max-w-full block appearance-none h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                         type="text"
                         maxLength={4}
                         placeholder="e.g. 1234"
@@ -80,7 +81,7 @@ export function AddAccountPage() {
                     <div className="relative">
                         <select
                             id="category"
-                            className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                            className="w-full min-w-0 max-w-full block h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                 value={formData.category}
                                 onChange={(e) => handleChange('category', e.target.value as AccountCategory)}
                         >
@@ -99,7 +100,7 @@ export function AddAccountPage() {
                         <label htmlFor="budgetOrder" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Budget Order (Optional)</label>
                         <input
                             id="budgetOrder"
-                            className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                            className="w-full min-w-0 max-w-full block appearance-none h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                             type="number"
                             placeholder="e.g. 1"
                                 value={formData.budgetOrder}
@@ -114,7 +115,7 @@ export function AddAccountPage() {
                         <label htmlFor="bondTermYears" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Term (Years, Optional)</label>
                         <input
                             id="bondTermYears"
-                            className="w-full h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                            className="w-full min-w-0 max-w-full block appearance-none h-14 px-4 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                             type="number"
                             step="0.1"
                             placeholder="e.g. 1"
@@ -127,13 +128,13 @@ export function AddAccountPage() {
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-8 mb-4">FINANCIAL SETTINGS</h2>
 
                 {/* Balance and Interest Rate Fields */}
-                <div className={showAER ? "grid grid-cols-2 gap-4 items-start" : "space-y-2"}>
-                    <div className="space-y-2">
+                <div className={cn(showAER ? "grid grid-cols-2 gap-4 items-start" : "space-y-2")}>
+                    <div className="space-y-2 min-w-0">
                         <label htmlFor="balance" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Current Balance</label>
                         <div className="relative flex items-center">
                             <input
                                 id="balance"
-                                className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                                className="w-full min-w-0 max-w-full block appearance-none h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                 type="number"
                                 placeholder="0.00"
                                 value={formData.balance}
@@ -144,12 +145,12 @@ export function AddAccountPage() {
                     </div>
 
                     {showAER && (
-                        <div className="space-y-2">
+                        <div className="space-y-2 min-w-0">
                             <label htmlFor="interestRate" className="block text-sm font-semibold text-slate-600 dark:text-slate-400">Interest Rate (%)</label>
                             <div className="relative flex items-center">
                                 <input
                                     id="interestRate"
-                                    className="w-full h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
+                                    className="w-full min-w-0 max-w-full block appearance-none h-14 pl-4 pr-12 rounded-lg bg-white dark:bg-primary/5 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-slate-900 dark:text-slate-100"
                                     type="number"
                                     step="0.01"
                                     placeholder="5.20"
@@ -190,7 +191,7 @@ export function AddAccountPage() {
                             <div className="relative">
                                 <select
                                     id="interestPayoutFrequency"
-                                    className="w-full h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                    className="w-full min-w-0 max-w-full block h-14 pl-4 pr-12 appearance-none text-slate-900 dark:text-slate-100 rounded-lg bg-white dark:bg-primary/10 border border-slate-200 dark:border-primary/20 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                                     value={formData.interestPayoutFrequency}
                                     onChange={(e) => handleChange('interestPayoutFrequency', e.target.value as 'monthly' | 'annually' | 'at_maturity' | '')}
                                 >
@@ -262,28 +263,34 @@ export function AddAccountPage() {
                     <div className="grid grid-cols-3 gap-2">
                         <button
                             onClick={() => handleChange('ownerId', 'person1')}
-                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${formData.ownerId === 'person1'
-                                ? 'border-primary bg-primary/10 text-primary font-bold'
-                                : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
-                                }`}
+                            className={cn(
+                                'py-3 px-2 rounded-lg border text-sm font-medium transition-all',
+                                formData.ownerId === 'person1'
+                                    ? 'border-primary bg-primary/10 text-primary font-bold'
+                                    : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
+                            )}
                         >
                             {p1Name}
                         </button>
                         <button
                             onClick={() => handleChange('ownerId', 'person2')}
-                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${formData.ownerId === 'person2'
-                                ? 'border-primary bg-primary/10 text-primary font-bold'
-                                : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
-                                }`}
+                            className={cn(
+                                'py-3 px-2 rounded-lg border text-sm font-medium transition-all',
+                                formData.ownerId === 'person2'
+                                    ? 'border-primary bg-primary/10 text-primary font-bold'
+                                    : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
+                            )}
                         >
                             {p2Name}
                         </button>
                         <button
                             onClick={() => handleChange('ownerId', 'joint')}
-                            className={`py-3 px-2 rounded-lg border text-sm font-medium transition-all ${formData.ownerId === 'joint'
-                                ? 'border-2 border-primary bg-primary/10 text-primary font-bold'
-                                : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
-                                }`}
+                            className={cn(
+                                'py-3 px-2 rounded-lg border text-sm font-medium transition-all',
+                                formData.ownerId === 'joint'
+                                    ? 'border-2 border-primary bg-primary/10 text-primary font-bold'
+                                    : 'border-slate-200 dark:border-primary/20 hover:border-primary text-slate-600 dark:text-slate-400'
+                            )}
                         >
                             Joint
                         </button>
@@ -299,7 +306,7 @@ export function AddAccountPage() {
             </div>
 
             {/* Action Buttons */}
-            <footer className="p-4 bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
+            <footer className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-background-light dark:bg-background-dark border-t border-primary/10 space-y-3">
                 <button
                     onClick={handleSave}
                     disabled={!formData.accountName || !formData.balance || (showAER && !formData.interestRate) || !formData.category}

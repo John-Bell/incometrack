@@ -62,22 +62,15 @@ describe('calculateLifetimeProjection - protectionFloor bug', () => {
      * Year 0 (2025):
      * - Budget: 30,000
      * - Pension Pot: 10,000 (Crystallised)
-     * - Net from pension: 10,000 * (1 - 0.15 tax drag) = 8,500
-     * - Remaining deficit: 30,000 - 8,500 = 21,500
-     * - The engine MUST breach the 50,000 protection floor to cover this 21,500 deficit
+     * - Net from pension: 10,000 * (1 - 0.20 tax drag) = 8,000
+     * - Remaining deficit: 30,000 - 8,000 = 22,000
+     * - The engine MUST breach the 50,000 protection floor to cover this 22,000 deficit
      *   because there are no other assets.
-     * - Resulting taxFree balance should be: 50,000 - 21,500 = 28,500
-     *
-     * THE BUG:
-     * The current engine uses `availableCash = Math.max(0, totalCash - floor)`.
-     * Since totalCash (taxable + taxFree + premiumBonds) is 50,000 and floor is 50,000,
-     * availableCash becomes 0. The engine will fail to draw the remaining 21,500
-     * and the taxFree balance will remain stuck at 50,000.
+     * - Resulting taxFree balance should be: 50,000 - 22,000 = 28,000
      */
 
-    // This assertion is expected to FAIL against the current buggy engine
     expect(results[0].potBalances.taxFree).toBeLessThan(50000);
-    expect(results[0].potBalances.taxFree).toBeCloseTo(28500, 0);
+    expect(results[0].potBalances.taxFree).toBeCloseTo(28000, 0);
 
     // Year 1 (2026):
     // - Deficit: 30,000

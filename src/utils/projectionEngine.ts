@@ -5,7 +5,7 @@ import { calculateIncomeForTaxYear } from './incomeCalculations';
 
 export type DrawdownStrategy = 'taxable_first' | 'tax_free_first' | 'pensions_first' | 'proportional';
 
-const PENSION_DRAWDOWN_TAX_RATE = 0.15;
+const PENSION_DRAWDOWN_TAX_RATE = 0.20;
 
 export interface PensionPot {
   id: string;
@@ -19,7 +19,8 @@ export interface ProjectionEngineInput {
   assetPots?: {
     taxable: number;
     taxFree: number;
-    premiumBonds: number;
+    sharesIsa?: number;
+    premiumBonds?: number;
     pensions: number;
   };
   pensionPots?: PensionPot[];
@@ -79,7 +80,24 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
   let trackingTaxable = input.assetPots?.taxable ?? input.currentBalances;
   let trackingTaxFree = input.assetPots?.taxFree ?? 0;
+  let trackingSharesIsa = Math.min(trackingTaxFree, Math.max(0, input.assetPots?.sharesIsa ?? 0));
+  let trackingCashIsa = trackingTaxFree - trackingSharesIsa;
   let trackingPremiumBonds = input.assetPots?.premiumBonds ?? 0;
+
+  const drawFromTaxFree = (amount: number) => {
+    const drawCashIsa = Math.min(trackingCashIsa, amount);
+    trackingCashIsa -= drawCashIsa;
+    const remaining = amount - drawCashIsa;
+    if (remaining > 0) {
+      trackingSharesIsa = Math.max(0, trackingSharesIsa - remaining);
+    }
+    trackingTaxFree = trackingCashIsa + trackingSharesIsa;
+  };
+
+  const addToTaxFree = (amount: number) => {
+    trackingCashIsa += amount;
+    trackingTaxFree = trackingCashIsa + trackingSharesIsa;
+  };
 
   const trackingPensions: PensionPot[] = input.pensionPots ? JSON.parse(JSON.stringify(input.pensionPots)) : [];
   if (!input.pensionPots && input.assetPots?.pensions) {
@@ -159,11 +177,12 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
         continue;
       }
 
-      // Step A: Escalate Expected Rent
+      // Step A: Escalate Expected Rent (in real purchasing-power terms relative to the global real growth rate)
       const baseMonthly = property.expectedMonthlyIncome ?? 0;
       const annualBaseRent = baseMonthly * 12;
-      const growthRate = property.annualGrowthRate ?? 0;
-      let escalatedGrossRent = annualBaseRent * Math.pow(1 + growthRate / 100, yearIndex);
+      const nominalGrowthRate = property.annualGrowthRate ?? 0;
+      const effectiveRealRentGrowth = nominalGrowthRate - input.realGrowthRate;
+      let escalatedGrossRent = annualBaseRent * Math.pow(1 + effectiveRealRentGrowth / 100, yearIndex);
 
       // Step B: Pro-rate rent if sold this year
       if (isSoldDuringThisYear && saleTs !== undefined) {
@@ -263,7 +282,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               const drawPremiumBonds = Math.min(trackingPremiumBonds, cashDrawNeeded * ratioPremiumBonds);
 
               trackingTaxable -= drawTaxable;
-              trackingTaxFree -= drawTaxFree;
+              drawFromTaxFree(drawTaxFree);
               trackingPremiumBonds -= drawPremiumBonds;
               deficit -= (drawTaxable + drawTaxFree + drawPremiumBonds);
             }
@@ -336,7 +355,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               availableCash -= draw;
             } else if (pot === 'taxFree') {
               const draw = Math.min(trackingTaxFree, availableCash, deficit);
-              trackingTaxFree -= draw;
+              drawFromTaxFree(draw);
               deficit -= draw;
               availableCash -= draw;
             } else if (pot === 'premiumBonds') {
@@ -408,7 +427,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
               deficit -= draw;
             } else if (pot === 'taxFree') {
               const draw = Math.min(trackingTaxFree, deficit);
-              trackingTaxFree -= draw;
+              drawFromTaxFree(draw);
               deficit -= draw;
             }
           }
@@ -432,7 +451,7 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
           if (amountToSweep > 0) {
             trackingTaxable -= amountToSweep;
-            trackingTaxFree += amountToSweep;
+            addToTaxFree(amountToSweep);
             currentMilestones.push(`Bed & ISA sweep: £${Math.round(amountToSweep).toLocaleString('en-GB')} moved to tax-free pot`);
           }
         }
@@ -440,6 +459,8 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
     } else {
       trackingTaxable = 0;
+      trackingCashIsa = 0;
+      trackingSharesIsa = 0;
       trackingTaxFree = 0;
       trackingPremiumBonds = 0;
       for (const pot of trackingPensions) pot.balance = 0;
@@ -447,7 +468,9 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
 
     // Floor and handle runway
     if (trackingTaxable < 0) trackingTaxable = 0;
-    if (trackingTaxFree < 0) trackingTaxFree = 0;
+    if (trackingCashIsa < 0) trackingCashIsa = 0;
+    if (trackingSharesIsa < 0) trackingSharesIsa = 0;
+    trackingTaxFree = trackingCashIsa + trackingSharesIsa;
     if (trackingPremiumBonds < 0) trackingPremiumBonds = 0;
     for (const pot of trackingPensions) {
       if (pot.balance < 0) pot.balance = 0;
@@ -487,15 +510,17 @@ export function calculateLifetimeProjection(input: ProjectionEngineInput): Proje
     // Apply Growth for the next year
     if (trackingTotalLiquidAssets > 0) {
       // Derive realistic net-of-inflation growth rates relative to the global macro base
-      // Taxable: Cash yields generally trail the macro rate + suffers minor unmodeled tax drag
+      // Taxable: Cash yields generally trail the macro rate + suffers 20% basic rate tax drag
       const rateTaxable = (input.realGrowthRate * 0.4) / 100;
-      // Tax-Free: Cash ISA yields trail the macro rate but enjoy zero tax drag
+      // Tax-Free (Cash ISA): Cash ISA yields trail the macro rate but enjoy zero tax drag
       const rateTaxFree = (input.realGrowthRate * 0.5) / 100;
-      // Pensions: Long-term equity/bond market returns outpace cash baseline compounding
+      // Equities (Pensions & Shares ISA): Long-term equity/bond market returns outpace cash baseline compounding
       const ratePensions = (input.realGrowthRate * 1.5) / 100;
 
       trackingTaxable *= (1 + rateTaxable);
-      trackingTaxFree *= (1 + rateTaxFree);
+      trackingCashIsa *= (1 + rateTaxFree);
+      trackingSharesIsa *= (1 + ratePensions);
+      trackingTaxFree = trackingCashIsa + trackingSharesIsa;
 
       // Premium Bonds: No compound interest, winnings paid out to taxable account
       const pbWinnings = trackingPremiumBonds * rateTaxFree;

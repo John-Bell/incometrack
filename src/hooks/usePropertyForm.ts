@@ -57,15 +57,18 @@ export function usePropertyForm(id?: string) {
 
     const propertyData = {
       name: formData.name,
-      expectedMonthlyIncome: formData.expectedMonthlyIncome
-        ? Number(formData.expectedMonthlyIncome)
-        : undefined,
-      annualGrowthRate: formData.annualGrowthRate
-        ? Number(formData.annualGrowthRate)
-        : undefined,
-      estimatedNetCashOnSale: formData.estimatedNetCashOnSale
-        ? Number(formData.estimatedNetCashOnSale)
-        : undefined,
+      expectedMonthlyIncome:
+        formData.expectedMonthlyIncome !== undefined
+          ? Number(formData.expectedMonthlyIncome)
+          : undefined,
+      annualGrowthRate:
+        formData.annualGrowthRate !== undefined
+          ? Number(formData.annualGrowthRate)
+          : undefined,
+      estimatedNetCashOnSale:
+        formData.estimatedNetCashOnSale !== undefined
+          ? Number(formData.estimatedNetCashOnSale)
+          : undefined,
       estimatedSaleDate: formData.estimatedSaleDate
         ? new Date(formData.estimatedSaleDate).getTime()
         : undefined,

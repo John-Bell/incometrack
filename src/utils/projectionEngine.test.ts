@@ -273,9 +273,9 @@ describe('calculateLifetimeProjection', () => {
     expect(results[3].potBalances.pensions).toBe(100000);
 
     // Year 4 (2029): 100k - 50k (net) = ?
-    // pensions: 100k - (50k / 0.85) = 100k - 58823.53 = 41176.47
-    expect(results[4].potBalances.pensions).toBeCloseTo(41176.47, 1);
-    expect(results[4].liquidAssets).toBeCloseTo(41176.47, 1);
+    // pensions: 100k - (50k / 0.80) = 100k - 62500 = 37500
+    expect(results[4].potBalances.pensions).toBeCloseTo(37500, 1);
+    expect(results[4].liquidAssets).toBeCloseTo(37500, 1);
   });
 
   it('TEST CASE 7: Proportional Drawdown Strategy', () => {
@@ -308,12 +308,12 @@ describe('calculateLifetimeProjection', () => {
     // taxable share: 15k. New = 135k
     // taxFree share: 5k. New = 45k
     // pensions share: 10k net.
-    // To get 10k net from pensions, we need to draw 10k / 0.85 = 11,764.71 gross.
-    // pensions: 100k - 11764.71 = 88235.29
-    expect(results[0].liquidAssets).toBeCloseTo(268235.29, 1);
+    // To get 10k net from pensions, we need to draw 10k / 0.80 = 12,500 gross.
+    // pensions: 100k - 12500 = 87500
+    expect(results[0].liquidAssets).toBeCloseTo(267500, 1);
     expect(results[0].potBalances.taxable).toBe(135000);
     expect(results[0].potBalances.taxFree).toBe(45000);
-    expect(results[0].potBalances.pensions).toBeCloseTo(88235.29, 1);
+    expect(results[0].potBalances.pensions).toBeCloseTo(87500, 1);
   });
 
   it('TEST CASE 8: Bed & ISA Sweep - 2027 Start, No Emergency Floor, and Fixed £20,000 Allowance', () => {
@@ -450,14 +450,14 @@ describe('calculateLifetimeProjection', () => {
     // Order: taxable, taxFree, pensions.
     // Draw from taxable: min(50k, 40k, 50k) = 40k. Remaining deficit = 10k. Available Cash = 0.
     // Draw from taxFree: min(50k, 0k, 10k) = 0k. Remaining deficit = 10k.
-    // Draw from pensions: net 10k needed. Gross = 10k / 0.85 = 11764.71.
+    // Draw from pensions: net 10k needed. Gross = 10k / 0.80 = 12500.
     // New Taxable = 50k - 40k = 10k.
     // New TaxFree = 50k.
-    // New Pensions = 50k - 11764.71 = 38235.29.
+    // New Pensions = 50k - 12500 = 37500.
     // Combined Cash = 10k + 50k = 60k (Hits floor exactly).
     expect(results[0].potBalances.taxable).toBe(10000);
     expect(results[0].potBalances.taxFree).toBe(50000);
-    expect(results[0].potBalances.pensions).toBeCloseTo(38235.29, 1);
+    expect(results[0].potBalances.pensions).toBeCloseTo(37500, 1);
   });
 
   it('TEST CASE 11: Cash Protection Floor (Proportional)', () => {
@@ -497,12 +497,12 @@ describe('calculateLifetimeProjection', () => {
     // TotalCash = 80k. taxable: 40k (50%), taxFree: 40k (50%).
     // New Taxable = 40k - (10k * 0.5) = 35k.
     // New TaxFree = 40k - (10k * 0.5) = 35k.
-    // Pension gross draw = 10k / 0.85 = 11764.71.
-    // New Pensions = 40k - 11764.71 = 28235.29.
+    // Pension gross draw = 10k / 0.80 = 12500.
+    // New Pensions = 40k - 12500 = 27500.
     // Combined Cash = 35k + 35k = 70k.
     expect(results[0].potBalances.taxable).toBe(35000);
     expect(results[0].potBalances.taxFree).toBe(35000);
-    expect(results[0].potBalances.pensions).toBeCloseTo(28235.29, 1);
+    expect(results[0].potBalances.pensions).toBeCloseTo(27500, 1);
   });
 
   it('TEST CASE 12: Bed & ISA Sweep and Protection Floor Interaction', () => {

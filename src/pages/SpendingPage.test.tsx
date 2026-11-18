@@ -369,7 +369,6 @@ describe('SpendingPage', () => {
       profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
     });
 
-    const currentYear = 2026;
     const prevYear = 2025;
 
     const accounts = [{ id: 'acc_1', name: 'Barclays Main', category: 'Current Account' }];
@@ -430,5 +429,110 @@ describe('SpendingPage', () => {
     fireEvent.change(yearSelect, { target: { value: String(prevYear) } });
 
     expect(screen.getByRole('combobox', { name: 'Budget' })).toHaveValue('');
+  });
+
+  it('shows Show Stacked checkbox when no budget is selected, and hides it when a budget is selected', () => {
+    mockStore({
+      profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+    });
+
+    const accounts = [
+      { id: 'acc_1', name: 'Barclays Main', category: 'Current Account' },
+      { id: 'acc_2', name: 'Monzo Joint', category: 'Current Account' },
+    ];
+    const budgets = [
+      { id: 'b1', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 500 },
+      { id: 'b2', name: 'Utilities', accountId: 'acc_2', frequency: 'monthly', amount: 200 },
+    ];
+
+    (useLiveQuery as any).mockImplementation((cb: any) => {
+      const str = cb.toString();
+      if (str.includes('accounts')) return accounts;
+      if (str.includes('budgets')) return budgets;
+      return [];
+    });
+
+    render(
+      <BrowserRouter>
+        <SpendingPage />
+      </BrowserRouter>
+    );
+
+    // Neither account nor budget selected -> Show Stacked is visible
+    expect(screen.getByRole('checkbox', { name: 'Show Stacked' })).toBeInTheDocument();
+    expect(screen.getByText('Break down monthly spend by account')).toBeInTheDocument();
+
+    // Select an account -> Show Stacked is still visible, description updates to budget
+    const accountSelect = screen.getByRole('combobox', { name: 'Account' });
+    fireEvent.change(accountSelect, { target: { value: 'acc_1' } });
+    expect(screen.getByRole('checkbox', { name: 'Show Stacked' })).toBeInTheDocument();
+    expect(screen.getByText('Break down monthly spend by budget')).toBeInTheDocument();
+
+    // Select a budget -> Show Stacked is hidden
+    const budgetSelect = screen.getByRole('combobox', { name: 'Budget' });
+    fireEvent.change(budgetSelect, { target: { value: 'b1' } });
+    expect(screen.queryByRole('checkbox', { name: 'Show Stacked' })).not.toBeInTheDocument();
+  });
+
+  it('displays stacked bars and legend per account when Show Stacked is checked with no account/budget selected, and per budget when an account is selected', () => {
+    mockStore({
+      profile: { partner1Name: 'Dan', partner2Name: 'Freya' },
+    });
+
+    const now = new Date();
+    const currentMonthMs = new Date(now.getFullYear(), now.getMonth(), 15).getTime();
+
+    const accounts = [
+      { id: 'acc_1', name: 'Barclays Main', nickname: 'Barclays', category: 'Current Account' },
+      { id: 'acc_2', name: 'Monzo Joint', nickname: 'Monzo', category: 'Current Account' },
+    ];
+    const budgets = [
+      { id: 'b1', name: 'Groceries', accountId: 'acc_1', frequency: 'monthly', amount: 500 },
+      { id: 'b2', name: 'Dining Out', accountId: 'acc_1', frequency: 'monthly', amount: 200 },
+      { id: 'b3', name: 'Utilities', accountId: 'acc_2', frequency: 'monthly', amount: 300 },
+    ];
+    const transactions = [
+      { id: 't1', budgetId: 'b1', accountId: 'acc_1', amount: 350, type: 'expense', date: currentMonthMs },
+      { id: 't2', budgetId: 'b2', accountId: 'acc_1', amount: 150, type: 'expense', date: currentMonthMs },
+      { id: 't3', budgetId: 'b3', accountId: 'acc_2', amount: 200, type: 'expense', date: currentMonthMs },
+    ];
+
+    (useLiveQuery as any).mockImplementation((cb: any) => {
+      const str = cb.toString();
+      if (str.includes('accounts')) return accounts;
+      if (str.includes('budgets')) return budgets;
+      if (str.includes('transactions')) return transactions;
+      return [];
+    });
+
+    render(
+      <BrowserRouter>
+        <SpendingPage />
+      </BrowserRouter>
+    );
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Show Stacked' });
+    fireEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
+
+    // Legend header for accounts should appear
+    expect(screen.getByText('Spend by Account')).toBeInTheDocument();
+    expect(screen.getByText('Stacked by Account')).toBeInTheDocument();
+    // Barclays total = 350 + 150 = £500, Monzo total = £200 (also appears in <option>, so length >= 2)
+    expect(screen.getAllByText('Barclays').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('£500')).toBeInTheDocument();
+    expect(screen.getAllByText('Monzo').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('£200')).toBeInTheDocument();
+
+    // Now select Barclays account -> should switch to Stacked by Budget
+    const accountSelect = screen.getByRole('combobox', { name: 'Account' });
+    fireEvent.change(accountSelect, { target: { value: 'acc_1' } });
+
+    expect(screen.getByText('Spend by Budget')).toBeInTheDocument();
+    expect(screen.getByText('Stacked by Budget')).toBeInTheDocument();
+    expect(screen.getAllByText('Groceries').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('£350')).toBeInTheDocument();
+    expect(screen.getAllByText('Dining Out').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('£150')).toBeInTheDocument();
   });
 });

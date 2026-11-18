@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateSpendingGraphData } from './spendingUtils';
-import type { Budget, Transaction } from '@/lib/db';
+import { calculateSpendingGraphData, getDisplayLegendItems } from './spendingUtils';
+import type { Account, Budget, Transaction } from '@/lib/db';
 import type { TargetMonth } from './budgetUtils';
 
 describe('spendingUtils', () => {
@@ -10,9 +10,32 @@ describe('spendingUtils', () => {
     { year: 2026, monthIndex: 2, label: 'Mar' },
   ];
 
+  const accounts: Account[] = [
+    {
+      id: 'acc1',
+      ownerId: 'p1',
+      name: 'Barclays Current',
+      nickname: 'Barclays',
+      balance: 1000,
+      interestRate: 0,
+      updatedAt: 0,
+      category: 'Current Account',
+    },
+    {
+      id: 'acc2',
+      ownerId: 'p2',
+      name: 'Monzo Joint',
+      balance: 500,
+      interestRate: 0,
+      updatedAt: 0,
+      category: 'Current Account',
+    },
+  ];
+
   const budgets: Budget[] = [
-    { id: 'b1', accountId: 'acc1', name: 'Groceries', amount: 500 },
-    { id: 'b2', accountId: 'acc2', name: 'Utilities', amount: 200 },
+    { id: 'b1', accountId: 'acc1', name: 'Groceries', amount: 500, frequency: 'monthly' },
+    { id: 'b2', accountId: 'acc2', name: 'Utilities', amount: 200, frequency: 'monthly' },
+    { id: 'b3', accountId: 'acc1', name: 'Dining Out', amount: 150, frequency: 'monthly' },
   ];
 
   it('calculates total, average, and peak spending correctly across all accounts and budgets', () => {
@@ -154,5 +177,148 @@ describe('spendingUtils', () => {
     expect(oneOffBudgetResult.barData[1].rawAmount).toBe(0);
     expect(oneOffBudgetResult.peakMonth).toBe('Jan');
     expect(oneOffBudgetResult.peakAmount).toBe(1200);
+  });
+
+  it('stacks spending by account when no account and no budget are selected and showStacked is true', () => {
+    const transactions: Transaction[] = [
+      // Jan: acc1 = £100, acc2 = £300 (total £400)
+      { id: 't1', date: new Date(2026, 0, 5).getTime(), amount: 100, type: 'expense', budgetId: 'b1', accountId: 'acc1', payee: 'Tesco', icon: 'shopping_cart' },
+      { id: 't2', date: new Date(2026, 0, 10).getTime(), amount: 300, type: 'expense', budgetId: 'b2', accountId: 'acc2', payee: 'Octopus', icon: 'bolt' },
+      // Feb: acc1 = £200 (total £200)
+      { id: 't3', date: new Date(2026, 1, 15).getTime(), amount: 200, type: 'expense', budgetId: 'b1', accountId: 'acc1', payee: 'Sainsburys', icon: 'shopping_cart' },
+    ];
+
+    const result = calculateSpendingGraphData(
+      targetMonths,
+      transactions,
+      '',
+      '',
+      budgets,
+      accounts,
+      true
+    );
+
+    expect(result.stackMode).toBe('account');
+    expect(result.legendItems).toHaveLength(2);
+    // Both have £300 total across Jan+Feb; Barclays comes before Monzo Joint alphabetically
+    expect(result.legendItems[0].label).toBe('Barclays');
+    expect(result.legendItems[0].totalAmount).toBe(300);
+    expect(result.legendItems[0].formattedAmount).toBe('£300');
+    expect(result.legendItems[0].percentage).toBe('50.0%');
+
+    expect(result.legendItems[1].label).toBe('Monzo Joint');
+    expect(result.legendItems[1].totalAmount).toBe(300);
+    expect(result.legendItems[1].formattedAmount).toBe('£300');
+    expect(result.legendItems[1].percentage).toBe('50.0%');
+
+    // Jan bar segments
+    const janSegments = result.barData[0].segments!;
+    expect(janSegments).toHaveLength(2);
+    expect(janSegments[0]).toMatchObject({
+      id: 'acc1',
+      label: 'Barclays',
+      rawAmount: 100,
+      amount: '£100',
+      pctOfBar: 25,
+    });
+    expect(janSegments[1]).toMatchObject({
+      id: 'acc2',
+      label: 'Monzo Joint',
+      rawAmount: 300,
+      amount: '£300',
+      pctOfBar: 75,
+    });
+
+    // Feb bar segments
+    const febSegments = result.barData[1].segments!;
+    expect(febSegments).toHaveLength(1);
+    expect(febSegments[0]).toMatchObject({
+      id: 'acc1',
+      label: 'Barclays',
+      rawAmount: 200,
+      amount: '£200',
+      pctOfBar: 100,
+    });
+  });
+
+  it('stacks spending by budget when an account is selected and showStacked is true', () => {
+    const transactions: Transaction[] = [
+      // Jan: b1 (Groceries) = £400, b3 (Dining Out) = £100
+      { id: 't1', date: new Date(2026, 0, 5).getTime(), amount: 400, type: 'expense', budgetId: 'b1', accountId: 'acc1', payee: 'Tesco', icon: 'shopping_cart' },
+      { id: 't2', date: new Date(2026, 0, 10).getTime(), amount: 100, type: 'expense', budgetId: 'b3', accountId: 'acc1', payee: 'Pizza', icon: 'restaurant' },
+      // Feb: b3 (Dining Out) = £150, unbudgeted = £50
+      { id: 't3', date: new Date(2026, 1, 15).getTime(), amount: 150, type: 'expense', budgetId: 'b3', accountId: 'acc1', payee: 'Pub', icon: 'restaurant' },
+      { id: 't4', date: new Date(2026, 1, 20).getTime(), amount: 50, type: 'expense', accountId: 'acc1', payee: 'Misc', icon: 'payments' },
+    ];
+
+    const scopedForAcc1 = budgets.filter((b) => b.accountId === 'acc1');
+    const result = calculateSpendingGraphData(
+      targetMonths,
+      transactions,
+      'acc1',
+      '',
+      scopedForAcc1,
+      accounts,
+      true
+    );
+
+    expect(result.stackMode).toBe('budget');
+    expect(result.legendItems).toHaveLength(3);
+    expect(result.legendItems[0]).toMatchObject({
+      id: 'b1',
+      label: 'Groceries',
+      totalAmount: 400,
+      formattedAmount: '£400',
+    });
+    expect(result.legendItems[1]).toMatchObject({
+      id: 'b3',
+      label: 'Dining Out',
+      totalAmount: 250,
+      formattedAmount: '£250',
+    });
+    expect(result.legendItems[2]).toMatchObject({
+      id: 'unbudgeted',
+      label: 'Unbudgeted',
+      totalAmount: 50,
+      formattedAmount: '£50',
+    });
+
+    // Check getDisplayLegendItems for Feb (monthIndex = 1)
+    const febLegend = getDisplayLegendItems(result, 1);
+    expect(febLegend).toHaveLength(2);
+    expect(febLegend[0]).toMatchObject({
+      id: 'b3',
+      label: 'Dining Out',
+      totalAmount: 150,
+      formattedAmount: '£150',
+      percentage: '75.0%',
+    });
+    expect(febLegend[1]).toMatchObject({
+      id: 'unbudgeted',
+      label: 'Unbudgeted',
+      totalAmount: 50,
+      formattedAmount: '£50',
+      percentage: '25.0%',
+    });
+  });
+
+  it('disables stacking when a budget is selected even if showStacked is true', () => {
+    const transactions: Transaction[] = [
+      { id: 't1', date: new Date(2026, 0, 5).getTime(), amount: 400, type: 'expense', budgetId: 'b1', accountId: 'acc1', payee: 'Tesco', icon: 'shopping_cart' },
+    ];
+
+    const result = calculateSpendingGraphData(
+      targetMonths,
+      transactions,
+      'acc1',
+      'b1',
+      budgets,
+      accounts,
+      true
+    );
+
+    expect(result.stackMode).toBe('none');
+    expect(result.legendItems).toEqual([]);
+    expect(result.barData[0].segments).toBeUndefined();
   });
 });

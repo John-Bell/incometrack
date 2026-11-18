@@ -7,7 +7,10 @@ import {
   getAvailableBudgetYears,
   filterBudgetsByYear,
 } from '@/utils/budgetUtils';
-import { calculateSpendingGraphData } from '@/utils/spendingUtils';
+import {
+  calculateSpendingGraphData,
+  getDisplayLegendItems,
+} from '@/utils/spendingUtils';
 
 export function useSpendingPage() {
   const profile = useStore((state) => state.profile);
@@ -27,6 +30,8 @@ export function useSpendingPage() {
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [selectedBudgetId, setSelectedBudgetId] = useState<string>('');
   const [selectedTimeframe, setSelectedTimeframe] = useState<string>('ytd');
+  const [showStacked, setShowStacked] = useState<boolean>(false);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number | null>(null);
 
   const availableYears = getAvailableBudgetYears(budgets, transactions, new Date().getFullYear());
 
@@ -45,6 +50,7 @@ export function useSpendingPage() {
 
   const handleAccountChange = (newAccountId: string) => {
     setSelectedAccountId(newAccountId);
+    setSelectedMonthIndex(null);
     if (selectedBudgetId) {
       const budget = yearBudgets.find((b) => b.id === selectedBudgetId);
       if (budget && newAccountId && budget.accountId !== newAccountId) {
@@ -55,6 +61,7 @@ export function useSpendingPage() {
 
   const handleYearChange = (year: number) => {
     setSelectedYear(year);
+    setSelectedMonthIndex(null);
     if (selectedBudgetId) {
       const remainingBudgets = filterBudgetsByYear(budgets, year);
       const isBudgetStillValid = remainingBudgets.some((b) => {
@@ -66,6 +73,15 @@ export function useSpendingPage() {
         setSelectedBudgetId('');
       }
     }
+  };
+
+  const handleTimeframeChange = (tf: string) => {
+    setSelectedTimeframe(tf);
+    setSelectedMonthIndex(null);
+  };
+
+  const handleMonthBarClick = (monthIndex: number) => {
+    setSelectedMonthIndex((prev) => (prev === monthIndex ? null : monthIndex));
   };
 
   const hasAnnualBudget = scopedBudgets.some((b) => b.frequency === 'annual');
@@ -90,13 +106,30 @@ export function useSpendingPage() {
     return new Date(t.date).getFullYear() === selectedYear;
   });
 
+  const canShowStacked = !activeSelectedBudgetId;
+  const effectiveShowStacked = canShowStacked && showStacked;
+
   const spendingData = calculateSpendingGraphData(
     targetMonths,
     yearTransactions,
     selectedAccountId,
     activeSelectedBudgetId,
-    scopedBudgets
+    scopedBudgets,
+    currentAccounts,
+    effectiveShowStacked
   );
+
+  const activeSelectedMonthIndex =
+    selectedMonthIndex !== null &&
+    spendingData.barData.some((b) => b.monthIndex === selectedMonthIndex)
+      ? selectedMonthIndex
+      : null;
+
+  const displayLegendItems = getDisplayLegendItems(spendingData, activeSelectedMonthIndex);
+  const selectedMonthBar =
+    activeSelectedMonthIndex !== null
+      ? spendingData.barData.find((b) => b.monthIndex === activeSelectedMonthIndex)
+      : undefined;
 
   return {
     namesLabel,
@@ -110,7 +143,16 @@ export function useSpendingPage() {
     selectedBudgetId: activeSelectedBudgetId,
     setSelectedBudgetId,
     selectedTimeframe,
-    setSelectedTimeframe,
+    setSelectedTimeframe: handleTimeframeChange,
+    showStacked,
+    setShowStacked,
+    canShowStacked,
+    effectiveShowStacked,
+    selectedMonthIndex: activeSelectedMonthIndex,
+    setSelectedMonthIndex,
+    handleMonthBarClick,
+    displayLegendItems,
+    selectedMonthBar,
     scopedBudgets,
     availableTimeframes,
     hasAnnualBudget,

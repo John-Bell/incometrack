@@ -2,6 +2,7 @@ import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
 import { useSpendingPage } from '@/hooks/useSpendingPage';
+import { cn } from '@/lib/utils';
 
 export function SpendingPage() {
   const {
@@ -15,6 +16,15 @@ export function SpendingPage() {
     setSelectedBudgetId,
     selectedTimeframe,
     setSelectedTimeframe,
+    showStacked,
+    setShowStacked,
+    canShowStacked,
+    effectiveShowStacked,
+    selectedMonthIndex,
+    setSelectedMonthIndex,
+    handleMonthBarClick,
+    displayLegendItems,
+    selectedMonthBar,
     scopedBudgets,
     availableTimeframes,
     hasAnnualBudget,
@@ -29,6 +39,13 @@ export function SpendingPage() {
     : selectedAccount
     ? `${selectedAccount.nickname || selectedAccount.name}`
     : 'All Accounts & Budgets';
+
+  const stackSubtitle =
+    spendingData.stackMode === 'account'
+      ? 'Stacked by Account'
+      : spendingData.stackMode === 'budget'
+      ? 'Stacked by Budget'
+      : 'Monthly Outgoings';
 
   return (
     <AppLayout
@@ -119,6 +136,31 @@ export function SpendingPage() {
             </div>
           </div>
 
+          {/* Show Stacked Checkbox - Hidden when a budget is selected */}
+          {canShowStacked && (
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+              <div>
+                <label
+                  htmlFor="showStacked"
+                  className="font-semibold text-slate-900 dark:text-white cursor-pointer text-sm block select-none"
+                >
+                  Show Stacked
+                </label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {selectedAccountId
+                    ? 'Break down monthly spend by budget'
+                    : 'Break down monthly spend by account'}
+                </p>
+              </div>
+              <input
+                id="showStacked"
+                type="checkbox"
+                checked={showStacked}
+                onChange={(e) => setShowStacked(e.target.checked)}
+                className="w-5 h-5 rounded text-purple-900 focus:ring-purple-500 border-slate-300 dark:border-slate-600 cursor-pointer accent-purple-900 dark:accent-purple-500"
+              />
+            </div>
+          )}
 
           {/* Horizontal Timeframe Selector Pills */}
           <div className="flex items-center space-x-2 overflow-x-auto py-1 no-scrollbar">
@@ -128,11 +170,12 @@ export function SpendingPage() {
                 <button
                   key={tf.id}
                   onClick={() => setSelectedTimeframe(tf.id)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+                  className={cn(
+                    'px-4 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-all cursor-pointer select-none',
                     isActive
                       ? 'bg-purple-900 text-white shadow-sm dark:bg-purple-700'
                       : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
+                  )}
                 >
                   {tf.label}
                 </button>
@@ -194,7 +237,7 @@ export function SpendingPage() {
             <div className="flex items-center space-x-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full w-fit">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-900 dark:bg-purple-400"></span>
               <span className="text-xs text-slate-700 dark:text-slate-300">
-                Monthly Outgoings
+                {stackSubtitle}
               </span>
             </div>
           </div>
@@ -207,25 +250,147 @@ export function SpendingPage() {
                 gridTemplateColumns: `repeat(${Math.max(spendingData.barData.length, 1)}, minmax(0, 1fr))`,
               }}
             >
-              {spendingData.barData.map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center h-full justify-end group">
-                  <span className="text-[10px] mb-1 font-medium text-slate-600 dark:text-slate-300">
-                    {item.amount}
-                  </span>
+              {spendingData.barData.map((item, idx) => {
+                const isSelectedMonth = selectedMonthIndex === item.monthIndex;
+                const isDimmed =
+                  effectiveShowStacked &&
+                  selectedMonthIndex !== null &&
+                  !isSelectedMonth;
+                const hasSegments =
+                  effectiveShowStacked && item.segments && item.segments.length > 0;
+
+                return (
                   <div
-                    className="w-full max-w-[36px] rounded-t-lg transition-all duration-300 bg-purple-900 dark:bg-purple-500 group-hover:opacity-80"
-                    style={{ height: `${Math.max(item.heightPct, item.rawAmount > 0 ? 4 : 2)}%` }}
-                  ></div>
-                  <span className="text-xs mt-2 text-slate-500 dark:text-slate-400 font-medium">
-                    {item.month}
-                  </span>
-                </div>
-              ))}
+                    key={idx}
+                    onClick={
+                      effectiveShowStacked
+                        ? () => handleMonthBarClick(item.monthIndex)
+                        : undefined
+                    }
+                    className={cn(
+                      'flex flex-col items-center h-full justify-end group transition-opacity',
+                      effectiveShowStacked && 'cursor-pointer select-none',
+                      isDimmed && 'opacity-45 hover:opacity-75'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'text-[10px] mb-1 font-medium text-slate-600 dark:text-slate-300',
+                        isSelectedMonth && 'font-bold text-purple-900 dark:text-purple-300'
+                      )}
+                    >
+                      {item.amount}
+                    </span>
+                    {hasSegments ? (
+                      <div
+                        className={cn(
+                          'w-full max-w-[36px] rounded-t-lg overflow-hidden flex flex-col-reverse transition-all duration-300 group-hover:opacity-90',
+                          isSelectedMonth && 'ring-2 ring-purple-900 dark:ring-purple-400 ring-offset-1 dark:ring-offset-slate-900'
+                        )}
+                        style={{
+                          height: `${Math.max(item.heightPct, item.rawAmount > 0 ? 4 : 2)}%`,
+                        }}
+                      >
+                        {item.segments!.map((seg) => (
+                          <div
+                            key={seg.id}
+                            title={`${seg.label}: ${seg.amount}`}
+                            style={{
+                              height: `${seg.pctOfBar}%`,
+                              backgroundColor: seg.color,
+                            }}
+                            className="w-full transition-all duration-300"
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="w-full max-w-[36px] rounded-t-lg transition-all duration-300 bg-purple-900 dark:bg-purple-500 group-hover:opacity-80"
+                        style={{
+                          height: `${Math.max(item.heightPct, item.rawAmount > 0 ? 4 : 2)}%`,
+                        }}
+                      ></div>
+                    )}
+                    <span
+                      className={cn(
+                        'text-xs mt-2 text-slate-500 dark:text-slate-400 font-medium',
+                        isSelectedMonth && 'font-bold text-purple-900 dark:text-purple-300 underline underline-offset-4'
+                      )}
+                    >
+                      {item.month}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
+
+          {/* Stacked Legend Under Graph */}
+          {effectiveShowStacked && (
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    {spendingData.stackMode === 'account'
+                      ? 'Spend by Account'
+                      : 'Spend by Budget'}
+                    {selectedMonthBar ? ` (${selectedMonthBar.month})` : ''}
+                  </h4>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                    {selectedMonthBar
+                      ? `Showing breakdown for ${selectedMonthBar.month} · Tap bar again for full period`
+                      : 'Tap any month bar to inspect that month'}
+                  </span>
+                </div>
+                {selectedMonthBar && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMonthIndex(null)}
+                    className="text-xs font-semibold text-purple-900 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2.5 py-1 rounded-full hover:opacity-80 transition-opacity cursor-pointer select-none"
+                  >
+                    Show All Months
+                  </button>
+                )}
+              </div>
+
+              {displayLegendItems.length === 0 ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400 py-2 text-center">
+                  No spending recorded for this selection.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {displayLegendItems.map((legend) => (
+                    <div
+                      key={legend.id}
+                      className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800"
+                    >
+                      <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: legend.color }}
+                        />
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          {legend.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          {legend.formattedAmount}
+                        </span>
+                        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 w-10 text-right">
+                          {legend.percentage}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>
   );
 }
 export default SpendingPage;
+

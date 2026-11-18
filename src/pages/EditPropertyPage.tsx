@@ -125,11 +125,11 @@ export function EditPropertyPage() {
                   id="annualGrowthRate"
                   type="number"
                   step="0.1"
-                  value={formData.annualGrowthRate || ''}
+                  value={formData.annualGrowthRate ?? ''}
                   onChange={(e) =>
                     handleChange(
                       'annualGrowthRate',
-                      e.target.value ? parseFloat(e.target.value) : undefined
+                      e.target.value !== '' ? parseFloat(e.target.value) : undefined
                     )
                   }
                   placeholder="3.5"

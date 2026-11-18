@@ -27,7 +27,7 @@ describe('calculateLifetimeProjection Pension Tax Drag', () => {
     taxRules: TAX_YEAR_CONSTANTS,
   };
 
-  it('applies 15% tax drag on ordered pension drawdown', () => {
+  it('applies 20% tax drag on ordered pension drawdown', () => {
     const input: ProjectionEngineInput = {
       ...baseInput,
       assetPots: {
@@ -41,7 +41,7 @@ describe('calculateLifetimeProjection Pension Tax Drag', () => {
           id: 'budg-1',
           accountId: 'acc-1',
           name: 'Budget',
-          amount: 8500,
+          amount: 8000,
           frequency: 'annually',
           updatedAt: Date.now(),
         },
@@ -51,16 +51,16 @@ describe('calculateLifetimeProjection Pension Tax Drag', () => {
     const results = calculateLifetimeProjection(input);
 
     // Year 0 (2025):
-    // Deficit = 8500.
-    // effectiveTaxRate = 0.15.
-    // grossPensionWithdrawal = 8500 / (1 - 0.15) = 8500 / 0.85 = 10000.
+    // Deficit = 8000.
+    // effectiveTaxRate = 0.20.
+    // grossPensionWithdrawal = 8000 / (1 - 0.20) = 8000 / 0.80 = 10000.
     // New pension balance should be 100000 - 10000 = 90000.
 
     expect(results[0].potBalances.pensions).toBe(90000);
     expect(results[0].liquidAssets).toBe(90000);
   });
 
-  it('applies 15% tax drag on proportional pension drawdown', () => {
+  it('applies 20% tax drag on proportional pension drawdown', () => {
     const input: ProjectionEngineInput = {
       ...baseInput,
       assetPots: {
@@ -74,7 +74,7 @@ describe('calculateLifetimeProjection Pension Tax Drag', () => {
           id: 'budg-1',
           accountId: 'acc-1',
           name: 'Budget',
-          amount: 8500,
+          amount: 8000,
           frequency: 'annually',
           updatedAt: Date.now(),
         },
@@ -84,8 +84,8 @@ describe('calculateLifetimeProjection Pension Tax Drag', () => {
     const results = calculateLifetimeProjection(input);
 
     // Even with proportional, if ONLY pensions have balance, it should behave same as pensions_first.
-    // Deficit = 8500.
-    // Should draw 10000 gross to get 8500 net.
+    // Deficit = 8000.
+    // Should draw 10000 gross to get 8000 net.
     expect(results[0].potBalances.pensions).toBe(90000);
   });
 });

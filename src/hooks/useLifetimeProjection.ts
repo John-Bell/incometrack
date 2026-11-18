@@ -75,6 +75,9 @@ export function useLifetimeProjection(drawdownStrategy?: DrawdownStrategy) {
       taxFree: dbAccounts
         .filter(a => ['Cash ISA', 'Shares ISA'].includes(a.category))
         .reduce((sum, a) => sum + a.balance, 0),
+      sharesIsa: dbAccounts
+        .filter(a => a.category === 'Shares ISA')
+        .reduce((sum, a) => sum + a.balance, 0),
       premiumBonds: dbAccounts
         .filter(a => a.category === 'Premium Bonds')
         .reduce((sum, a) => sum + a.balance, 0),

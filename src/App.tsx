@@ -85,7 +85,7 @@ function AppRoutes() {
   }, [initStore]);
 
   if (!isHydrated) {
-    return <div className="flex h-screen w-screen items-center justify-center text-gray-500">Loading your data...</div>;
+    return <div className="flex h-dvh w-screen items-center justify-center text-gray-500">Loading your data...</div>;
   }
 
   const isSetupRoute = location.pathname === '/setup';
@@ -98,7 +98,7 @@ function AppRoutes() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-screen items-center justify-center text-gray-500">
+        <div className="flex h-dvh w-screen items-center justify-center text-gray-500">
           Loading...
         </div>
       }

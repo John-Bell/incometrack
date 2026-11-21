@@ -8,6 +8,7 @@ import {
   formatAccountForDisplay,
   calculatePortfolioSummary,
   calculateTabSummaries,
+  type AccountSortBy,
 } from '@/utils/accountUtils';
 
 export function useAccountsPage() {
@@ -18,7 +19,7 @@ export function useAccountsPage() {
   const p1Name = profile?.partner1Name || 'Partner 1';
   const p2Name = profile?.partner2Name || 'Partner 2';
 
-  const [sortBy, setSortBy] = useState<'rate' | 'name'>('name');
+  const [sortBy, setSortBy] = useState<AccountSortBy>('name');
 
   const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 

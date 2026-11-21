@@ -3,6 +3,9 @@ import { type Account } from '@/lib/db';
 import {
   formatGBP,
   sortAccounts,
+  getNextAccountSort,
+  getAccountSortLabel,
+  getAccountUpdateInfo,
   formatAccountForDisplay,
   calculatePortfolioSummary,
   calculateTabSummaries,
@@ -69,6 +72,115 @@ describe('accountUtils', () => {
         'Santander Easy',
       ]);
     });
+
+    it('sorts accounts by updatedAt oldest first with alphabetical tie-breaker', () => {
+      const accountsWithDates: Account[] = [
+        { ...mockAccounts[0], name: 'Zeta', updatedAt: 2000 },
+        { ...mockAccounts[1], name: 'Beta', updatedAt: 1000 },
+        { ...mockAccounts[2], name: 'Alpha', updatedAt: 1000 },
+        { ...mockAccounts[2], id: 'acc4', name: 'NoDate', updatedAt: 0 },
+      ];
+      const sorted = sortAccounts(accountsWithDates, 'updatedAt');
+      expect(sorted.map((a) => a.name)).toEqual(['NoDate', 'Alpha', 'Beta', 'Zeta']);
+    });
+  });
+
+  describe('getNextAccountSort and getAccountSortLabel', () => {
+    it('cycles through name -> rate -> updatedAt -> name', () => {
+      expect(getNextAccountSort('name')).toBe('rate');
+      expect(getNextAccountSort('rate')).toBe('updatedAt');
+      expect(getNextAccountSort('updatedAt')).toBe('name');
+    });
+
+    it('returns display labels for each sort option', () => {
+      expect(getAccountSortLabel('name')).toBe('Name');
+      expect(getAccountSortLabel('rate')).toBe('Rate');
+      expect(getAccountSortLabel('updatedAt')).toBe('Last Updated');
+    });
+  });
+
+  describe('getAccountUpdateInfo', () => {
+    const now = new Date(2026, 10, 21, 14, 0, 0).getTime(); // 21 Nov 2026 14:00
+
+    it('handles missing or zero updatedAt as unknown and stale', () => {
+      expect(getAccountUpdateInfo(undefined, now)).toEqual({
+        formattedDate: 'Unknown',
+        ageLabel: null,
+        displayText: 'Never updated',
+        daysSinceUpdate: null,
+        freshness: 'unknown',
+        isStale: true,
+      });
+      expect(getAccountUpdateInfo(0, now).freshness).toBe('unknown');
+    });
+
+    it('formats updates within the last minute as Just now', () => {
+      const info = getAccountUpdateInfo(now - 30 * 1000, now);
+      expect(info.displayText).toBe('Just now');
+      expect(info.freshness).toBe('fresh');
+      expect(info.isStale).toBe(false);
+    });
+
+    it('formats updates within the last hour in minutes', () => {
+      expect(getAccountUpdateInfo(now - 60 * 1000, now).displayText).toBe('1 min ago');
+      expect(getAccountUpdateInfo(now - 15 * 60 * 1000, now).displayText).toBe('15 mins ago');
+    });
+
+    it('formats earlier same-day updates as Today', () => {
+      const info = getAccountUpdateInfo(new Date(2026, 10, 21, 8, 0, 0).getTime(), now);
+      expect(info.displayText).toBe('Today');
+      expect(info.freshness).toBe('fresh');
+      expect(info.daysSinceUpdate).toBe(0);
+    });
+
+    it('formats previous calendar day updates as Yesterday', () => {
+      const info = getAccountUpdateInfo(new Date(2026, 10, 20, 22, 0, 0).getTime(), now);
+      expect(info.displayText).toBe('Yesterday');
+      expect(info.freshness).toBe('fresh');
+      expect(info.daysSinceUpdate).toBe(1);
+    });
+
+    it('formats 2-29 days ago with date and days ago as fresh', () => {
+      const fiveDaysAgo = new Date(2026, 10, 16, 10, 0, 0).getTime();
+      const info = getAccountUpdateInfo(fiveDaysAgo, now);
+      expect(info.displayText).toBe('16 Nov (5 days ago)');
+      expect(info.freshness).toBe('fresh');
+      expect(info.isStale).toBe(false);
+      expect(info.daysSinceUpdate).toBe(5);
+    });
+
+    it('marks 30-59 days ago as aging with month period', () => {
+      const thirtyFiveDaysAgo = new Date(2026, 9, 17, 10, 0, 0).getTime();
+      const info = getAccountUpdateInfo(thirtyFiveDaysAgo, now);
+      expect(info.displayText).toBe('17 Oct (1 month ago)');
+      expect(info.freshness).toBe('aging');
+      expect(info.isStale).toBe(true);
+      expect(info.daysSinceUpdate).toBe(35);
+    });
+
+    it('marks 60+ days ago as stale with months period', () => {
+      const seventyFiveDaysAgo = new Date(2026, 8, 7, 10, 0, 0).getTime();
+      const info = getAccountUpdateInfo(seventyFiveDaysAgo, now);
+      expect(info.displayText).toBe('7 Sept (2 months ago)');
+      expect(info.freshness).toBe('stale');
+      expect(info.isStale).toBe(true);
+      expect(info.daysSinceUpdate).toBe(75);
+    });
+
+    it('includes year and years ago for updates over a year old', () => {
+      const overYearAgo = new Date(2025, 9, 17, 10, 0, 0).getTime();
+      const info = getAccountUpdateInfo(overYearAgo, now);
+      expect(info.displayText).toBe('17 Oct 2025 (1 year ago)');
+      expect(info.freshness).toBe('stale');
+      expect(info.isStale).toBe(true);
+    });
+
+    it('clamps future timestamps safely to Just now', () => {
+      const info = getAccountUpdateInfo(now + 60 * 60 * 1000, now);
+      expect(info.displayText).toBe('Just now');
+      expect(info.freshness).toBe('fresh');
+      expect(info.isStale).toBe(false);
+    });
   });
 
   describe('formatAccountForDisplay', () => {
@@ -76,13 +188,15 @@ describe('accountUtils', () => {
     const endTs = new Date(2026, 3, 5).getTime();
 
     it('formats person1 account with blue owner tag and correct icon color', () => {
+      const now = new Date(2026, 10, 21, 14, 0, 0).getTime();
       const formatted = formatAccountForDisplay(
-        mockAccounts[0],
+        { ...mockAccounts[0], updatedAt: now - 3600000 },
         [],
         startTs,
         endTs,
         p1Name,
-        p2Name
+        p2Name,
+        now
       );
 
       expect(formatted.id).toBe('acc1');
@@ -93,6 +207,27 @@ describe('accountUtils', () => {
       expect(formatted.balance).toBe('£10,000.00');
       expect(formatted.rate).toBe('4.50%');
       expect(formatted.isTaxable).toBe(true);
+      expect(formatted.updatedAt).toBe('Today');
+      expect(formatted.updatedAtFreshness).toBe('fresh');
+      expect(formatted.isStale).toBe(false);
+    });
+
+    it('surfaces stale freshness metadata when account has not been updated recently', () => {
+      const now = new Date(2026, 10, 21, 14, 0, 0).getTime();
+      const oldTs = new Date(2026, 7, 1, 10, 0, 0).getTime();
+      const formatted = formatAccountForDisplay(
+        { ...mockAccounts[0], updatedAt: oldTs },
+        [],
+        startTs,
+        endTs,
+        p1Name,
+        p2Name,
+        now
+      );
+
+      expect(formatted.updatedAt).toBe('1 Aug (3 months ago)');
+      expect(formatted.updatedAtFreshness).toBe('stale');
+      expect(formatted.isStale).toBe(true);
     });
 
     it('formats person2 account with pink owner tag and handles zero interest rate', () => {

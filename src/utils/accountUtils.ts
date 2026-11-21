@@ -1,5 +1,4 @@
 import { type Account, type InterestAccrual } from '@/lib/db';
-import { formatRelativeTime } from '@/lib/utils';
 import { TAX_FREE_CATEGORIES } from '@/constants/taxConstants';
 import {
   calculateTotalSavings,
@@ -8,6 +7,25 @@ import {
   calculateProjectedInterestForAccount,
   calculateProjectedTaxableInterest,
 } from '@/services/accountCalculations';
+
+export type AccountSortBy = 'name' | 'rate' | 'updatedAt';
+
+export type AccountFreshness = 'fresh' | 'aging' | 'stale' | 'unknown';
+
+export interface AccountUpdateInfo {
+  formattedDate: string;
+  ageLabel: string | null;
+  displayText: string;
+  daysSinceUpdate: number | null;
+  freshness: AccountFreshness;
+  isStale: boolean;
+}
+
+export const ACCOUNT_AGING_DAYS = 30;
+export const ACCOUNT_STALE_DAYS = 60;
+
+const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface AccountTabSummary {
   id: 'person1' | 'person2' | 'joint';
@@ -24,14 +42,118 @@ export function formatGBP(amount: number): string {
   }).format(amount || 0);
 }
 
-export function sortAccounts(accounts: Account[], sortBy: 'rate' | 'name'): Account[] {
+export function getNextAccountSort(current: AccountSortBy): AccountSortBy {
+  if (current === 'name') return 'rate';
+  if (current === 'rate') return 'updatedAt';
+  return 'name';
+}
+
+export function getAccountSortLabel(sortBy: AccountSortBy): string {
+  if (sortBy === 'rate') return 'Rate';
+  if (sortBy === 'updatedAt') return 'Last Updated';
+  return 'Name';
+}
+
+export function sortAccounts(accounts: Account[], sortBy: AccountSortBy): Account[] {
   return [...accounts].sort((a, b) => {
     if (sortBy === 'rate') {
       return (a.interestRate || 0) - (b.interestRate || 0);
-    } else {
+    }
+    if (sortBy === 'updatedAt') {
+      const diff = (a.updatedAt || 0) - (b.updatedAt || 0);
+      if (diff !== 0) return diff;
       return (a.name || '').localeCompare(b.name || '');
     }
+    return (a.name || '').localeCompare(b.name || '');
   });
+}
+
+function formatAgeLabel(daysSinceUpdate: number): string {
+  if (daysSinceUpdate < ACCOUNT_AGING_DAYS) {
+    return `${daysSinceUpdate} day${daysSinceUpdate === 1 ? '' : 's'} ago`;
+  }
+  if (daysSinceUpdate < 365) {
+    const months = Math.floor(daysSinceUpdate / 30);
+    return `${months} month${months === 1 ? '' : 's'} ago`;
+  }
+  const years = Math.floor(daysSinceUpdate / 365);
+  return `${years} year${years === 1 ? '' : 's'} ago`;
+}
+
+export function getAccountUpdateInfo(
+  updatedAt: number | undefined,
+  now: number = Date.now()
+): AccountUpdateInfo {
+  if (!updatedAt || updatedAt <= 0) {
+    return {
+      formattedDate: 'Unknown',
+      ageLabel: null,
+      displayText: 'Never updated',
+      daysSinceUpdate: null,
+      freshness: 'unknown',
+      isStale: true,
+    };
+  }
+
+  const nowDate = new Date(now);
+  const date = new Date(updatedAt);
+  const diffMs = Math.max(0, now - updatedAt);
+  const diffMins = Math.floor(diffMs / MS_PER_MINUTE);
+
+  const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+  const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const calendarDays = Math.max(0, Math.round((todayStart.getTime() - dateStart.getTime()) / MS_PER_DAY));
+
+  if (calendarDays === 0) {
+    let label = 'Today';
+    if (diffMins < 1) {
+      label = 'Just now';
+    } else if (diffMins < 60) {
+      label = `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
+    }
+    return {
+      formattedDate: 'Today',
+      ageLabel: label,
+      displayText: label,
+      daysSinceUpdate: 0,
+      freshness: 'fresh',
+      isStale: false,
+    };
+  }
+
+  if (calendarDays === 1) {
+    return {
+      formattedDate: 'Yesterday',
+      ageLabel: 'Yesterday',
+      displayText: 'Yesterday',
+      daysSinceUpdate: 1,
+      freshness: 'fresh',
+      isStale: false,
+    };
+  }
+
+  const formattedDate = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: nowDate.getFullYear() !== date.getFullYear() ? 'numeric' : undefined,
+  }).format(date);
+
+  const ageLabel = formatAgeLabel(calendarDays);
+  const freshness: AccountFreshness =
+    calendarDays >= ACCOUNT_STALE_DAYS
+      ? 'stale'
+      : calendarDays >= ACCOUNT_AGING_DAYS
+      ? 'aging'
+      : 'fresh';
+
+  return {
+    formattedDate,
+    ageLabel,
+    displayText: `${formattedDate} (${ageLabel})`,
+    daysSinceUpdate: calendarDays,
+    freshness,
+    isStale: freshness !== 'fresh',
+  };
 }
 
 export function formatAccountForDisplay(
@@ -40,7 +162,8 @@ export function formatAccountForDisplay(
   startTs: number,
   endTs: number,
   p1Name: string,
-  p2Name: string
+  p2Name: string,
+  now: number = Date.now()
 ) {
   let ownerTagColor: 'blue' | 'pink' | 'purple' = 'purple';
 
@@ -63,6 +186,8 @@ export function formatAccountForDisplay(
     acc.category &&
     (TAX_FREE_CATEGORIES as readonly string[]).includes(acc.category);
 
+  const updateInfo = getAccountUpdateInfo(acc.updatedAt, now);
+
   return {
     id: acc.id,
     ownerId: acc.ownerId,
@@ -80,7 +205,9 @@ export function formatAccountForDisplay(
     rate: acc.interestRate === 0 ? undefined : acc.interestRate.toFixed(2) + '%',
     interestPayoutFrequency: acc.interestPayoutFrequency,
     interestPayoutDate: acc.interestPayoutDate,
-    updatedAt: formatRelativeTime(acc.updatedAt),
+    updatedAt: updateInfo.displayText,
+    updatedAtFreshness: updateInfo.freshness,
+    isStale: updateInfo.isStale,
     alertText: acc.alertText,
     alertType: acc.alertType,
   };

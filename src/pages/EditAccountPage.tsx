@@ -5,12 +5,28 @@ import { InterestLedger } from '@/components/accounts/InterestLedger';
 import { useAccountForm } from '@/hooks/useAccountForm';
 import { DateInput } from '@/components/ui/DateInput';
 import { cn } from '@/lib/utils';
+import { type AccountFreshness } from '@/utils/accountUtils';
+
+const freshnessBadgeClassMap: Record<AccountFreshness, string> = {
+    fresh: 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800',
+    aging: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
+    stale: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20',
+    unknown: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20',
+};
+
+const freshnessIconMap: Record<AccountFreshness, string> = {
+    fresh: 'schedule',
+    aging: 'schedule',
+    stale: 'warning',
+    unknown: 'warning',
+};
 
 export function EditAccountPage() {
     const { id } = useParams<{ id: string }>();
     const {
         account,
         activeAccountId,
+        lastUpdatedInfo,
         navigate,
         p1Name,
         p2Name,
@@ -126,7 +142,20 @@ export function EditAccountPage() {
                     </div>
                 )}
 
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-8 mb-4">FINANCIAL SETTINGS</h2>
+                <div className="flex flex-wrap items-center justify-between gap-2 mt-8 mb-4">
+                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">FINANCIAL SETTINGS</h2>
+                    {lastUpdatedInfo && (
+                        <span
+                            className={cn(
+                                'inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md',
+                                freshnessBadgeClassMap[lastUpdatedInfo.freshness]
+                            )}
+                        >
+                            <Icon name={freshnessIconMap[lastUpdatedInfo.freshness]} className="text-[14px]" />
+                            <span>Updated: {lastUpdatedInfo.displayText}</span>
+                        </span>
+                    )}
+                </div>
 
                 {/* Balance and Interest Rate Fields */}
                 <div className={cn(isEligibleForAER ? "grid grid-cols-2 gap-4 items-start" : "space-y-2")}>

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAccountsPage } from '@/hooks/useAccountsPage';
+import { getAccountSortLabel, getNextAccountSort } from '@/utils/accountUtils';
 import { AppLayout } from '../components/layout/AppLayout';
 import { Header } from '../components/layout/Header';
 import { Icon } from '../components/ui/Icon';
@@ -84,10 +85,10 @@ export function AccountsPage() {
                 <div className="flex items-center justify-between mb-4 mt-2">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white">Active Accounts</h2>
                     <button
-                        onClick={() => setSortBy((prev) => (prev === 'rate' ? 'name' : 'rate'))}
+                        onClick={() => setSortBy((prev) => getNextAccountSort(prev))}
                         className="text-sm font-medium text-primary flex items-center gap-1 hover:opacity-80 transition-opacity"
                     >
-                        Sort by {sortBy === 'rate' ? 'Rate' : 'Name'}
+                        Sort by {getAccountSortLabel(sortBy)}
                         <Icon name="sort" className="text-base" />
                     </button>
                 </div>

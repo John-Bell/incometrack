@@ -12,6 +12,8 @@ export type AccountSortBy = 'name' | 'rate' | 'updatedAt';
 
 export type AccountFreshness = 'fresh' | 'aging' | 'stale' | 'unknown';
 
+export type LedgerFreshness = 'recent' | 'overdue' | 'neutral';
+
 export interface AccountUpdateInfo {
   formattedDate: string;
   ageLabel: string | null;
@@ -21,8 +23,19 @@ export interface AccountUpdateInfo {
   isStale: boolean;
 }
 
+export interface AccountLedgerInfo {
+  latestEntryDate: number;
+  entryCount: number;
+  formattedDate: string;
+  ageLabel: string;
+  displayText: string;
+  daysSinceEntry: number;
+  freshness: LedgerFreshness;
+}
+
 export const ACCOUNT_AGING_DAYS = 30;
 export const ACCOUNT_STALE_DAYS = 60;
+export const MONTHLY_LEDGER_OVERDUE_DAYS = 40;
 
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -156,6 +169,74 @@ export function getAccountUpdateInfo(
   };
 }
 
+export function getAccountLedgerInfo(
+  accountId: string,
+  accruals: InterestAccrual[],
+  interestPayoutFrequency?: Account['interestPayoutFrequency'],
+  now: number = Date.now()
+): AccountLedgerInfo | null {
+  let latestEntryDate: number | null = null;
+  let entryCount = 0;
+
+  for (const accrual of accruals) {
+    if (accrual.accountId === accountId) {
+      entryCount += 1;
+      if (latestEntryDate === null || accrual.date > latestEntryDate) {
+        latestEntryDate = accrual.date;
+      }
+    }
+  }
+
+  if (latestEntryDate === null || entryCount === 0) {
+    return null;
+  }
+
+  const nowDate = new Date(now);
+  const entryDate = new Date(latestEntryDate);
+  const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+  const entryStart = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+  const rawCalendarDays = Math.round((todayStart.getTime() - entryStart.getTime()) / MS_PER_DAY);
+  const daysSinceEntry = Math.max(0, rawCalendarDays);
+
+  const formattedDate = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: nowDate.getFullYear() !== entryDate.getFullYear() ? 'numeric' : undefined,
+  }).format(entryDate);
+
+  let ageLabel: string;
+  let displayText: string;
+
+  if (rawCalendarDays < 0) {
+    ageLabel = 'Scheduled';
+    displayText = formattedDate;
+  } else if (daysSinceEntry === 0) {
+    ageLabel = 'Today';
+    displayText = 'Today';
+  } else if (daysSinceEntry === 1) {
+    ageLabel = 'Yesterday';
+    displayText = 'Yesterday';
+  } else {
+    ageLabel = formatAgeLabel(daysSinceEntry);
+    displayText = `${formattedDate} (${ageLabel})`;
+  }
+
+  let freshness: LedgerFreshness = 'neutral';
+  if (interestPayoutFrequency === 'monthly') {
+    freshness = daysSinceEntry >= MONTHLY_LEDGER_OVERDUE_DAYS ? 'overdue' : 'recent';
+  }
+
+  return {
+    latestEntryDate,
+    entryCount,
+    formattedDate,
+    ageLabel,
+    displayText,
+    daysSinceEntry,
+    freshness,
+  };
+}
+
 export function formatAccountForDisplay(
   acc: Account,
   allAccruals: InterestAccrual[],
@@ -163,7 +244,8 @@ export function formatAccountForDisplay(
   endTs: number,
   p1Name: string,
   p2Name: string,
-  now: number = Date.now()
+  now: number = Date.now(),
+  allTimeAccruals: InterestAccrual[] = allAccruals
 ) {
   let ownerTagColor: 'blue' | 'pink' | 'purple' = 'purple';
 
@@ -187,6 +269,12 @@ export function formatAccountForDisplay(
     (TAX_FREE_CATEGORIES as readonly string[]).includes(acc.category);
 
   const updateInfo = getAccountUpdateInfo(acc.updatedAt, now);
+  const ledgerInfo = getAccountLedgerInfo(
+    acc.id,
+    allTimeAccruals,
+    acc.interestPayoutFrequency,
+    now
+  );
 
   return {
     id: acc.id,
@@ -208,6 +296,8 @@ export function formatAccountForDisplay(
     updatedAt: updateInfo.displayText,
     updatedAtFreshness: updateInfo.freshness,
     isStale: updateInfo.isStale,
+    ledgerLastEntry: ledgerInfo?.displayText,
+    ledgerFreshness: ledgerInfo?.freshness,
     alertText: acc.alertText,
     alertType: acc.alertType,
   };

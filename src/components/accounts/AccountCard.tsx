@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
-import { type AccountFreshness } from '@/utils/accountUtils';
+import { type AccountFreshness, type LedgerFreshness } from '@/utils/accountUtils';
 
 interface AccountCardProps {
     id: string;
@@ -24,6 +24,8 @@ interface AccountCardProps {
     isWarned?: boolean;
     updatedAt: string;
     updatedAtFreshness?: AccountFreshness;
+    ledgerLastEntry?: string;
+    ledgerFreshness?: LedgerFreshness;
     alertText?: string;
     alertType?: 'warning' | 'error' | 'info';
     className?: string;
@@ -64,6 +66,12 @@ const freshnessIconMap: Record<AccountFreshness, string> = {
     unknown: 'warning',
 };
 
+const ledgerFreshnessColorMap: Record<LedgerFreshness, string> = {
+    recent: 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
+    neutral: 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800',
+    overdue: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
+};
+
 export function AccountCard({
     id,
     accountIcon,
@@ -83,6 +91,8 @@ export function AccountCard({
     isWarned = false,
     updatedAt,
     updatedAtFreshness = 'fresh',
+    ledgerLastEntry,
+    ledgerFreshness = 'neutral',
     alertText,
     alertType = 'warning',
     className,
@@ -180,6 +190,18 @@ export function AccountCard({
                     <Icon name={freshnessIconMap[updatedAtFreshness]} className="text-[14px]" />
                     <span>Updated: {updatedAt}</span>
                 </div>
+
+                {ledgerLastEntry && (
+                    <div
+                        className={cn(
+                            'inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md font-medium',
+                            ledgerFreshnessColorMap[ledgerFreshness]
+                        )}
+                    >
+                        <Icon name={ledgerFreshness === 'overdue' ? 'warning' : 'receipt_long'} className="text-[14px]" />
+                        <span>Ledger: {ledgerLastEntry}</span>
+                    </div>
+                )}
 
                 {alertText && (
                     <div className={cn('flex items-center gap-1 text-xs px-2 py-1 rounded-md', alertColorMap[alertType])}>

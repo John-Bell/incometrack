@@ -49,6 +49,8 @@ describe('AccountsPage', () => {
       updatedAt: 'Today',
       updatedAtFreshness: 'fresh' as const,
       isStale: false,
+      ledgerLastEntry: undefined,
+      ledgerFreshness: undefined,
       alertText: undefined,
       alertType: undefined,
     },
@@ -101,6 +103,60 @@ describe('AccountsPage', () => {
     expect(screen.getByText('Active Accounts')).toBeInTheDocument();
     expect(screen.getByText('Main Savings')).toBeInTheDocument();
     expect(screen.getByText('Updated: Today')).toBeInTheDocument();
+    expect(screen.queryByText(/Ledger:/i)).not.toBeInTheDocument();
+  });
+
+  it('renders ledger indicator only for accounts with ledger entries and reflects freshness', () => {
+    vi.mocked(useAccountsPage).mockReturnValue({
+      ...defaultHookReturn,
+      filteredAccounts: [
+        {
+          ...mockFilteredAccounts[0],
+          id: 'acc-recent',
+          nickname: 'Monthly Saver',
+          ledgerLastEntry: '15 Nov (6 days ago)',
+          ledgerFreshness: 'recent',
+        },
+        {
+          ...mockFilteredAccounts[0],
+          id: 'acc-overdue',
+          nickname: 'Overdue Monthly',
+          ledgerLastEntry: '5 Oct (1 month ago)',
+          ledgerFreshness: 'overdue',
+        },
+        {
+          ...mockFilteredAccounts[0],
+          id: 'acc-annual',
+          nickname: 'Annual Bonus',
+          ledgerLastEntry: '1 Nov 2025 (1 year ago)',
+          ledgerFreshness: 'neutral',
+        },
+        {
+          ...mockFilteredAccounts[0],
+          id: 'acc-none',
+          nickname: 'No Ledger Account',
+          ledgerLastEntry: undefined,
+          ledgerFreshness: undefined,
+        },
+      ],
+    });
+
+    render(
+      <BrowserRouter>
+        <AccountsPage />
+      </BrowserRouter>
+    );
+
+    const recentBadge = screen.getByText('Ledger: 15 Nov (6 days ago)');
+    expect(recentBadge.parentElement?.className).toContain('text-emerald-700');
+
+    const overdueBadge = screen.getByText('Ledger: 5 Oct (1 month ago)');
+    expect(overdueBadge.parentElement?.className).toContain('text-amber-700');
+
+    const neutralBadge = screen.getByText('Ledger: 1 Nov 2025 (1 year ago)');
+    expect(neutralBadge.parentElement?.className).toContain('text-slate-600');
+
+    expect(screen.getAllByText(/Ledger:/i)).toHaveLength(3);
   });
 
   it('triggers setActiveAccountsTab when clicking a tab button', () => {

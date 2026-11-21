@@ -24,15 +24,24 @@ export function useAccountsPage() {
   const { startTs, endTs } = getTaxYearDates(taxYear || undefined);
 
   const rawAccounts = useLiveQuery(() => db.accounts.toArray()) || [];
-  const allAccruals = useLiveQuery(
-    () => db.interestAccruals.where('date').between(startTs, endTs, true, true).toArray(),
-    [startTs, endTs]
-  ) || [];
+  const allTimeAccruals = useLiveQuery(() => db.interestAccruals.toArray()) || [];
+  const taxYearAccruals = allTimeAccruals.filter(
+    (accrual) => accrual.date >= startTs && accrual.date <= endTs
+  );
 
   const sortedRawAccounts = sortAccounts(rawAccounts, sortBy);
 
   const mappedAccounts = sortedRawAccounts.map((acc) =>
-    formatAccountForDisplay(acc, allAccruals, startTs, endTs, p1Name, p2Name)
+    formatAccountForDisplay(
+      acc,
+      taxYearAccruals,
+      startTs,
+      endTs,
+      p1Name,
+      p2Name,
+      undefined,
+      allTimeAccruals
+    )
   );
 
   const filteredAccounts = mappedAccounts.filter((acc) => acc.ownerId === activeAccountsTab);
@@ -40,7 +49,7 @@ export function useAccountsPage() {
   const { formattedTotalSavings, formattedNonPensionSavings, formattedTaxableSavings } =
     calculatePortfolioSummary(rawAccounts);
 
-  const tabSummaries = calculateTabSummaries(rawAccounts, allAccruals, startTs, endTs, p1Name, p2Name);
+  const tabSummaries = calculateTabSummaries(rawAccounts, taxYearAccruals, startTs, endTs, p1Name, p2Name);
 
   return {
     p1Name,

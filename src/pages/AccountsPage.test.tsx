@@ -44,14 +44,20 @@ describe('AccountsPage', () => {
       projectedInterest: '£450.00',
       isTaxable: true,
       rate: '4.50%',
-      updatedAt: '1 hour ago',
+      interestPayoutFrequency: undefined,
+      interestPayoutDate: undefined,
+      updatedAt: 'Today',
+      updatedAtFreshness: 'fresh' as const,
+      isStale: false,
+      alertText: undefined,
+      alertType: undefined,
     },
   ];
 
-  const defaultHookReturn = {
+  const defaultHookReturn: ReturnType<typeof useAccountsPage> = {
     p1Name: 'Alice',
     p2Name: 'Bob',
-    sortBy: 'name' as const,
+    sortBy: 'name',
     setSortBy: mockSetSortBy,
     activeAccountsTab: 'person1',
     setActiveAccountsTab: mockSetActiveAccountsTab,
@@ -70,7 +76,7 @@ describe('AccountsPage', () => {
   });
 
   it('renders portfolio overview, forecast widget, add account button, tabs, and active accounts', () => {
-    (useAccountsPage as any).mockReturnValue(defaultHookReturn);
+    vi.mocked(useAccountsPage).mockReturnValue(defaultHookReturn);
 
     render(
       <BrowserRouter>
@@ -94,10 +100,11 @@ describe('AccountsPage', () => {
     // Active Accounts
     expect(screen.getByText('Active Accounts')).toBeInTheDocument();
     expect(screen.getByText('Main Savings')).toBeInTheDocument();
+    expect(screen.getByText('Updated: Today')).toBeInTheDocument();
   });
 
   it('triggers setActiveAccountsTab when clicking a tab button', () => {
-    (useAccountsPage as any).mockReturnValue(defaultHookReturn);
+    vi.mocked(useAccountsPage).mockReturnValue(defaultHookReturn);
 
     render(
       <BrowserRouter>
@@ -111,8 +118,8 @@ describe('AccountsPage', () => {
     expect(mockSetActiveAccountsTab).toHaveBeenCalledWith('person2');
   });
 
-  it('triggers setSortBy when clicking sort button', () => {
-    (useAccountsPage as any).mockReturnValue(defaultHookReturn);
+  it('triggers setSortBy with next sort cycle when clicking sort button', () => {
+    vi.mocked(useAccountsPage).mockReturnValue(defaultHookReturn);
 
     render(
       <BrowserRouter>
@@ -123,11 +130,41 @@ describe('AccountsPage', () => {
     const sortButton = screen.getByRole('button', { name: /Sort by Name/i });
     fireEvent.click(sortButton);
 
-    expect(mockSetSortBy).toHaveBeenCalled();
+    expect(mockSetSortBy).toHaveBeenCalledTimes(1);
+    const updater = mockSetSortBy.mock.calls[0][0] as (prev: 'name' | 'rate' | 'updatedAt') => string;
+    expect(updater('name')).toBe('rate');
+    expect(updater('rate')).toBe('updatedAt');
+    expect(updater('updatedAt')).toBe('name');
+  });
+
+  it('displays Sort by Last Updated label and highlights stale account timestamps', () => {
+    vi.mocked(useAccountsPage).mockReturnValue({
+      ...defaultHookReturn,
+      sortBy: 'updatedAt',
+      filteredAccounts: [
+        {
+          ...mockFilteredAccounts[0],
+          updatedAt: '1 Aug (3 months ago)',
+          updatedAtFreshness: 'stale',
+          isStale: true,
+        },
+      ],
+    });
+
+    render(
+      <BrowserRouter>
+        <AccountsPage />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByRole('button', { name: /Sort by Last Updated/i })).toBeInTheDocument();
+    const updatedLabel = screen.getByText('Updated: 1 Aug (3 months ago)');
+    expect(updatedLabel).toBeInTheDocument();
+    expect(updatedLabel.parentElement?.className).toContain('text-rose-600');
   });
 
   it('navigates to /accounts/add when "Add Account" button is clicked', () => {
-    (useAccountsPage as any).mockReturnValue(defaultHookReturn);
+    vi.mocked(useAccountsPage).mockReturnValue(defaultHookReturn);
 
     render(
       <BrowserRouter>
@@ -142,7 +179,7 @@ describe('AccountsPage', () => {
   });
 
   it('navigates to edit account page when quick update button is clicked', () => {
-    (useAccountsPage as any).mockReturnValue(defaultHookReturn);
+    vi.mocked(useAccountsPage).mockReturnValue(defaultHookReturn);
 
     render(
       <BrowserRouter>

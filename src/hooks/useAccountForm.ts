@@ -5,6 +5,7 @@ import { db, type Account } from '@/lib/db';
 import { useStore } from '@/store/useStore';
 import { type AccountCategory } from '@/constants/taxConstants';
 import { canShowAER, canShowBonus } from '@/utils/accountRules';
+import { getAccountUpdateInfo } from '@/utils/accountUtils';
 
 // We use string for numeric inputs in the form data to handle intermediate states like empty strings
 export interface AccountFormData {
@@ -159,9 +160,12 @@ export function useAccountForm(accountId?: string) {
         }
     };
 
+    const lastUpdatedInfo = account ? getAccountUpdateInfo(account.updatedAt) : null;
+
     return {
         account,
         activeAccountId,
+        lastUpdatedInfo,
         navigate,
         p1Name,
         p2Name,

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Icon } from '@/components/ui/Icon';
+import { type AccountFreshness } from '@/utils/accountUtils';
 
 interface AccountCardProps {
     id: string;
@@ -22,6 +23,7 @@ interface AccountCardProps {
     isStale?: boolean;
     isWarned?: boolean;
     updatedAt: string;
+    updatedAtFreshness?: AccountFreshness;
     alertText?: string;
     alertType?: 'warning' | 'error' | 'info';
     className?: string;
@@ -48,6 +50,20 @@ const alertColorMap = {
     info: 'text-blue-500 bg-blue-100 dark:bg-blue-900/20',
 };
 
+const freshnessColorMap: Record<AccountFreshness, string> = {
+    fresh: 'text-slate-500 dark:text-slate-400',
+    aging: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-md font-medium',
+    stale: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md font-medium',
+    unknown: 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 px-2 py-0.5 rounded-md font-medium',
+};
+
+const freshnessIconMap: Record<AccountFreshness, string> = {
+    fresh: 'schedule',
+    aging: 'schedule',
+    stale: 'warning',
+    unknown: 'warning',
+};
+
 export function AccountCard({
     id,
     accountIcon,
@@ -64,9 +80,9 @@ export function AccountCard({
     rate,
     interestPayoutFrequency,
     interestPayoutDate,
-    isStale = false,
     isWarned = false,
     updatedAt,
+    updatedAtFreshness = 'fresh',
     alertText,
     alertType = 'warning',
     className,
@@ -102,7 +118,6 @@ export function AccountCard({
         <div
             className={cn(
                 'group relative bg-white dark:bg-[#18221f] rounded-2xl p-4 border border-gray-100 dark:border-[#283933] shadow-sm active:scale-[0.98] transition-transform duration-200',
-                isStale && 'opacity-80',
                 className
             )}
         >
@@ -160,10 +175,10 @@ export function AccountCard({
                 )}
             </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-[#283933]">
-                <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
-                    <Icon name="calendar_today" className="text-[14px]" />
-                    Updated: {updatedAt}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100 dark:border-[#283933]">
+                <div className={cn('inline-flex items-center gap-1 text-xs', freshnessColorMap[updatedAtFreshness])}>
+                    <Icon name={freshnessIconMap[updatedAtFreshness]} className="text-[14px]" />
+                    <span>Updated: {updatedAt}</span>
                 </div>
 
                 {alertText && (

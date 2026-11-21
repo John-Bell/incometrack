@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { type Account } from '@/lib/db';
+import { type Account, type InterestAccrual } from '@/lib/db';
 import {
   formatGBP,
   sortAccounts,
   getNextAccountSort,
   getAccountSortLabel,
   getAccountUpdateInfo,
+  getAccountLedgerInfo,
   formatAccountForDisplay,
   calculatePortfolioSummary,
   calculateTabSummaries,
@@ -183,6 +184,100 @@ describe('accountUtils', () => {
     });
   });
 
+  describe('getAccountLedgerInfo', () => {
+    const now = new Date(2026, 10, 21, 14, 0, 0).getTime(); // 21 Nov 2026
+
+    const makeAccrual = (id: string, accountId: string, date: number): InterestAccrual => ({
+      id,
+      accountId,
+      date,
+      interestAccrued: 25.5,
+      updatedAt: date,
+    });
+
+    it('returns null when account has no ledger entries', () => {
+      const otherAccruals = [makeAccrual('1', 'other-acc', new Date(2026, 10, 15).getTime())];
+      expect(getAccountLedgerInfo('acc1', [], 'monthly', now)).toBeNull();
+      expect(getAccountLedgerInfo('acc1', otherAccruals, 'monthly', now)).toBeNull();
+    });
+
+    it('selects the latest entry date regardless of array order and tracks entryCount', () => {
+      const accruals = [
+        makeAccrual('1', 'acc1', new Date(2026, 8, 1).getTime()),
+        makeAccrual('2', 'acc1', new Date(2026, 10, 15).getTime()),
+        makeAccrual('3', 'acc1', new Date(2026, 9, 15).getTime()),
+      ];
+      const info = getAccountLedgerInfo('acc1', accruals, 'monthly', now);
+      expect(info).not.toBeNull();
+      expect(info?.entryCount).toBe(3);
+      expect(info?.displayText).toBe('15 Nov (6 days ago)');
+      expect(info?.daysSinceEntry).toBe(6);
+      expect(info?.freshness).toBe('recent');
+    });
+
+    it('formats today and yesterday entries cleanly', () => {
+      const todayInfo = getAccountLedgerInfo(
+        'acc1',
+        [makeAccrual('1', 'acc1', new Date(2026, 10, 21, 9, 0, 0).getTime())],
+        'monthly',
+        now
+      );
+      expect(todayInfo?.displayText).toBe('Today');
+      expect(todayInfo?.freshness).toBe('recent');
+
+      const yesterdayInfo = getAccountLedgerInfo(
+        'acc1',
+        [makeAccrual('1', 'acc1', new Date(2026, 10, 20, 9, 0, 0).getTime())],
+        'monthly',
+        now
+      );
+      expect(yesterdayInfo?.displayText).toBe('Yesterday');
+      expect(yesterdayInfo?.freshness).toBe('recent');
+    });
+
+    it('marks monthly accounts as overdue when latest ledger entry is >= 40 days old', () => {
+      const fortyFiveDaysAgo = new Date(2026, 9, 7).getTime();
+      const info = getAccountLedgerInfo(
+        'acc1',
+        [makeAccrual('1', 'acc1', fortyFiveDaysAgo)],
+        'monthly',
+        now
+      );
+      expect(info?.displayText).toBe('7 Oct (1 month ago)');
+      expect(info?.daysSinceEntry).toBe(45);
+      expect(info?.freshness).toBe('overdue');
+    });
+
+    it('keeps annual, at_maturity, and sporadic accounts neutral even when older than 40 days', () => {
+      const priorYearEntry = new Date(2025, 10, 1).getTime();
+      const accruals = [makeAccrual('1', 'acc1', priorYearEntry)];
+
+      const annualInfo = getAccountLedgerInfo('acc1', accruals, 'annually', now);
+      expect(annualInfo?.displayText).toBe('1 Nov 2025 (1 year ago)');
+      expect(annualInfo?.freshness).toBe('neutral');
+
+      const maturityInfo = getAccountLedgerInfo('acc1', accruals, 'at_maturity', now);
+      expect(maturityInfo?.freshness).toBe('neutral');
+
+      const sporadicInfo = getAccountLedgerInfo('acc1', accruals, undefined, now);
+      expect(sporadicInfo?.freshness).toBe('neutral');
+    });
+
+    it('handles future-dated ledger entries without negative days', () => {
+      const futureEntry = new Date(2026, 11, 1).getTime();
+      const info = getAccountLedgerInfo(
+        'acc1',
+        [makeAccrual('1', 'acc1', futureEntry)],
+        'monthly',
+        now
+      );
+      expect(info?.daysSinceEntry).toBe(0);
+      expect(info?.ageLabel).toBe('Scheduled');
+      expect(info?.displayText).toBe('1 Dec');
+      expect(info?.freshness).toBe('recent');
+    });
+  });
+
   describe('formatAccountForDisplay', () => {
     const startTs = new Date(2025, 3, 6).getTime();
     const endTs = new Date(2026, 3, 5).getTime();
@@ -228,6 +323,32 @@ describe('accountUtils', () => {
       expect(formatted.updatedAt).toBe('1 Aug (3 months ago)');
       expect(formatted.updatedAtFreshness).toBe('stale');
       expect(formatted.isStale).toBe(true);
+      expect(formatted.ledgerLastEntry).toBeUndefined();
+      expect(formatted.ledgerFreshness).toBeUndefined();
+    });
+
+    it('surfaces ledger last entry from all-time accruals including prior tax years', () => {
+      const now = new Date(2026, 10, 21, 14, 0, 0).getTime();
+      const priorTaxYearAccrual: InterestAccrual = {
+        id: 'old-1',
+        accountId: 'acc1',
+        date: new Date(2025, 2, 15).getTime(),
+        interestAccrued: 120,
+        updatedAt: new Date(2025, 2, 15).getTime(),
+      };
+      const formatted = formatAccountForDisplay(
+        { ...mockAccounts[0], interestPayoutFrequency: 'annually', updatedAt: now },
+        [],
+        new Date(2026, 3, 6).getTime(),
+        new Date(2027, 3, 5).getTime(),
+        p1Name,
+        p2Name,
+        now,
+        [priorTaxYearAccrual]
+      );
+
+      expect(formatted.ledgerLastEntry).toBe('15 Mar 2025 (1 year ago)');
+      expect(formatted.ledgerFreshness).toBe('neutral');
     });
 
     it('formats person2 account with pink owner tag and handles zero interest rate', () => {
